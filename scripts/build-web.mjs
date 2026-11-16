@@ -1,6 +1,6 @@
 // Monta www/ (o app completo, offline) a partir de src/, vendor/ e data/.
-import fs from 'fs'; import path from 'path';
-const R = path.resolve(path.dirname(new URL(import.meta.url).pathname), '..');
+import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
+const R = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const rd = f => fs.readFileSync(path.join(R, f), 'utf8');
 const out = path.join(R, 'www');
 fs.rmSync(out, { recursive: true, force: true });
