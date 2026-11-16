@@ -277,7 +277,7 @@ function classify(P) {
     const uci = m.from + m.to + (m.promotion || '');
     const isBest = !!eb && eb.best === uci;
     let k = isBest ? 'best' : loss < 2 ? 'exc' : loss < 10 ? 'good' : loss < 20 ? 'inacc' : loss < 30 ? 'mistake' : 'blunder';
-    if (legalCount(P.fens[i]) === 1) k = 'forced';
+    if (k !== 'best' && k !== 'exc' && k !== 'good' && legalCount(P.fens[i]) === 1) k = 'forced';
     const prev = out[i - 1];
     if (prev && (prev.k === 'mistake' || prev.k === 'blunder') && BAD[k] && wb >= 60 && wa < wb - 10) k = 'miss';
     const acc = Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * loss) - 3.1669));
@@ -658,8 +658,23 @@ function openGame(id, ply) {
 }
 
 /* ---------- PAINEL ---------- */
+/* Prepara as partidas analisadas em pequenos lotes, sem travar a tela. */
+let WARMING = null;
+const analyzedReady = () => analyzedGames().every(g => PREP.has(g.id));
+function warmPrep() {
+  if (WARMING) return WARMING;
+  WARMING = new Promise(res => {
+    const todo = analyzedGames().filter(g => !PREP.has(g.id));
+    const step = () => { const t = performance.now(); while (todo.length && performance.now() - t < 14) prep(todo.shift()); if (todo.length) setTimeout(step, 0); else { WARMING = null; TRAIN = null; res(); } };
+    setTimeout(step, 0);
+  });
+  return WARMING;
+}
+const CALC = '<p class="muted">Calculando…</p>';
 function renderPainel() {
-  const T = buildTraining();
+  const ready = analyzedReady();
+  if (!ready) warmPrep().then(() => { if (S.view === 'painel') renderPainel(); });
+  const T = ready ? buildTraining() : null;
   const empty = !S.games.length;
   $('#pnEmpty').hidden = !empty; $('#pnBody').hidden = empty;
   if (empty) {
@@ -672,7 +687,7 @@ function renderPainel() {
   const last = rapid.concat(blitz).reduce((m, x) => Math.max(m, x[0]), 0);
   const ends = S.games.map(g => g.end);
   const f0 = isSeed() && isFinite(first) ? first : Math.min.apply(null, ends), l0 = isSeed() && last ? last : Math.max.apply(null, ends);
-  $('#pnSub').textContent = AGG.total + ' partidas de ' + S.me + ' no ' + PLAT[S.plat] + (isSeed() ? '' : ' (sincronizadas)') + ' · ' + dateLabel(f0, true) + ' a ' + dateLabel(l0, true) + ' · ' + T.games + ' analisadas pelo motor';
+  $('#pnSub').textContent = AGG.total + ' partidas de ' + S.me + ' no ' + PLAT[S.plat] + (isSeed() ? '' : ' (sincronizadas)') + ' · ' + dateLabel(f0, true) + ' a ' + dateLabel(l0, true) + ' · ' + analyzedGames().length + ' analisadas pelo motor';
   const kp = (lab, ser) => {
     if (!ser.length) return '';
     const now = ser[ser.length - 1][1], d = now - ser[0][1], peak = Math.max.apply(null, ser.map(x => x[1]));
@@ -683,7 +698,7 @@ function renderPainel() {
   const R = AGG.byTc[mainTc] || { W: 0, D: 0, L: 0 }; const nR = R.W + R.D + R.L;
   $('#pnKpis').innerHTML = kp('Rápida', rapid) + kp('Blitz', blitz) +
     '<div class="card kpi"><span class="label">Aproveitamento ' + (TC[mainTc] || '').toLowerCase() + '</span><span class="v">' + pct((R.W + R.D / 2) / Math.max(1, nR) * 100) + '</span><span class="d">' + R.W + ' V · ' + R.D + ' E · ' + R.L + ' D</span></div>' +
-    '<div class="card kpi"><span class="label">Precisão estimada</span><span class="v">' + (T.acc != null ? pct(T.acc) : '—') + '</span><span class="d">média nas ' + T.games + ' partidas analisadas</span></div>';
+    '<div class="card kpi"><span class="label">Precisão estimada</span><span class="v">' + (T && T.acc != null ? pct(T.acc) : '—') + '</span><span class="d">' + (T ? 'média nas ' + T.games + ' partidas analisadas' : 'calculando…') + '</span></div>';
   drawRatingChart(rapid, blitz);
   const rN = rapid.length ? rapid[rapid.length - 1][1] : 0, bN = blitz.length ? blitz[blitz.length - 1][1] : 0;
   if (rN && bN && Math.abs(rN - bN) >= 250) {
@@ -692,8 +707,8 @@ function renderPainel() {
     $('#pnInsight').innerHTML = '<span class="label">Observação do treinador</span><p>Seu rating de ' + hi + ' está ' + Math.abs(rN - bN) + ' pontos acima do ' + lo + '. Uma diferença assim costuma vir de reconhecimento de padrões e de decisões com pouco tempo; táticas curtas e repetidas tendem a render mais que teoria de abertura.</p>';
   } else $('#pnInsight').hidden = true;
   $('#pnLast').innerHTML = lastGameCard();
-  $('#prSub').textContent = 'Baseado nos seus ' + T.errs + ' erros em ' + T.games + ' partidas analisadas';
-  $('#pnPrio').innerHTML = T.prios.slice(0, 4).map(p => {
+  $('#prSub').textContent = T ? 'Baseado nos seus ' + T.errs + ' erros em ' + T.games + ' partidas analisadas' : 'Calculando a partir das suas partidas analisadas…';
+  $('#pnPrio').innerHTML = !T ? CALC : T.prios.slice(0, 4).map(p => {
     const Ls = LESSONS[p.k];
     return '<a class="prio" href="#treino"><span class="row"><b>' + esc(Ls.t) + '</b><span class="mono muted" style="font-size:13px">' + p.n + ' de ' + T.errs + '</span></span><span class="bar"><i style="width:' + Math.round(p.n / Math.max(1, T.errs) * 100) + '%"></i></span><span class="muted" style="font-size:13px;line-height:1.4">' + esc(p.extra || Ls.d) + '</span></a>';
   }).join('') || '<p class="muted">Analise algumas partidas para gerar prioridades.</p>';
@@ -707,10 +722,10 @@ function renderPainel() {
   $('#pnOps').innerHTML = AGG.openings.slice(0, 8).map(opRow).join('');
   $('#pnSession').innerHTML = sessionCard();
   $('#pnHabits').innerHTML = habitsCard();
-  $('#pnClock').innerHTML = clockCard();
-  $('#pnShort').innerHTML = shortCard();
-  $('#pnCmp').innerHTML = compareCard();
-  $('#pnWeeks').innerHTML = weeksCard();
+  $('#pnShort').innerHTML = ready ? shortCard() : '<h2 class="h-card">Derrotas curtas</h2>' + CALC;
+  $('#pnClock').innerHTML = ready ? clockCard() : '<h2 class="h-card">Relógio</h2>' + CALC;
+  $('#pnCmp').innerHTML = ready ? compareCard() : '<h2 class="h-card">Você × adversários do seu nível</h2>' + CALC;
+  $('#pnWeeks').innerHTML = ready ? weeksCard() : '<h2 class="h-card">Evolução semanal</h2>' + CALC;
 }
 function opRow(o) {
   const sc = (o.W + o.D / 2) / o.n * 100;
@@ -1630,7 +1645,8 @@ function openPrefs() {
   $('#prefsBody').innerHTML =
     '<div class="stack" style="gap:6px"><span class="label">Peças</span>' + seg('pieces', store.get('pieces', 'classic'), [['classic', 'Clássicas'], ['lance', 'Lance (originais)']]) + '</div>' +
     '<div class="stack" style="gap:6px"><span class="label">Tema</span>' + seg('theme', store.get('theme', 'system'), [['system', 'Sistema'], ['light', 'Claro'], ['dark', 'Escuro']]) + '</div>' +
-    '<div class="stack" style="gap:6px"><span class="label">Sons de lance</span>' + seg('snd', store.get('snd', true) ? 'on' : 'off', [['on', 'Ligados'], ['off', 'Desligados']]) + '</div>';
+    '<div class="stack" style="gap:6px"><span class="label">Sons de lance</span>' + seg('snd', store.get('snd', true) ? 'on' : 'off', [['on', 'Ligados'], ['off', 'Desligados']]) + '</div>' +
+    (window.__checkUpdate ? '<div class="stack" style="gap:8px"><span class="label">Versão</span><p class="muted" style="font-size:14px">App ' + esc(String(window.__APP_BUILD)) + ' · aplicativo ' + esc(window.__SHELL || '') + (NATIVE ? (NATIVE.platform === 'android' ? ' (Android)' : NATIVE.portable ? ' (Windows portátil)' : ' (Windows)') : '') + '. As atualizações do app chegam sozinhas.</p><div class="vxacts"><button class="btn small" type="button" data-upd="check">Procurar atualização</button></div></div>' : '');
   $('#prefs').hidden = false;
 }
 function setPref(a) {
@@ -1708,6 +1724,7 @@ function renderGoal() {
   $('#trGoal').innerHTML = '<svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-2)" stroke-width="5"></circle><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (f * 113.1).toFixed(1) + ' 113.1" transform="rotate(-90 22 22)" style="transition:stroke-dasharray .5s var(--ease)"></circle></svg><div class="stack" style="gap:0"><b>' + Math.min(n, 999) + ' de ' + GOAL + ' hoje</b><span class="muted" style="font-size:13px">' + (st ? 'Sequência: ' + st + ' dia' + (st > 1 ? 's' : '') + ' batendo a meta' : 'Bata a meta de ' + GOAL + ' exercícios por dia') + (store.get('tbest', 0) ? ' · recorde no relógio: ' + store.get('tbest', 0) : '') + '</span></div>';
 }
 function renderTreino() {
+  if (!analyzedReady()) { if (!PB) PB = new Board($('#pzBoard')); $('#pzQ').textContent = 'Preparando seus exercícios…'; warmPrep().then(() => { if (S.view === 'treino') renderTreino(); }); return; }
   const T = buildTraining(); if (!PB) PB = new Board($('#pzBoard'));
   renderGoal();
   if (S.pendingReview) { const g = S.pendingReview; S.pendingReview = null; setPzMode('review', g); }
@@ -2166,6 +2183,28 @@ function wire() {
   $('#pzNext').onclick = () => { S.puz++; loadPuzzle(); };
 }
 
+/* ---------- atualizações do app instalado ---------- */
+function updBanner(html) {
+  let el = $('#updBar'); if (!el) { el = document.createElement('div'); el.id = 'updBar'; el.className = 'updbar'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
+  el.innerHTML = html; el.hidden = false;
+}
+window.addEventListener('lal-update', () => updBanner('<span>Nova versão do app pronta.</span><button class="btn small primary" type="button" data-upd="reload">Atualizar agora</button><button class="btn small" type="button" data-upd="later">Depois</button>'));
+window.addEventListener('lal-shell-ready', () => updBanner('<span>Nova versão do instalador baixada.</span><button class="btn small primary" type="button" data-upd="shell">Reiniciar e instalar</button><button class="btn small" type="button" data-upd="later">Ao fechar</button>'));
+window.addEventListener('lal-shell-new', e => {
+  if (NATIVE && NATIVE.platform === 'windows' && !NATIVE.portable) return;
+  if (store.get('shellSeen') === e.detail.version) return; store.set('shellSeen', e.detail.version);
+  updBanner('<span>Versão ' + esc(e.detail.version) + ' do aplicativo disponível.</span><a class="btn small primary" href="' + window.__RELEASES + '" target="_blank" rel="noopener">Baixar</a><button class="btn small" type="button" data-upd="later">Depois</button>');
+});
+window.addEventListener('lal-uptodate', () => toast('Você já está na versão mais recente'));
+window.addEventListener('lal-update-fail', () => toast('Não consegui procurar atualizações agora'));
+document.addEventListener('click', e => {
+  const b = e.target.closest('[data-upd]'); if (!b) return; const a = b.dataset.upd;
+  if (a === 'reload') location.reload();
+  else if (a === 'shell' && window.native && window.native.installShellUpdate) window.native.installShellUpdate();
+  else if (a === 'check' && window.__checkUpdate) { toast('Procurando atualização…'); window.__checkUpdate(); }
+  else if (a === 'later') { const el = $('#updBar'); if (el) el.hidden = true; }
+});
+
 /* ---------- início ---------- */
 applyPrefs();
 loadData();
@@ -2173,4 +2212,5 @@ $('#acct').textContent = acctLabel();
 wire();
 route();
 hydrate().then(() => { loadData(); TRAIN = null; showView(S.view || 'painel'); return cloudStart(); });
+try { if (window.__APP_BUILD != null) localStorage.setItem('lal.bootok', String(window.__APP_BUILD)); } catch (e) { /* sem armazenamento */ }
 })();

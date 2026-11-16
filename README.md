@@ -2,8 +2,6 @@
 
 Treinador de xadrez pessoal: análise lance a lance das suas partidas, teoria e armadilhas do seu repertório, e treino feito a partir dos seus próprios erros. Versões para Windows (.exe) e Android (.apk), compiladas automaticamente pelo GitHub a cada mudança.
 
-> **Mantenha este repositório privado.** A pasta `data/` traz as suas partidas e análises.
-
 ## Instalar
 
 Abra a aba **Releases** deste repositório e pegue a versão mais recente.
@@ -16,6 +14,14 @@ Abra a aba **Releases** deste repositório e pegue a versão mais recente.
 **Android**
 - Baixe `Lance-a-Lance-….apk` no celular e toque para abrir.
 - Na primeira vez, o Android pede para permitir a instalação de apps desta fonte (o navegador ou o gerenciador de arquivos). Permita e volte para instalar.
+
+## Atualizações automáticas
+
+- **O app** (telas, análises, treino, teoria) se atualiza sozinho nos dois aparelhos. Ao abrir, ele procura uma versão nova, baixa em segundo plano (cerca de 230 KB) e avisa "Nova versão do app pronta". Se você não tocar em "Atualizar agora", ela entra na próxima vez que abrir o app. Se uma atualização falhar ao abrir, o app volta sozinho para a versão anterior.
+- **O aplicativo instalado** muda raramente. No Windows, o instalador (Setup) baixa a versão nova sozinho e instala quando você fecha o app. A versão portátil e o Android mostram um aviso com o botão "Baixar", porque o Android não deixa um app instalado fora da Play Store se reinstalar sem a sua confirmação.
+- Em **Ajustes → Versão** aparecem a versão em uso e o botão "Procurar atualização".
+
+Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`. Uma versão nova do instalador e do APK só é criada quando o campo `version` do `package.json` muda.
 
 ## Sincronização
 

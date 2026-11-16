@@ -4,7 +4,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 
 const WWW = path.join(__dirname, '..', 'www');
-const ALLOWED = ['api.chess.com', 'lichess.org'];
+const ALLOWED = ['api.chess.com', 'lichess.org', 'raw.githubusercontent.com'];
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wasm': 'application/wasm', '.woff2': 'font/woff2', '.json': 'application/json', '.css': 'text/css' };
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
@@ -44,8 +44,21 @@ app.whenReady().then(() => {
     if (!r.ok) return Promise.reject(new Error('http_' + r.status));
     return r.text();
   });
-  createWindow();
+  const win = createWindow();
+  setupShellUpdates(win);
   app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
   app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
 });
+// Atualização da casca (instalador do Windows). A versão portátil não se atualiza sozinha.
+function setupShellUpdates(win) {
+  if (!app.isPackaged || process.env.PORTABLE_EXECUTABLE_DIR) return;
+  let autoUpdater; try { ({ autoUpdater } = require('electron-updater')); } catch (e) { return; }
+  autoUpdater.autoDownload = true; autoUpdater.autoInstallOnAppQuit = true;
+  autoUpdater.on('update-downloaded', info => { if (!win.isDestroyed()) win.webContents.send('shell-update-ready', info && info.version); });
+  autoUpdater.on('error', () => {});
+  const check = () => autoUpdater.checkForUpdates().catch(() => {});
+  setTimeout(check, 8000); setInterval(check, 6 * 60 * 60 * 1000);
+  ipcMain.handle('installShellUpdate', () => { setImmediate(() => autoUpdater.quitAndInstall(true, true)); return true; });
+}
+
 app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

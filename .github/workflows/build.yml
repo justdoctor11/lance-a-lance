@@ -8,6 +8,9 @@ on:
 permissions:
   contents: write
 
+env:
+  BUILD_NUMBER: ${{ github.run_number }}
+
 jobs:
   windows:
     runs-on: windows-latest
@@ -24,7 +27,10 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: windows
-          path: release/*.exe
+          path: |
+            release/*.exe
+            release/*.blockmap
+            release/latest.yml
           if-no-files-found: error
 
   android:
@@ -55,19 +61,41 @@ jobs:
           path: out/*.apk
           if-no-files-found: error
 
+  # Atualização silenciosa do app: publica o pacote novo no ramo "updates" a cada compilação.
+  update:
+    needs: [windows, android]
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: node scripts/build-web.mjs
+      - name: Publicar pacote de atualização
+        run: |
+          cd update
+          git init -q -b updates
+          git add app.json
+          git -c user.name="github-actions" -c user.email="github-actions@users.noreply.github.com" commit -qm "Atualização ${BUILD_NUMBER}"
+          git push -f "https://x-access-token:${{ github.token }}@github.com/${{ github.repository }}.git" updates
+
+  # Nova versão do instalador/APK: só quando a versão em package.json muda.
   release:
     needs: [windows, android]
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
       - uses: actions/download-artifact@v4
         with:
           path: dist
           merge-multiple: true
-      - uses: softprops/action-gh-release@v2
-        with:
-          tag_name: build-${{ github.run_number }}
-          name: Lance a Lance — versão ${{ github.run_number }}
-          body: |
-            Windows: baixe o instalador (Setup) ou a versão portátil (não precisa instalar).
-            Android: baixe o arquivo .apk no celular e abra para instalar.
-          files: dist/*
+      - name: Criar versão no GitHub (se ainda não existir)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          V=$(node -p "require('./package.json').version")
+          if gh release view "v$V" >/dev/null 2>&1; then
+            echo "A versão v$V já existe; só o app foi atualizado pelo ramo updates."
+          else
+            gh release create "v$V" dist/* --title "Lance a Lance $V" --notes "Windows: baixe o instalador (Setup), que se atualiza sozinho, ou a versão portátil. Android: baixe o .apk no celular e abra para instalar. Depois de instalado, o app recebe as atualizações sozinho."
+          fi
