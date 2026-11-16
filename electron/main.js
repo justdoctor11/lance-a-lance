@@ -1,0 +1,51 @@
+// Lance a Lance para Windows (Electron)
+const { app, BrowserWindow, ipcMain, protocol, net, nativeTheme, shell, Menu } = require('electron');
+const path = require('path');
+const { pathToFileURL } = require('url');
+
+const WWW = path.join(__dirname, '..', 'www');
+const ALLOWED = ['api.chess.com', 'lichess.org'];
+const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wasm': 'application/wasm', '.woff2': 'font/woff2', '.json': 'application/json', '.css': 'text/css' };
+
+protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
+
+if (!app.requestSingleInstanceLock()) app.quit();
+
+function createWindow() {
+  const win = new BrowserWindow({
+    width: 1360, height: 900, minWidth: 380, minHeight: 600,
+    backgroundColor: nativeTheme.shouldUseDarkColors ? '#0e1412' : '#eef1ee',
+    title: 'Lance a Lance', show: false, autoHideMenuBar: true,
+    icon: path.join(__dirname, '..', 'build', 'icon.png'),
+    webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, backgroundThrottling: false }
+  });
+  win.once('ready-to-show', () => win.show());
+  win.webContents.setWindowOpenHandler(({ url }) => { if (/^https:\/\//.test(url)) shell.openExternal(url); return { action: 'deny' }; });
+  win.webContents.on('will-navigate', (e, url) => { if (!url.startsWith('app://')) { e.preventDefault(); if (/^https:\/\//.test(url)) shell.openExternal(url); } });
+  win.loadURL('app://local/index.html');
+  return win;
+}
+
+app.whenReady().then(() => {
+  Menu.setApplicationMenu(null);
+  protocol.handle('app', async req => {
+    const u = new URL(req.url); let rel = decodeURIComponent(u.pathname).replace(/^\/+/, '') || 'index.html';
+    const file = path.normalize(path.join(WWW, rel));
+    if (!file.startsWith(WWW)) return new Response('Proibido', { status: 403 });
+    const res = await net.fetch(pathToFileURL(file).toString());
+    const type = TYPES[path.extname(file).toLowerCase()];
+    return type ? new Response(res.body, { status: res.status, headers: { 'content-type': type } }) : res;
+  });
+  ipcMain.handle('fetchText', async (_e, url) => {
+    const host = new URL(url).hostname;
+    if (!ALLOWED.includes(host)) throw new Error('host_blocked');
+    const r = await net.fetch(url, { headers: { 'User-Agent': 'LanceALance/1.0 (app pessoal de estudo)', Accept: 'application/json, application/x-chess-pgn, */*' } });
+    if (r.status === 404) return Promise.reject(new Error('nouser'));
+    if (!r.ok) return Promise.reject(new Error('http_' + r.status));
+    return r.text();
+  });
+  createWindow();
+  app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });
+  app.on('activate', () => { if (!BrowserWindow.getAllWindows().length) createWindow(); });
+});
+app.on('window-all-closed', () => { if (process.platform !== 'darwin') app.quit(); });

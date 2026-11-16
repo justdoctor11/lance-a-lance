@@ -1,0 +1,249 @@
+<header class="top">
+  <div class="wrap top-in">
+    <a class="brand" href="#painel" aria-label="Lance a Lance, início">
+      <svg width="24" height="24" viewBox="0 0 22 22" aria-hidden="true"><rect width="11" height="11" fill="currentColor"></rect><rect x="11" y="11" width="11" height="11" fill="currentColor"></rect><rect x="11" width="11" height="11" fill="var(--accent)"></rect><rect y="11" width="11" height="11" fill="var(--line)"></rect></svg>
+      <b>Lance a Lance</b>
+    </a>
+    <nav class="tabs" id="tabs" aria-label="Seções">
+      <span class="pill" aria-hidden="true"></span>
+      <a href="#painel" data-v="painel">Painel</a>
+      <a href="#partidas" data-v="partidas">Partidas</a>
+      <a href="#analise" data-v="analise">Análise</a>
+      <a href="#treino" data-v="treino">Treino</a>
+    </nav>
+    <div class="top-r">
+      <span class="acct" id="acct"></span>
+      <button class="btn small" id="openPrefs" type="button" aria-label="Ajustes"><svg width="16" height="16" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M3 5h9M15 5h2M3 10h3M9 10h8M3 15h7M13 15h4"></path><circle cx="13.5" cy="5" r="1.8"></circle><circle cx="7.5" cy="10" r="1.8"></circle><circle cx="11.5" cy="15" r="1.8"></circle></svg></button>
+      <button class="btn small" id="openSync" type="button">
+        <svg width="15" height="15" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M16 7a7 7 0 0 0-12-2M4 13a7 7 0 0 0 12 2M16 3v4h-4M4 17v-4h4"></path></svg>
+        Sincronizar
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="wrap">
+  <!-- PAINEL -->
+  <section class="view" id="v-painel" aria-labelledby="h-painel">
+    <div class="stack">
+      <div class="stack" style="gap:4px">
+        <h1 class="h-page" id="h-painel">Seu xadrez</h1>
+        <p class="sub" id="pnSub"></p>
+      </div>
+      <section class="card pad stack" id="pnEmpty" hidden style="gap:12px;align-items:flex-start">
+        <h2 class="h-card">Nenhuma partida desta conta ainda</h2>
+        <p class="muted" id="pnEmptyMsg"></p>
+        <button class="btn primary" type="button" data-open-sync>Sincronizar partidas</button>
+      </section>
+      <div class="stack" id="pnBody">
+      <section class="card pad stack" id="pnLast" style="gap:12px"></section>
+      <div class="kpis" id="pnKpis"></div>
+      <div class="grid2">
+        <div class="stack">
+          <section class="card pad stack" style="gap:10px">
+            <div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap">
+              <h2 class="h-card">Evolução do rating</h2>
+              <div class="legend"><span><i style="background:var(--accent)"></i>Rápida</span><span><i style="background:var(--series-2)"></i>Blitz</span></div>
+            </div>
+            <div class="chart" id="pnChart"></div>
+          </section>
+          <section class="callout" id="pnInsight"></section>
+          <section class="card pad stack" id="pnWeeks" style="gap:10px"></section>
+          <section class="card pad stack" id="pnCmp" style="gap:12px"></section>
+          <section class="card pad stack" style="gap:10px">
+            <h2 class="h-card">Suas aberturas mais jogadas</h2>
+            <div class="ops" id="pnOps"></div>
+          </section>
+        </div>
+        <div class="stack">
+          <section class="card pad stack" id="pnSession" style="gap:12px"></section>
+          <section class="card pad stack" style="gap:12px">
+            <div class="stack" style="gap:2px">
+              <h2 class="h-card">Prioridades de treino</h2>
+              <p class="sub" id="prSub"></p>
+            </div>
+            <div class="stack" style="gap:10px" id="pnPrio"></div>
+          </section>
+          <section class="card pad stack" id="pnHabits" style="gap:12px"></section>
+          <section class="card pad stack" id="pnClock" style="gap:12px"></section>
+          <section class="card pad stack" id="pnShort" style="gap:10px"></section>
+          <section class="card pad stack" style="gap:10px">
+            <h2 class="h-card">Como suas derrotas terminam</h2>
+            <div class="stackbar" id="pnLossBar"></div>
+            <div class="leg2" id="pnLossLeg"></div>
+          </section>
+          <section class="card pad stack" style="gap:10px">
+            <h2 class="h-card">Resultados por cor</h2>
+            <div class="stack" style="gap:10px" id="pnColor"></div>
+          </section>
+        </div>
+      </div>
+      </div>
+      <p class="foot">Peças: conjunto cburnett (licença aberta, por Colin M.L. Burnett). Motor: Stockfish (GPL).</p>
+    </div>
+  </section>
+
+  <!-- PARTIDAS -->
+  <section class="view" id="v-partidas" aria-labelledby="h-partidas">
+    <div class="stack">
+      <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+        <div class="stack" style="gap:4px">
+          <h1 class="h-page" id="h-partidas">Partidas</h1>
+          <p class="sub" id="gmSub"></p>
+        </div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" type="button" data-analyze-batch>Analisar 10 recentes</button>
+          <button class="btn primary" type="button" data-open-sync>Sincronizar</button>
+        </div>
+      </div>
+      <div class="chips" id="gmChips" role="group" aria-label="Filtrar partidas"></div>
+      <section class="card glist" id="gmList"></section>
+    </div>
+  </section>
+
+  <!-- ANÁLISE -->
+  <section class="view" id="v-analise" aria-label="Análise da partida">
+    <div class="an">
+      <div class="an-main">
+        <div class="an-head" id="anHead"></div>
+        <div class="vxbar" id="vxBar" hidden></div>
+        <div class="evh" id="evH"><div class="track"><i></i></div><div class="lab"><span id="evHl"></span><span id="evHr"></span></div></div>
+        <div class="boardrow">
+          <div class="evv" id="evV" role="img" aria-label="Barra de avaliação"><i></i><span id="evVt"></span></div>
+          <div class="boardbox"><div id="anBoard"></div></div>
+        </div>
+        <div class="ctrls">
+          <button class="btn" type="button" id="bFirst" aria-label="Início da partida"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4v12M15 4l-7 6 7 6"></path></svg></button>
+          <button class="btn w" type="button" id="bPrev" aria-label="Lance anterior"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M13 4l-7 6 7 6"></path></svg></button>
+          <button class="btn primary w" type="button" id="bNext" aria-label="Próximo lance"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l7 6-7 6"></path></svg></button>
+          <button class="btn" type="button" id="bLast" aria-label="Fim da partida"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4v12M5 4l7 6-7 6"></path></svg></button>
+          <button class="btn" type="button" id="bFlip" aria-label="Virar tabuleiro"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8a6 6 0 0 1 11-2l1 2M16 12a6 6 0 0 1-11 2l-1-2M16 4v4h-4M4 16v-4h4"></path></svg></button>
+          <span class="kbd">← → navegam · F vira</span>
+        </div>
+        <div class="card graph">
+          <div style="display:flex;justify-content:space-between"><span class="label">Avaliação ao longo da partida</span><span class="label" style="text-transform:none;letter-spacing:0">toque para pular</span></div>
+          <div class="gbox" id="gbox" role="slider" aria-label="Posição na partida" tabindex="0"></div>
+          <div id="tgraph" class="stack" style="gap:6px" hidden>
+            <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="label">Tempo por lance</span><span class="muted" id="tnote" style="font-size:12px"></span></div>
+            <div class="tbox" id="tbox"></div>
+          </div>
+        </div>
+      </div>
+      <aside class="an-side">
+        <section class="card coach" id="coach" aria-live="polite"></section>
+        <section class="card moves" id="moves" aria-label="Lista de lances"></section>
+      </aside>
+    </div>
+  </section>
+
+  <!-- TREINO -->
+  <section class="view" id="v-treino" aria-labelledby="h-treino">
+    <div class="stack">
+      <div class="stack" style="gap:4px">
+        <h1 class="h-page" id="h-treino">Treino</h1>
+        <p class="sub">Exercícios tirados dos seus próprios erros, mais um plano montado a partir deles</p>
+      </div>
+      <div class="goal" id="trGoal"></div>
+      <div class="tr">
+        <section class="card puz" id="puz">
+          <div class="chips" id="pzModes" role="group" aria-label="Modo de treino"></div>
+          <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
+            <span class="label" id="pzFrom"></span>
+            <span class="mono muted" style="font-size:12px" id="pzCount"></span>
+          </div>
+          <p class="q" id="pzQ"></p>
+          <div class="bwrap"><div id="pzBoard"></div></div>
+          <div class="ctrls" style="padding-left:0;max-width:none">
+            <button class="btn" type="button" id="pzHint">Dica</button>
+            <button class="btn" type="button" id="pzSol">Ver solução</button>
+            <button class="btn primary" type="button" id="pzNext">Próximo</button>
+          </div>
+          <div class="fb" id="pzFb" role="status"></div>
+        </section>
+        <div class="stack">
+          <section class="card pad stack" style="gap:12px">
+            <h2 class="h-card">Plano da semana</h2>
+            <div class="steps" id="trPlan"></div>
+          </section>
+
+          <section class="card pad stack" style="gap:10px">
+            <div class="stack" style="gap:2px"><h2 class="h-card">Furos do seu repertório</h2><p class="sub">Linhas com 10 ou mais partidas em que você rende bem abaixo da sua média. Toque para abrir na árvore.</p></div>
+            <div class="stack" style="gap:6px" id="repHoles"></div>
+          </section>
+          <section class="card pad">
+            <h2 class="h-card" style="margin-bottom:6px">Conceitos</h2>
+            <div id="trLessons"></div>
+          </section>
+        </div>
+      </div>
+      <section class="card pad stack" id="repCard" style="gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+          <div class="stack" style="gap:2px"><h2 class="h-card">Árvore do seu repertório</h2><p class="sub">Seus primeiros 8 lances em todas as partidas, com o aproveitamento de cada caminho</p></div>
+          <div class="seg" id="repSeg" role="group" aria-label="Cor"><button type="button" data-rep="w" aria-pressed="true">De brancas</button><button type="button" data-rep="b" aria-pressed="false">De pretas</button></div>
+        </div>
+        <div class="chips" id="repCrumb"></div>
+        <div class="rep"><div class="repb"><div id="repBoard"></div></div><div class="stack" style="gap:8px;min-width:0" id="repInfo"></div></div>
+      </section>
+      <section class="card pad stack" id="thCard" style="gap:14px">
+        <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
+          <div class="stack" style="gap:2px"><h2 class="h-card">Teoria e armadilhas</h2><p class="sub" id="thSub"></p></div>
+          <button class="btn small accent" type="button" data-pz="theory">Treinar essas posições</button>
+        </div>
+        <div class="chips" id="thTabs" role="group" aria-label="Seção"></div>
+        <div class="chips" id="thCol" role="group" aria-label="Cor"></div>
+        <div class="stack" style="gap:10px" id="thList"></div>
+      </section>
+    </div>
+  </section>
+</main>
+
+<nav class="bnav" id="bnav" aria-label="Seções">
+  <a href="#painel" data-v="painel"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="12" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="12" width="7" height="7" rx="1.5"></rect><rect x="12" y="12" width="7" height="7" rx="1.5"></rect></svg></span>Painel</a>
+  <a href="#partidas" data-v="partidas"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h14M4 11h14M4 16h9"></path></svg></span>Partidas</a>
+  <a href="#analise" data-v="analise"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="16" height="16" rx="2"></rect><path d="M3 11h16M11 3v16" stroke-opacity=".5"></path><rect x="3" y="3" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect><rect x="11" y="11" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect></svg></span>Análise</a>
+  <a href="#treino" data-v="treino"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><circle cx="11" cy="11" r="4"></circle><circle cx="11" cy="11" r="1" fill="currentColor"></circle></svg></span>Treino</a>
+</nav>
+
+<div class="modal" id="sync" hidden role="dialog" aria-modal="true" aria-labelledby="syncTitle">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+      <h2 class="h-card" id="syncTitle" style="font-size:20px">Sincronizar partidas</h2>
+      <button class="btn small" type="button" id="syncClose" aria-label="Fechar">Fechar</button>
+    </div>
+    <div class="seg" role="group" aria-label="Fonte">
+      <button type="button" data-src="chesscom" aria-pressed="true">Chess.com</button>
+      <button type="button" data-src="lichess" aria-pressed="false">Lichess</button>
+      <button type="button" data-src="pgn" aria-pressed="false">Colar PGN</button>
+    </div>
+    <div class="field">
+      <label for="syncUser">Seu usuário</label>
+      <input id="syncUser" autocomplete="username" spellcheck="false">
+    </div>
+    <div id="syncAuto" class="stack" style="gap:10px">
+      <p class="status" id="syncAutoNote">A sincronização automática lê a API pública pelo navegador do app Claude para computador. Em outros lugares, use “Colar PGN”.</p>
+      <button class="btn primary" type="button" id="syncGo">Buscar partidas recentes</button>
+    </div>
+    <div id="syncPgn" class="stack" style="gap:10px" hidden>
+      <div class="field">
+        <label for="pgnText">PGN de uma ou mais partidas</label>
+        <textarea id="pgnText" spellcheck="false" placeholder="[Event &quot;Live Chess&quot;] …"></textarea>
+      </div>
+      <div class="field">
+        <label for="pgnFile">Ou envie um arquivo .pgn</label>
+        <input id="pgnFile" type="file" accept=".pgn,.txt,text/plain">
+      </div>
+      <p class="status">No Chess.com: Jogar → Arquivo de partidas → selecione → Baixar. No Lichess: perfil → Exportar partidas.</p>
+      <button class="btn primary" type="button" id="pgnGo">Importar</button>
+    </div>
+    <label class="chk" for="autoChk"><input type="checkbox" id="autoChk" checked> <span>Sincronização ao vivo: buscar e analisar partidas novas a cada 4 minutos enquanto o app estiver aberto no Claude para computador</span></label>
+    <p class="status" id="syncWhere">Suas partidas e análises ficam salvas na sua conta Claude e aparecem também no celular.</p>
+    <p class="status" id="syncStatus" role="status"></p>
+  </div>
+</div>
+<div class="modal" id="prefs" hidden role="dialog" aria-modal="true" aria-labelledby="prefsTitle">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="h-card" id="prefsTitle" style="font-size:20px">Ajustes</h2><button class="btn small" type="button" id="prefsClose">Fechar</button></div>
+    <div class="stack" style="gap:16px" id="prefsBody"></div>
+  </div>
+</div>
+<div class="toast" id="toast" role="status"></div>
