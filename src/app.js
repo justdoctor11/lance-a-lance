@@ -726,6 +726,7 @@ function warmPrep() {
 }
 const CALC = '<p class="muted">Calculando…</p>';
 function renderPainel() {
+  renderHero();
   const ready = analyzedReady();
   if (!ready) warmPrep().then(() => { if (S.view === 'painel') renderPainel(); });
   const T = ready ? buildTraining() : null;
@@ -1729,7 +1730,7 @@ function applyPrefs() {
 function openPrefs() {
   const seg = (name, val, opts) => '<div class="seg" role="group">' + opts.map(([v, t]) => '<button type="button" data-pref="' + name + ':' + v + '" aria-pressed="' + (val === v) + '">' + t + '</button>').join('') + '</div>';
   $('#prefsBody').innerHTML =
-    '<div class="stack" style="gap:6px"><span class="label">Peças</span><div class="swatches">' + [['classic', 'Clássicas'], ['moderno', 'Moderno'], ['lance', 'Lance'], ['staunty', 'Staunty'], ['maestro', 'Maestro'], ['california', 'California'], ['cardinal', 'Cardinal'], ['merida', 'Merida'], ['chessnut', 'Chessnut'], ['fantasy', 'Fantasia'], ['spatial', 'Espacial']].map(([v, t]) => '<button type="button" class="sw" data-pref="pieces:' + v + '" aria-pressed="' + (store.get('pieces', 'classic') === v) + '"><span class="swp" data-pieces="' + v + '"><i class="pc wn"></i><i class="pc bq"></i></span>' + t + '</button>').join('') + '</div></div>' +
+    '<div class="stack" style="gap:6px"><span class="label">Peças</span><div class="swatches">' + [['classic', 'Clássicas'], ['moderno', 'Moderno'], ['caliente', 'Caliente'], ['lance', 'Lance'], ['staunty', 'Staunty'], ['maestro', 'Maestro'], ['california', 'California'], ['cardinal', 'Cardinal'], ['merida', 'Merida'], ['chessnut', 'Chessnut'], ['fantasy', 'Fantasia'], ['spatial', 'Espacial']].map(([v, t]) => '<button type="button" class="sw" data-pref="pieces:' + v + '" aria-pressed="' + (store.get('pieces', 'classic') === v) + '"><span class="swp" data-pieces="' + v + '"><i class="pc wn"></i><i class="pc bq"></i></span>' + t + '</button>').join('') + '</div></div>' +
     '<div class="stack" style="gap:6px"><span class="label">Tabuleiro</span><div class="swatches">' + [['classic', 'Clássico'], ['wood', 'Madeira'], ['walnut', 'Nogueira'], ['marble', 'Mármore'], ['slate', 'Ardósia'], ['leather', 'Couro'], ['green', 'Torneio'], ['blue', 'Azul'], ['sand', 'Areia'], ['ice', 'Gelo'], ['amethyst', 'Ametista'], ['coral', 'Coral'], ['night', 'Noturno']].map(([v, t]) => '<button type="button" class="sw" data-pref="board:' + v + '" aria-pressed="' + (store.get('board', 'classic') === v) + '"><span class="swb" data-board="' + v + '"></span>' + t + '</button>').join('') + '</div></div>' +
     '<div class="stack" style="gap:6px"><span class="label">Tema</span>' + seg('theme', store.get('theme', 'system'), [['system', 'Sistema'], ['light', 'Claro'], ['dark', 'Escuro'], ['oled', 'Preto (OLED)']]) + '</div>' +
     '<div class="stack" style="gap:6px"><span class="label">Coordenadas no tabuleiro</span>' + seg('coords', store.get('coords', 'on'), [['on', 'Mostrar'], ['off', 'Esconder']]) + '</div>' +
@@ -2271,6 +2272,7 @@ function wire() {
     if (e.target.closest('#repEval')) { repEval(); return; }
     const tb = e.target.closest('#tbox i'); if (tb) { setPly(+tb.dataset.p); return; }
     const opl = e.target.closest('[data-openply]'); if (opl) { const q = opl.dataset.openply.split(':'); openGame(q[0], +q[1]); return; }
+    const qq = e.target.closest('[data-quote]'); if (qq) { showQuote(+qq.dataset.quote); quoteTimer(); return; }
     const mb = e.target.closest('[data-maia]'); if (mb) { if (mb.dataset.maia === 'load') maiaLoad(); else maiaAnalyze(); return; }
     const qb = e.target.closest('[data-q]'); if (qb) { queueAction(qb.dataset.q); return; }
     const qs = e.target.closest('[data-queue]'); if (qs) { const ids = qs.dataset.queue === 'today' ? habits().today.slice().sort((a, b) => a.end - b.end).map(g => g.id) : ($$('#gmList [data-open]').map(b => b.dataset.open).slice(0, 25)); startQueue(ids, qs.dataset.queue === 'today' ? 'Partidas de hoje' : 'Fila de revisão'); return; }

@@ -523,3 +523,79 @@ function dosTreeAction(a, D) {
   const run = () => { const j = jobs.shift(); if (!j) return; try { j(); } catch (e) { /* segue */ } idle(run); };
   setTimeout(() => warmPrep().then(() => idle(run)), 2500);
 })();
+
+/* ---------- recepção do Painel: saudação, o dia em partidas e frases de enxadristas ---------- */
+const QUOTES = [
+  ['Tática é saber o que fazer quando há algo a fazer; estratégia é saber o que fazer quando não há nada a fazer.', 'Savielly Tartakower'],
+  ['Vence quem comete o penúltimo erro.', 'Savielly Tartakower'],
+  ['Ninguém nunca ganhou uma partida desistindo.', 'Savielly Tartakower'],
+  ['Quando encontrar um bom lance, procure um melhor.', 'Emanuel Lasker'],
+  ['Sem erro não pode haver brilhantismo.', 'Emanuel Lasker'],
+  ['Ajude suas peças para que elas possam ajudar você.', 'Paul Morphy'],
+  ['Os peões são a alma do xadrez.', 'François-André Philidor'],
+  ['Xadrez é a luta contra o erro.', 'Johannes Zukertort'],
+  ['Mesmo um plano ruim é melhor que plano nenhum.', 'Mikhail Chigorin'],
+  ['Xadrez é vida.', 'Bobby Fischer'],
+  ['Não acredito em psicologia. Acredito em bons lances.', 'Bobby Fischer'],
+  ['Você aprende muito mais com uma partida que perde do que com uma que ganha.', 'José Raúl Capablanca'],
+  ['Para melhorar seu jogo, estude os finais antes de tudo.', 'José Raúl Capablanca'],
+  ['Leve o adversário para uma floresta escura, onde 2 + 2 = 5 e o caminho de saída só tem espaço para um.', 'Mikhail Tal'],
+  ['A ameaça é mais forte que a execução.', 'Aron Nimzowitsch'],
+  ['O rei é uma peça de combate. Use-o!', 'Wilhelm Steinitz'],
+  ['Jogue a abertura como um livro, o meio-jogo como um mágico e o final como uma máquina.', 'Rudolf Spielmann'],
+  ['Xadrez é 99% tática.', 'Richard Teichmann'],
+  ['Xadrez é tudo: arte, ciência e esporte.', 'Anatoly Karpov'],
+  ['Quem ataca pode se arrepender de um lance ruim, mas é muito pior se arrepender para sempre de uma oportunidade que deixou passar.', 'Garry Kasparov']
+];
+let QI = null, QT = 0;
+function showQuote(step) {
+  const el = $('#pnQuote'); if (!el) return;
+  if (QI == null) { const d = new Date(); QI = (d.getFullYear() * 400 + d.getMonth() * 31 + d.getDate()) % QUOTES.length; }
+  else QI = (QI + (step || 1) + QUOTES.length) % QUOTES.length;
+  const [t, a] = QUOTES[QI];
+  el.innerHTML = '<blockquote class="qtext">' + esc(t) + '</blockquote><figcaption><span>' + esc(a) + '</span><span class="qnav"><button type="button" data-quote="-1" aria-label="Frase anterior">‹</button><button type="button" data-quote="1" aria-label="Próxima frase">›</button></span></figcaption>';
+  el.classList.remove('qin'); void el.offsetWidth; el.classList.add('qin');
+}
+function quoteTimer() { if (QT) clearInterval(QT); QT = setInterval(() => { if (S.view === 'painel' && !document.hidden) showQuote(1); }, 11000); }
+function renderHero() {
+  const h = new Date().getHours(), G = S.games;
+  const hi = h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
+  $('#h-painel').textContent = hi + ', ' + (S.me || 'enxadrista') + '!';
+  $('#pnWhen').textContent = cap(new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }));
+  if (!$('#pnQuote').innerHTML) { showQuote(0); quoteTimer(); }
+  if (!G.length) { $('#pnToday').innerHTML = '<p class="hero-line">Sincronize sua conta e eu te conto como foram as partidas do dia.</p>'; $('#pnQuick').innerHTML = ''; return; }
+  const H = habits(), T = H.today.slice().sort((a, b) => a.end - b.end);
+  const W = T.filter(g => rk(g) === 'W').length, D = T.filter(g => rk(g) === 'D').length, L = T.length - W - D;
+  let line, mood = '';
+  if (!T.length) {
+    const last = G[0], days = Math.floor((Date.now() / 1000 - last.end) / 86400);
+    line = 'Nenhuma partida hoje ainda. A última foi ' + (days <= 0 ? 'mais cedo' : days === 1 ? 'ontem' : 'há ' + days + ' dias') + ', ' + (rk(last) === 'W' ? 'uma vitória' : rk(last) === 'D' ? 'um empate' : 'uma derrota') + ' contra ' + esc(last.opp) + '.';
+    mood = 'Que tal 3 exercícios de aquecimento antes da primeira?';
+  } else {
+    const parts = [W && W + (W === 1 ? ' vitória' : ' vitórias'), D && D + (D === 1 ? ' empate' : ' empates'), L && L + (L === 1 ? ' derrota' : ' derrotas')].filter(Boolean);
+    line = 'Hoje já foram <b>' + T.length + (T.length === 1 ? ' partida' : ' partidas') + '</b>: ' + parts.join(', ').replace(/, ([^,]*)$/, ' e $1') + '.';
+    const dl = Object.entries(H.deltas).filter(([, v]) => v != null && v !== 0).map(([k, v]) => TC[k].toLowerCase() + ' <b class="' + (v > 0 ? 'up' : 'down') + '">' + (v > 0 ? '+' : '−') + Math.abs(v) + '</b>');
+    if (dl.length) line += ' Rating de hoje: ' + dl.join(', ') + '.';
+    mood = H.lossRun >= 2 ? H.lossRun + ' derrotas seguidas: uma pausa curta agora costuma valer mais que a próxima partida.' : W >= 3 && W > L * 2 ? 'Dia inspirado. Aproveite, mas sem pressa nos lances.' : L > W ? 'Dia difícil até aqui. Revise uma das derrotas antes de continuar.' : 'Bora para a próxima? Olhe xeques, capturas e ameaças antes de cada lance.';
+  }
+  let html = '<p class="hero-line">' + line + '</p><p class="muted">' + esc(mood) + '</p>';
+  if (T.length) html += '<div class="todayg">' + T.slice(-8).map(g => { const P = S.an[g.id] ? prep(g) : null, acc = P && P.acc ? pct(P.acc[g.c]) : ''; return '<button type="button" class="tg ' + rk(g) + '" data-openply="' + g.id + ':0"><b>' + ({ W: 'V', D: 'E', L: 'D' }[rk(g)]) + '</b><span>vs ' + esc(g.opp) + '</span>' + (acc ? '<i class="mono">' + acc + '</i>' : '') + '</button>'; }).join('') + '</div>';
+  html += '<div class="vxacts">' + (T.length ? '<button class="btn small primary" type="button" data-queue="today">Revisar as de hoje</button>' : '<button class="btn small primary" type="button" data-pz="warm">Aquecer com 3 exercícios</button>') + '<a class="btn small" href="#treino">Ir para o treino</a></div>';
+  $('#pnToday').innerHTML = html;
+  // números rápidos
+  const asc = G.slice().sort((a, b) => a.end - b.end); let win = 0, unb = 0;
+  for (let i = asc.length - 1; i >= 0 && rk(asc[i]) === 'W'; i--) win++;
+  for (let i = asc.length - 1; i >= 0 && rk(asc[i]) !== 'L'; i--) unb++;
+  const tc = (G.find(g => g.tc === 'blitz' && g.mR) ? 'blitz' : (G.find(g => g.mR) || {}).tc) || 'blitz';
+  const rNow = (G.find(g => g.tc === tc && g.mR) || {}).mR, wk = Date.now() / 1000 - 7 * 86400;
+  const r7 = (asc.filter(g => g.tc === tc && g.mR && g.end < wk).pop() || {}).mR;
+  const week = G.filter(g => g.end >= wk), ws = scoreOf(week);
+  const accs = analyzedGames().slice().sort((a, b) => b.end - a.end).slice(0, 10).map(g => prep(g)).filter(P => P.acc).map(P => P.acc[P.g.c]);
+  const q = [
+    [win ? win + (win === 1 ? ' vitória' : ' vitórias') : unb ? unb + ' sem perder' : '—', win ? 'sequência atual' : unb ? 'sequência atual' : 'sem sequência agora'],
+    [dailyCount() + ' de ' + GOAL, 'exercícios de hoje' + (streakDays() > 1 ? ' · ' + streakDays() + ' dias seguidos' : '')],
+    [ws == null ? '—' : sp(ws) + '%', 'aproveitamento em 7 dias · ' + week.length + ' partidas'],
+    [accs.length ? pct(avg(accs)) : '—', 'precisão nas 10 últimas analisadas']
+  ];
+  $('#pnQuick').innerHTML = q.map(([b, s]) => '<div class="qs"><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('');
+}

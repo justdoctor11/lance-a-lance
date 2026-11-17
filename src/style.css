@@ -554,3 +554,32 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 
 :root:not([data-glass="off"]) .h-page{background:linear-gradient(100deg,var(--ink) 30%,color-mix(in srgb,var(--accent) 80%,var(--ink)) 100%);-webkit-background-clip:text;background-clip:text;color:transparent}
 :root:not([data-glass="off"]) .kpi b,:root:not([data-glass="off"]) .tile b,:root:not([data-glass="off"]) .rec b{text-shadow:0 1px 0 var(--card-hi)}
+
+/* recepção do Painel */
+.hero{position:relative;display:grid;grid-template-columns:minmax(0,1.5fr) minmax(0,1fr);gap:18px;align-items:stretch;padding:22px;border-radius:20px;overflow:hidden;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 16%,var(--card-bg)),var(--card-bg) 55%,color-mix(in srgb,var(--series-2) 14%,var(--card-bg)));border:1px solid var(--card-line);box-shadow:inset 0 1px 0 var(--card-hi),var(--shadow-sm)}
+.hero::before{content:"";position:absolute;width:340px;height:340px;right:-90px;top:-150px;border-radius:50%;background:radial-gradient(circle,color-mix(in srgb,var(--accent) 30%,transparent),transparent 70%);pointer-events:none}
+.hero-main{position:relative;display:flex;flex-direction:column;gap:6px;min-width:0}
+.hero-main .label{text-transform:none;letter-spacing:.02em;font-size:12.5px}
+.hero .h-page{font-size:clamp(28px,4.2vw,40px);line-height:1.08;text-wrap:balance}
+.hero-line{font-size:16.5px;line-height:1.5;margin:0;text-wrap:pretty}
+.hero-line b.up{color:var(--win)} .hero-line b.down{color:var(--loss)}
+.todayg{display:flex;flex-wrap:wrap;gap:6px}
+.tg{display:inline-flex;align-items:center;gap:7px;min-height:34px;padding:0 10px 0 4px;border-radius:999px;border:1px solid var(--card-line);background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--ink);font:600 13px var(--f-display);transition:transform .14s var(--ease)}
+.tg:active{transform:scale(.96)}
+.tg b{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:50%;color:#fff;font-size:12px}
+.tg.W b{background:var(--win)} .tg.D b{background:var(--draw)} .tg.L b{background:var(--loss)}
+.tg i{font-style:normal;color:var(--muted);font-size:12px}
+.quote{position:relative;margin:0;display:flex;flex-direction:column;justify-content:space-between;gap:12px;padding:18px 18px 14px;border-radius:16px;background:color-mix(in srgb,var(--surface) 55%,transparent);border:1px solid var(--card-line);min-height:170px}
+:root:not([data-glass="off"]) .quote{backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+.quote::before{content:"\201C";position:absolute;top:-18px;left:10px;font:800 96px/1 Georgia,"Times New Roman",serif;color:color-mix(in srgb,var(--accent) 55%,transparent);pointer-events:none}
+.qtext{margin:0;padding-top:18px;font:500 17px/1.5 var(--f-body);text-wrap:pretty}
+.quote figcaption{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 13px var(--f-display);color:var(--accent-ink)}
+.qnav{display:flex;gap:4px}
+.qnav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--card-line);background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--ink);font-size:16px;line-height:1}
+.quote.qin .qtext,.quote.qin figcaption>span:first-child{animation:qIn .5s var(--ease) both}
+@keyframes qIn{from{opacity:0;transform:translateY(6px)}}
+.qstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
+.qs{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:var(--card-bg);border:1px solid var(--card-line);box-shadow:inset 0 1px 0 var(--card-hi)}
+.qs b{font-size:22px;letter-spacing:-.02em}
+.qs span{font-size:12.5px;color:var(--muted);line-height:1.35}
+@media (max-width:760px){.hero{grid-template-columns:minmax(0,1fr);padding:18px}.qstats{grid-template-columns:repeat(2,minmax(0,1fr))}.quote{min-height:0}}

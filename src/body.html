@@ -27,10 +27,16 @@
   <!-- PAINEL -->
   <section class="view" id="v-painel" aria-labelledby="h-painel">
     <div class="stack">
-      <div class="stack" style="gap:4px">
-        <h1 class="h-page" id="h-painel">Seu xadrez</h1>
-        <p class="sub" id="pnSub"></p>
-      </div>
+      <section class="hero" aria-labelledby="h-painel">
+        <div class="hero-main">
+          <span class="label" id="pnWhen"></span>
+          <h1 class="h-page" id="h-painel">Olá!</h1>
+          <div class="stack" style="gap:10px" id="pnToday"></div>
+        </div>
+        <figure class="quote" id="pnQuote" aria-live="polite"></figure>
+      </section>
+      <div class="qstats" id="pnQuick"></div>
+      <p class="sub" id="pnSub" style="margin-top:-4px"></p>
       <section class="card pad stack" id="pnEmpty" hidden style="gap:12px;align-items:flex-start">
         <h2 class="h-card">Nenhuma partida desta conta ainda</h2>
         <p class="muted" id="pnEmptyMsg"></p>
@@ -81,7 +87,7 @@
         </div>
       </div>
       </div>
-      <p class="foot">Peças: cburnett (Colin M.L. Burnett, GPLv2+), Merida (Armando H. Marroquin, GPLv2+), Chessnut (Alexis Luengas, Apache 2.0), Fantasia e Espacial (Maurizio Monge, MIT), Staunty, Maestro e Cardinal (sadsnake1, CC BY-NC-SA 4.0), California (Jerry S., CC BY-NC-SA 4.0); Moderno e Lance: originais do app. Motor: Stockfish (GPL). Tabela de finais: Lichess.</p>
+      <p class="foot">Peças: cburnett (Colin M.L. Burnett, GPLv2+), Merida (Armando H. Marroquin, GPLv2+), Chessnut (Alexis Luengas, Apache 2.0), Fantasia e Espacial (Maurizio Monge, MIT), Staunty, Maestro e Cardinal (sadsnake1, CC BY-NC-SA 4.0), California (Jerry S., CC BY-NC-SA 4.0), Caliente (avi, CC BY-NC-SA 4.0); Moderno e Lance: originais do app. Motor: Stockfish (GPL). Tabela de finais: Lichess.</p>
     </div>
   </section>
 
