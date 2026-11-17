@@ -449,3 +449,11 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 #v-arena .ctrls{justify-content:flex-end}
 #v-arena .ctrls .btn{flex:0 0 52px}
 @media (max-width:520px){.hub{grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.tile{padding:11px 12px;gap:1px}.tile b{font-size:22px}.tile .label{font-size:10px;letter-spacing:.06em}.tile .muted{font-size:12px}}
+:root[data-board="walnut"],.swb[data-board="walnut"]{--sq-l:#d9b487;--sq-d:#7b4a2a;--tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='480' height='480'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.008 0.2' numOctaves='3' seed='21'/%3E%3CfeColorMatrix values='0 0 0 0 0.25 0 0 0 0 0.13 0 0 0 0 0.05 0 0 0 1.2 -0.15'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");--tex-o:.5}
+:root[data-board="slate"],.swb[data-board="slate"]{--sq-l:#c8ccc8;--sq-d:#59626a;--tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' seed='5'/%3E%3CfeColorMatrix values='0 0 0 0 0.2 0 0 0 0 0.2 0 0 0 0 0.2 0 0 0 0.9 -0.25'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");--tex-o:.5}
+:root[data-board="leather"],.swb[data-board="leather"]{--sq-l:#dcb994;--sq-d:#8e5332;--tex:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='300' height='300'%3E%3Cfilter id='f'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.35' numOctaves='4' seed='9'/%3E%3CfeColorMatrix values='0 0 0 0 0.3 0 0 0 0 0.15 0 0 0 0 0.06 0 0 0 1 -0.3'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23f)'/%3E%3C/svg%3E");--tex-o:.45}
+:root[data-board="sand"],.swb[data-board="sand"]{--sq-l:#f2e6c9;--sq-d:#c8a46e;--tex:none}
+:root[data-board="ice"],.swb[data-board="ice"]{--sq-l:#e8f0f5;--sq-d:#7ea4c0;--tex:none}
+:root[data-board="amethyst"],.swb[data-board="amethyst"]{--sq-l:#e7e0f0;--sq-d:#8a70b0;--tex:none}
+:root[data-board="coral"],.swb[data-board="coral"]{--sq-l:#f4e3d7;--sq-d:#c9705b;--tex:none}
+@media (max-width:520px){.swatches{grid-template-columns:repeat(4,minmax(0,1fr));gap:6px}.sw{padding:8px 2px;gap:4px;font-size:11.5px}.swb{width:40px;height:40px}.swp{height:26px}.swp .pc{width:26px;height:26px}}

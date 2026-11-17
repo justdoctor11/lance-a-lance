@@ -2,7 +2,7 @@
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const R = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 let css = '';
-for (const set of ['merida', 'chessnut', 'fantasy', 'spatial']) {
+for (const set of ['merida', 'chessnut', 'fantasy', 'spatial', 'staunty', 'maestro', 'california', 'cardinal', 'moderno']) {
   for (const c of 'wb') for (const p of 'PNBRQK') {
     const svg = fs.readFileSync(path.join(R, 'vendor/pieces', set, c + p + '.svg'));
     const u = 'url("data:image/svg+xml;base64,' + svg.toString('base64') + '")';

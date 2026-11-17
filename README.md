@@ -56,7 +56,8 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - Stockfish (GPLv3), motor de xadrez, via pacote `stockfish` (WebAssembly).
 - chess.js (BSD-2-Clause).
 - Peças cburnett de Colin M.L. Burnett (GPLv2 ou posterior), via chessground.
-- Peças Merida de Armando Hernandez Marroquin (GPLv2 ou posterior), Chessnut de Alexis Luengas (Apache 2.0), Fantasy e Spatial de Maurizio Monge (MIT), todas copiadas do repositório lichess-org/lila (`vendor/pieces/`).
+- Peças Merida de Armando Hernandez Marroquin (GPLv2 ou posterior), Chessnut de Alexis Luengas (Apache 2.0), Fantasy e Spatial de Maurizio Monge (MIT), Staunty, Maestro e Cardinal de sadsnake1 e California de Jerry S. (CC BY-NC-SA 4.0, uso sem fins comerciais, com crédito), todas copiadas do repositório lichess-org/lila (`vendor/pieces/`).
+- Peças Moderno (`scripts/pieces-moderno.mjs`) e Lance: desenhos originais deste app.
 - Tabela de finais: API pública do Lichess (tablebase.lichess.ovh), consultada durante o uso.
 - Fontes Geist e Geist Mono (SIL Open Font License 1.1).
 - Nomes de aberturas: base `lichess-org/chess-openings` (CC0).
