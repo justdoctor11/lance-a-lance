@@ -278,11 +278,11 @@ function isSac(m, fenBefore, ea) {
 }
 function attachAnalysis(P) {
   const raw = S.an[P.g.id];
-  if (!raw || raw.length < P.fens.length) { P.evs = null; P.cls = null; P.acc = null; return; }
-  P.evs = raw.map(evOf); classify(P);
+  if (!raw || raw.length < P.fens.length) { P.evs = null; P.cls = null; P.acc = null; P.asig = ''; return; }
+  P.asig = anSig(raw); P.evs = raw.map(evOf); classify(P);
 }
 function classify(P) {
-  const out = [];
+  const out = [], F = factsOk(P) ? P.facts : null;
   for (let i = 0; i < P.moves.length; i++) {
     const m = P.moves[i], side = m.color, eb = P.evs[i], ea = P.evs[i + 1];
     const b = wpWhite(eb), a = wpWhite(ea);
@@ -291,11 +291,11 @@ function classify(P) {
     const uci = m.from + m.to + (m.promotion || '');
     const isBest = !!eb && eb.best === uci;
     let k = isBest ? 'best' : loss < 2 ? 'exc' : loss < 10 ? 'good' : loss < 20 ? 'inacc' : loss < 30 ? 'mistake' : 'blunder';
-    if (k !== 'best' && k !== 'exc' && k !== 'good' && legalCount(P.fens[i]) === 1) k = 'forced';
+    if (k !== 'best' && k !== 'exc' && k !== 'good' && (F ? F.forced.has(i) : legalCount(P.fens[i]) === 1)) k = 'forced';
     const prev = out[i - 1];
     if (prev && (prev.k === 'mistake' || prev.k === 'blunder') && BAD[k] && wb >= 60 && wa < wb - 10) k = 'miss';
     if ((k === 'best' || k === 'exc') && loss < 2) {
-      if (wb < 92 && wa >= 40 && isSac(m, P.fens[i], P.evs[i + 1])) k = 'brill';
+      if (wb < 92 && wa >= 40 && (F ? F.sac.has(i) : isSac(m, P.fens[i], P.evs[i + 1]))) k = 'brill';
       else if (k === 'best' && prev && (prev.k === 'mistake' || prev.k === 'blunder') && prev.loss >= 20 && wa >= 60) k = 'great';
     }
     let only = false;
@@ -494,7 +494,7 @@ class Board {
     if (x < 0 || x > 7 || y < 0 || y > 7) return null;
     return (this.flip ? y : 7 - y) * 8 + (this.flip ? 7 - x : x);
   }
-  targets(i) { return this.live ? (this.live.dests[iSq(i)] || []) : []; }
+  targets(i) { if (!this.live) return []; if (typeof this.live.dests === 'function') this.live.dests = this.live.dests(); return this.live.dests[iSq(i)] || []; }
   select(i) {
     this.sel = i; const d = this.targets(i); const B = parseBoard(this.fen);
     this.setMarks(Object.assign({}, this.live.marks || {}, { sel: iSq(i), dots: d.filter(s => !B[sqI(s)]), caps: d.filter(s => B[sqI(s)]) }));
@@ -598,7 +598,7 @@ async function analyzeGame(g, onProg) {
     }
     S.an[g.id] = evs;
     MEM.an = MEM.an || {}; MEM.an[g.id] = evs; kv.set('an', MEM.an); setTimeout(cloudPushLocalAn, 0); gsSchedule();
-    attachAnalysis(P); TRAIN = null; return P;
+    attachAnalysis(P); TRAIN = null; gpTouch(g); return P;
   })();
   ANALYZING.set(g.id, job);
   try { return await job; } finally { ANALYZING.delete(g.id); }
@@ -629,7 +629,9 @@ function opNameRaw(raw) {
 
 /* ---------- treino: agregação ---------- */
 let TRAIN = null;
-function analyzedGames() { return S.games.filter(g => S.an[g.id]); }
+let AGC = null, AGK = null, AGA = null, AGN = -1;
+/* memorizada: é chamada em quase toda tela; não altere o array devolvido */
+function analyzedGames() { const n = Object.keys(S.an).length; if (AGC && AGK === S.games && AGA === S.an && AGN === n) return AGC; AGK = S.games; AGA = S.an; AGN = n; return (AGC = S.games.filter(g => S.an[g.id])); }
 function buildTraining() {
   if (TRAIN) return TRAIN;
   const tags = { hang: 0, tactic: 0, mate: 0, allowMate: 0, time: 0 }, phase = { abertura: 0, 'meio-jogo': 0, final: 0 }, puzzles = [];
@@ -640,15 +642,13 @@ function buildTraining() {
     for (let i = 0; i < P.moves.length; i++) {
       const m = P.moves[i]; if (m.color !== g.c) continue; userMoves++;
       const c = P.cls[i]; if (!BAD[c.k]) continue; errs++;
-      const ph = phaseOf(parseBoard(P.fens[i]), i); phase[ph]++;
+      const ph = phAt(P, i); phase[ph]++;
       if (g.clk && g.clk[i] != null && +g.ctl && g.clk[i] < +g.ctl * 0.15) tags.time++;
       const eb = P.evs[i], ea = P.evs[i + 1], me = g.c;
       if (isMateFor(eb, me)) tags.mate++;
       if (isMateFor(ea, other(me)) && !isMateFor(eb, other(me))) tags.allowMate++;
-      const rl = lineSan(m.after, ea && ea.pv.length ? ea.pv : (ea && ea.best ? [ea.best] : []));
-      if (rl.length) { const R2 = settledSwing(m.after, rl.slice(0, 8), other(me)); if (R2.sure && R2.v >= 2) tags.hang++; }
-      const bl = lineSan(P.fens[i], eb && eb.pv.length ? eb.pv : (eb && eb.best ? [eb.best] : []));
-      if (bl.length && !isMateFor(eb, me)) { const BF = factsFor(P.fens[i], bl[0].m, i); if (BF.fork || BF.pins.length || materialSwing(P.fens[i], bl.slice(0, 6), me) >= 2) tags.tactic++; }
+      const tf = factsOk(P) && P.facts.tr[i] != null ? P.facts.tr[i] : trFact(P.fens, P.moves, P.evs, i, me);
+      if (tf & 1) tags.hang++; if (tf & 2) tags.tactic++;
       if (c.k !== 'inacc' && eb && eb.best) puzzles.push({ key: g.id + ':' + i, gid: g.id, ply: i, k: c.k, loss: c.loss, side: me, best: eb.best, played: m.san, mate: isMateFor(eb, me) ? Math.abs(eb.mate) : 0 });
     }
   }
@@ -682,13 +682,13 @@ function route() {
 }
 /* Troca de aba: a aba aparece no mesmo toque; só reconstrói se os dados mudaram, e depois do primeiro quadro. */
 const VKEY = {};
-function dataKey() { return acctKey() + ':' + S.games.length + ':' + (S.games[0] ? S.games[0].id : '') + ':' + Object.keys(S.an).length + ':' + Object.keys(CRIT).length; }
+function dataKey() { return acctKey() + ':' + S.games.length + ':' + (S.games[0] ? S.games[0].id : '') + ':' + Object.keys(S.an).length; }
 function viewKey(v) {
   const b = dataKey(), today = JSON.stringify(store.get('act', {})[dayKey(new Date())] || {}) + ':' + dailyCount();
   if (v === 'painel') return b + ':' + today;
   if (v === 'partidas') return b + ':' + S.filter + ':' + (S.limit || 60) + ':' + ANALYZING.size;
   if (v === 'analise') return S.vx || S.guess || S.pendingGuess || S.shownGid !== S.gid || S.shownPly !== S.ply ? null : b + ':' + S.gid;
-  if (v === 'treino') return S.pendingReview || S.pendingWarm || S.pendingPz ? null : b + ':' + today + ':' + JSON.stringify(store.get('arena', {})).length + ':' + store.get('xbest', 0) + ':' + JSON.stringify(store.get('rep', {})).length + ':' + (repReady() ? 1 : 0);
+  if (v === 'treino') return S.pendingReview || S.pendingWarm || S.pendingPz ? null : b + ':' + Object.keys(CRIT).length + ':' + today + ':' + JSON.stringify(store.get('arena', {})).length + ':' + store.get('xbest', 0) + ':' + JSON.stringify(store.get('rep', {})).length + ':' + (repReady() ? 1 : 0);
   if (v === 'stats') return b;
   return null;
 }
@@ -732,7 +732,8 @@ function openGame(id, ply) {
 /* Prepara as partidas analisadas em pequenos lotes, sem travar a tela. */
 let WARMING = null;
 const analyzedReady = () => analyzedGames().every(g => PREP.has(g.id));
-function warmPrep() {
+function warmPrep() { return gpReadyP(); }
+function warmPrepLocal() {
   if (WARMING) return WARMING;
   WARMING = new Promise(res => {
     const todo = analyzedGames().filter(g => !PREP.has(g.id));
@@ -742,6 +743,14 @@ function warmPrep() {
   return WARMING;
 }
 const CALC = '<p class="muted">Calculando…</p>';
+const CARDM = {};
+function memoCard(name, fn) { const k = gpKey(); const m = CARDM[name]; if (m && m[0] === k) return m[1]; const h = fn(); CARDM[name] = [k, h]; return h; }
+/* contêineres que só recebem HTML pronto: se o HTML novo é igual ao atual, não refaz o DOM (nem o layout) */
+function dedupeHtml(el) {
+  if (!el || el.__dd) return; el.__dd = true;
+  const d = Object.getOwnPropertyDescriptor(Element.prototype, 'innerHTML');
+  Object.defineProperty(el, 'innerHTML', { configurable: true, get() { return d.get.call(this); }, set(v) { v = String(v); if (this.__h === v && this.__hn === this.childNodes.length) return; d.set.call(this, v); this.__h = v; this.__hn = this.childNodes.length; } });
+}
 function renderPainel() {
   renderHero();
   const ready = analyzedReady();
@@ -794,10 +803,10 @@ function renderPainel() {
   $('#pnOps').innerHTML = AGG.openings.slice(0, 8).map(opRow).join('');
   $('#pnSession').innerHTML = sessionCard();
   $('#pnHabits').innerHTML = habitsCard();
-  $('#pnShort').innerHTML = ready ? shortCard() : '<h2 class="h-card">Derrotas curtas</h2>' + CALC;
-  $('#pnClock').innerHTML = ready ? clockCard() : '<h2 class="h-card">Relógio</h2>' + CALC;
+  $('#pnShort').innerHTML = ready ? memoCard('short', shortCard) : '<h2 class="h-card">Derrotas curtas</h2>' + CALC;
+  $('#pnClock').innerHTML = ready ? memoCard('clock', clockCard) : '<h2 class="h-card">Relógio</h2>' + CALC;
   $('#pnCmp').innerHTML = ready ? compareCard() : '<h2 class="h-card">Você × adversários do seu nível</h2>' + CALC;
-  $('#pnWeeks').innerHTML = ready ? weeksCard() : '<h2 class="h-card">Evolução semanal</h2>' + CALC;
+  $('#pnWeeks').innerHTML = ready ? memoCard('weeks', weeksCard) : '<h2 class="h-card">Evolução semanal</h2>' + CALC;
   $('#pnRadar').innerHTML = ready ? radarCard() : '<h2 class="h-card">Seu perfil</h2>' + CALC;
 }
 function opRow(o) {
@@ -832,8 +841,9 @@ function renderPartidas() {
   });
   const shown = gs.slice(0, S.limit || 60);
   $('#gmList').innerHTML = (gs.length ? shown.map(g => {
-    const R = resultOf(g); const P = S.an[g.id] ? prep(g) : null; const busy = ANALYZING.has(g.id);
+    const R = resultOf(g); const P = S.an[g.id] ? PREP.get(g.id) || null : null; const busy = ANALYZING.has(g.id);
     const right = P && P.acc ? '<span class="acc">' + pct(P.acc[g.c]) + '</span><span>precisão</span>' :
+      S.an[g.id] && !P ? '<span class="acc">…</span><span>precisão</span>' :
       busy ? '<span class="prog" data-prog="' + g.id + '"><i style="width:0"></i></span><span>analisando</span>' :
       '<span class="btn small" data-analyze="' + g.id + '" role="button">Analisar</span>';
     return '<button class="grow" type="button" data-open="' + g.id + '"><span class="res ' + R.k + '" aria-label="' + esc(R.label) + '">' + R.short + '</span><span style="min-width:0;display:flex;flex-direction:column;gap:1px"><span class="t">vs ' + esc(g.opp) + (g.oR ? ' <span class="muted" style="font-weight:400">' + g.oR + '</span>' : '') + '</span><span class="s">' + esc(opName(g)) + '</span><span class="s">' + tcLabel(g) + ' · ' + dateLabel(g.end) + ' · ' + (g.c === 'w' ? 'brancas' : 'pretas') + ' · ' + esc(R.label.trim()) + '</span></span><span class="r">' + right + '</span></button>';
@@ -942,13 +952,17 @@ function plansHtml(pl, myColor) {
   return '<div class="plans">' + ['w', 'b'].map(s => '<div class="plan"><b><i style="background:' + (s === 'w' ? 'var(--evw)' : 'var(--evb)') + '"></i>Ideias das ' + SIDE[s] + (s === myColor ? ' (você)' : '') + '</b><ul>' + pl[s].map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>').join('') + '</div>';
 }
 function analysisFen() { if (S.vx) return S.vx.fens[S.vx.fens.length - 1]; const P = currentP(); return P ? P.fens[S.ply] : null; }
+function destsOf(fen) {
+  const dests = {}; let c; try { c = new Chess(fen); } catch (e) { return dests; }
+  for (const m of c.moves({ verbose: true })) { const a = dests[m.from] = dests[m.from] || []; if (!a.includes(m.to)) a.push(m.to); }
+  return dests;
+}
 function armAnalysis() {
   if (!AB) return; if (S.guess) { guessArm(); return; } const fen = analysisFen(); if (!fen) { AB.setLive(null); return; }
-  const c = new Chess(fen);
-  if (c.isGameOver() || S.vxSetup || (S.vx && S.vx.mode === 'play' && (c.turn() !== S.vx.userColor || S.vx.thinking))) { AB.setLive(null); return; }
-  const dests = {};
-  for (const m of c.moves({ verbose: true })) { const a = dests[m.from] = dests[m.from] || []; if (!a.includes(m.to)) a.push(m.to); }
-  AB.setLive({ color: c.turn(), dests, marks: AB.marks, onMove: (f, t) => analysisMove(f, t) });
+  const turn = fen.split(' ')[1];
+  if (S.vxSetup || (S.vx && S.vx.mode === 'play' && (turn !== S.vx.userColor || S.vx.thinking))) { AB.setLive(null); return; }
+  // os lances legais só são calculados quando a pessoa toca numa peça (avançar lances fica leve)
+  AB.setLive({ color: turn, dests: () => destsOf(fen), marks: AB.marks, onMove: (f, t) => analysisMove(f, t) });
 }
 async function evalPos(fen, ms) {
   const c = new Chess(fen);
@@ -1320,7 +1334,7 @@ async function autoSync() {
 /* ---------- relatório da última partida ---------- */
 function lastGameCard() {
   const g = S.games[0]; if (!g) return '';
-  const R = resultOf(g), P = S.an[g.id] ? prep(g) : null;
+  const R = resultOf(g), P = S.an[g.id] ? prepIf(g) : null;
   let h = '<div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px;flex-wrap:wrap"><div class="stack" style="gap:2px;min-width:0"><span class="label">Última partida · ' + tcLabel(g) + ' · ' + dateLabel(g.end, true) + '</span><b style="font-size:18px">vs ' + esc(g.opp) + (g.oR ? ' <span class="muted" style="font-weight:400">' + g.oR + '</span>' : '') + '</b><span class="muted" style="font-size:13px">' + esc(opName(g)) + ' · ' + (g.c === 'w' ? 'brancas' : 'pretas') + '</span></div><span class="tag ' + R.k + '">' + esc(R.label.trim()) + '</span></div>';
   if (P && P.cls) {
     const cnt = {}; const mine = [];
@@ -1579,7 +1593,7 @@ function compareCardRaw() {
     if (!S.an[g.id]) continue; const P = prep(g); if (!P.cls) continue; n++;
     me.acc.push(P.acc[g.c]); op.acc.push(P.acc[other(g.c)]);
     P.cls.forEach((c, i) => {
-      const side = P.moves[i].color === g.c ? me : op; const ph = phaseOf(parseBoard(P.fens[i]), i);
+      const side = P.moves[i].color === g.c ? me : op; const ph = phAt(P, i);
       side.ph[ph][1]++; const bad = c.k === 'blunder' || c.k === 'mistake' || c.k === 'miss';
       if (c.k === 'blunder') side.bl++; if (bad) { side.er++; side.ph[ph][0]++; }
     });
@@ -1614,16 +1628,16 @@ function weeksCard() {
 
 /* ---------- repertório ---------- */
 let RB = null; const REP = { c: 'w', path: [] };
-let TREE = null, TREEKEY = '';
+const TREES = {};
 function repTree(c) {
-  const key = HABKEY + ':' + c; if (TREE && TREEKEY === key) return TREE;
+  const key = HABKEY + ':' + c; if (TREES[c] && TREES[c][0] === key) return TREES[c][1];
   const root = { n: 0, W: 0, D: 0, L: 0, ch: {} };
   for (const g of S.games) {
     if (g.c !== c) continue; const r = rk(g); let node = root; node.n++; node[r]++;
     const mv = g.mv.split(' ').slice(0, 16);
     for (const m of mv) { node = node.ch[m] = node.ch[m] || { n: 0, W: 0, D: 0, L: 0, ch: {} }; node.n++; node[r]++; }
   }
-  TREE = root; TREEKEY = key; return root;
+  TREES[c] = [key, root]; return root;
 }
 const nodeScore = x => (x.W + x.D / 2) / Math.max(1, x.n) * 100;
 function repHoles(root, c) {
@@ -1671,14 +1685,14 @@ async function repEval() {
 }
 
 /* ---------- sons ---------- */
-let AC = null;
+let AC = null; const SNDB = [null, null];
 function sound(kind) {
   if (!store.get('snd', true)) return;
   try {
     AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume();
     const t = AC.currentTime, cap = kind === 'cap';
-    const len = Math.floor(AC.sampleRate * (cap ? .09 : .05)); const buf = AC.createBuffer(1, len, AC.sampleRate); const d = buf.getChannelData(0);
-    for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, cap ? 3 : 5);
+    let buf = SNDB[cap ? 1 : 0];
+    if (!buf) { const len = Math.floor(AC.sampleRate * (cap ? .09 : .05)); buf = SNDB[cap ? 1 : 0] = AC.createBuffer(1, len, AC.sampleRate); const d = buf.getChannelData(0); for (let i = 0; i < len; i++) d[i] = (Math.random() * 2 - 1) * Math.pow(1 - i / len, cap ? 3 : 5); }
     const src = AC.createBufferSource(); src.buffer = buf;
     const f = AC.createBiquadFilter(); f.type = 'bandpass'; f.frequency.value = cap ? 900 : 1700; f.Q.value = cap ? .9 : 1.4;
     const gn = AC.createGain(); gn.gain.value = cap ? .9 : .6;
@@ -1835,6 +1849,7 @@ function renderGoal() {
   const n = dailyCount(), st = streakDays(), f = Math.min(1, n / GOAL);
   $('#trGoal').innerHTML = '<svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-2)" stroke-width="5"></circle><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (f * 113.1).toFixed(1) + ' 113.1" transform="rotate(-90 22 22)" style="transition:stroke-dasharray .5s var(--ease)"></circle></svg><div class="stack" style="gap:0"><b>' + Math.min(n, 999) + ' de ' + GOAL + ' hoje</b><span class="muted" style="font-size:13px">' + (st ? 'Sequência: ' + st + ' dia' + (st > 1 ? 's' : '') + ' batendo a meta' : 'Bata a meta de ' + GOAL + ' exercícios por dia') + (store.get('tbest', 0) ? ' · recorde no relógio: ' + store.get('tbest', 0) : '') + '</span></div>';
 }
+let TRT = null;
 function renderTreino() {
   if (!analyzedReady()) { if (!PB) PB = new Board($('#pzBoard')); $('#pzQ').textContent = 'Preparando seus exercícios…'; warmPrep().then(() => { if (S.view === 'treino') renderTreino(); }); return; }
   const T = buildTraining(); if (!PB) PB = new Board($('#pzBoard'));
@@ -1845,14 +1860,17 @@ function renderTreino() {
   else if (!S.pzMode || !S.pzQueue) setPzMode('mine');
   else { renderPzModes(); renderPzCount(); if (!PZ) loadPuzzle(); }
   $('#trHub').innerHTML = hubHtml();
-  $('#trPlan').innerHTML = renderPlan();
+  // o resto da aba vem em pedaços, cada um numa tarefa curta, para a tela nunca ficar parada esperando
+  const tok = TRT = {};
+  const stages = [() => { $('#trPlan').innerHTML = renderPlan(); }, () => {
   const steps = [];
   steps.push({ t: 'Seus erros viram exercícios', d: T.puzzles.length + ' posições das suas partidas onde existia um lance melhor. Meta: ' + GOAL + ' por dia; os que você errar voltam em 1, 3 e 7 dias.', links: [] });
   for (const p of T.prios.slice(0, 3)) { const Ls = LESSONS[p.k]; steps.push({ t: Ls.t, d: (p.extra || Ls.d) + ' (' + p.n + ' de ' + T.errs + ' erros)', links: Ls.links }); }
   $('#trPrio').innerHTML = steps.map((s, k) => '<div class="step' + (k === 0 ? ' on' : '') + '"><span class="num">' + (k + 1) + '</span><div><b>' + esc(s.t) + '</b><p class="muted" style="font-size:14px;line-height:1.45">' + esc(s.d) + '</p>' + (s.links.length ? '<div class="links">' + s.links.map(([t, u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + ' ↗</a>').join('') + '</div>' : '') + '</div></div>').join('');
   $('#trLessons').innerHTML = Object.keys(LESSONS).map(k => { const Ls = LESSONS[k]; return '<details class="lesson"><summary>' + esc(Ls.t) + '</summary><div class="body"><p class="muted">' + esc(Ls.d) + '</p><ul>' + Ls.how.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><div class="links">' + Ls.links.map(([t, u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + ' ↗</a>').join('') + '</div></div></details>'; }).join('');
-  renderRep();
-  renderTheory();
+  }, () => renderRep(), () => renderTheory()];
+  const next = () => { if (TRT !== tok) return; const f = stages.shift(); if (!f) return; try { f(); } catch (e) { /* segue para a próxima parte */ } if (stages.length) setTimeout(next, 0); };
+  setTimeout(next, 0);
 }
 function loadPuzzle() {
   const fb = $('#pzFb'); fb.className = 'fb'; fb.textContent = '';
@@ -1896,10 +1914,8 @@ function loadPuzzle() {
 }
 function armPuzzle(fen, side, marks) {
   setTimeout(blindApply, 0);
-  const c = new Chess(fen); const dests = {};
-  for (const m of c.moves({ verbose: true })) { const a = dests[m.from] = dests[m.from] || []; if (!a.includes(m.to)) a.push(m.to); }
   PB.setMarks(marks); PB.setArrows([]);
-  PB.setLive({ color: side, dests, marks, onMove: (from, to) => tryPuzzleMove(from, to) });
+  PB.setLive({ color: side, dests: () => destsOf(fen), marks, onMove: (from, to) => tryPuzzleMove(from, to) });
 }
 function pzEv() { return PZ.p.ev || PZ.P.evs[PZ.p.ply]; }
 function bestSan() { const l = lineSan(PZ.fen, [PZ.p.best]); return l[0] ? fig(l[0].san) : PZ.p.best; }
@@ -1987,7 +2003,18 @@ async function cloudLoadReport() {
     REPORT = r;
   } catch (e) { REPORT = null; }
 }
-const fenAt = path => { const c = new Chess(); for (const m of (path ? path.split(' ') : [])) { try { c.move(m); } catch (e) { break; } } return c.fen(); };
+const FENAT = new Map(), FEN0 = 'rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1';
+/* posição ao fim de uma linha (lances em SAN): memorizada e incremental, cada prefixo é calculado uma vez */
+function fenAtR(path) {
+  if (!path) return { f: FEN0, bad: false };
+  let r = FENAT.get(path); if (r) return r;
+  const i = path.lastIndexOf(' '), par = fenAtR(i < 0 ? '' : path.slice(0, i));
+  if (par.bad) r = par;
+  else { try { const c = new Chess(par.f); c.move(path.slice(i + 1)); r = { f: c.fen(), bad: false }; } catch (e) { r = { f: par.f, bad: true }; } }
+  if (FENAT.size > 20000) FENAT.clear();
+  FENAT.set(path, r); return r;
+}
+const fenAt = path => fenAtR(path || '').f;
 const plyOf = path => path ? path.split(' ').length : 0;
 function lineTxt(path, mark) {
   const mv = path ? path.split(' ') : [];
@@ -2045,6 +2072,7 @@ function thClassic(x) {
   t.push((x.nSetup ? (favor ? 'Nas suas partidas você está do lado que arma a armadilha. ' : 'Nas suas partidas você está do lado que pode cair. ') : '') + 'O erro é ' + moveNum(mi) + fig(x.line[mi]) + (x.alt ? '; o certo é ' + fig(x.alt) : '') + '.');
   return h + '<p>' + esc(t.join(' ')) + '</p>';
 }
+let THLC = null;
 function renderTheory() {
   const list = $('#thList'); if (!list) return;
   if (!REPORT) { $('#thSub').textContent = 'O relatório de teoria e armadilhas é gerado a partir das suas partidas e fica salvo na sua conta.'; $('#thTabs').innerHTML = ''; $('#thCol').innerHTML = ''; list.innerHTML = '<p class="muted">Ainda não há relatório para ' + esc(S.me) + '.</p>'; return; }
@@ -2057,16 +2085,24 @@ function renderTheory() {
   let items = cur;
   if (TH.tab === 'classic') items = cur.slice().sort((a, b) => b.nSetup - a.nSetup);
   const fn = { lines: thLine, errors: x => thError(x, false), against: x => thError(x, true), favor: thFavor, classic: thClassic }[TH.tab];
-  list.innerHTML = items.length ? items.slice(0, 15).map(x => '<article class="thitem">' + fn(x) + '</article>').join('') : '<p class="muted">Nada aqui por enquanto.</p>';
+  if (!THLC || THLC.r !== REPORT) THLC = { r: REPORT };
+  const lk = TH.tab + '|' + TH.c;
+  if (THLC[lk] == null) THLC[lk] = items.length ? items.slice(0, 15).map(x => '<article class="thitem">' + fn(x) + '</article>').join('') : '<p class="muted">Nada aqui por enquanto.</p>';
+  list.innerHTML = THLC[lk];
 }
 let THQ = null, THQR = null;
+function lazyProp(o, k, f) { Object.defineProperty(o, k, { configurable: true, enumerable: true, get() { const v = f(); Object.defineProperty(o, k, { value: v, writable: true, enumerable: true, configurable: true }); return v; } }); }
 function theoryQueue() {
   if (!REPORT) return []; if (THQ && THQR === REPORT) return THQ; const seen = new Set(), out = []; THQR = REPORT; THQ = out;
   for (const x of REPORT.errors.concat(REPORT.against)) {
     const key = 'th:' + x.c + ':' + x.path; if (seen.has(key)) continue; seen.add(key);
-    const fen = fenAt(x.path), e = evOf(x.ev); if (!e || !e.best) continue;
-    const pm = x.path ? (() => { const c = new Chess(fenAt(x.path.split(' ').slice(0, -1).join(' '))); try { return c.move(x.path.split(' ').pop()); } catch (er) { return null; } })() : null;
-    out.push({ key, fen, side: fen.split(' ')[1], best: e.best, played: x.san, k: x.loss >= 18 ? 'blunder' : 'mistake', loss: x.loss, ev: e, name: x.name, path: x.path, c: x.c, last: pm ? [pm.from, pm.to] : null });
+    const e = evOf(x.ev); if (!e || !e.best) continue;
+    // a posição e o último lance só são calculados quando o exercício aparece na tela
+    const it = { key, best: e.best, played: x.san, k: x.loss >= 18 ? 'blunder' : 'mistake', loss: x.loss, ev: e, name: x.name, path: x.path, c: x.c };
+    lazyProp(it, 'fen', () => fenAt(x.path));
+    lazyProp(it, 'side', () => it.fen.split(' ')[1]);
+    lazyProp(it, 'last', () => { if (!x.path) return null; const i = x.path.lastIndexOf(' '); try { const m = new Chess(fenAt(i < 0 ? '' : x.path.slice(0, i))).move(x.path.slice(i + 1)); return m ? [m.from, m.to] : null; } catch (er) { return null; } });
+    out.push(it);
   }
   return out;
 }
@@ -2246,6 +2282,7 @@ function closeSync() { $('#sync').hidden = true; }
 /*@MORE@*/
 /*@MORE2@*/
 /*@MORE3@*/
+/*@GP@*/
 
 /* ---------- eventos ---------- */
 function wire() {
@@ -2356,6 +2393,7 @@ document.addEventListener('click', e => {
 
 /* ---------- início ---------- */
 applyPrefs();
+for (const id of ['pnKpis', 'pnPrio', 'pnLossBar', 'pnLossLeg', 'pnColor', 'pnOps', 'pnSession', 'pnHabits', 'pnShort', 'pnClock', 'pnCmp', 'pnWeeks', 'pnLast', 'pnRadar', 'pnInsight', 'pnToday', 'pnQuick', 'trHub', 'trPlan', 'trPrio', 'trLessons', 'thList', 'thTabs', 'thCol', 'stRec', 'stPhase', 'stOpen', 'stEnd', 'stClock', 'gmChips']) dedupeHtml(document.getElementById(id));
 loadData();
 $('#acct').textContent = acctLabel();
 wire();
@@ -2363,4 +2401,5 @@ route();
 v14Start();
 hydrate().then(() => { loadData(); TRAIN = null; showView(S.view || 'painel'); v14Data(); return cloudStart(); });
 try { if (window.__APP_BUILD != null) localStorage.setItem('lal.bootok', String(window.__APP_BUILD)); } catch (e) { /* sem armazenamento */ }
+/*@DEBUG@*/
 })();

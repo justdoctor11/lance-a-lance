@@ -85,6 +85,14 @@ function statsData() {
   STATS = { key }; STATSKEY = key; return STATS;
 }
 const gLink = (g, txt) => '<button class="linkbtn" type="button" data-openply="' + g.id + ':0">' + esc(txt) + '</button>';
+/* número de lances e os 8 primeiros, sem quebrar a partida inteira em pedaços toda vez */
+const GXC = new Map();
+function gx(g) {
+  let x = GXC.get(g.id); if (x && x.mv === g.mv) return x;
+  const mv = g.mv || ''; let n = 1, c8 = -1;
+  for (let i = 0; i < mv.length; i++) if (mv.charCodeAt(i) === 32) { n++; if (n === 9) c8 = i; }
+  x = { mv, n, k8: c8 < 0 ? mv : mv.slice(0, c8) }; GXC.set(g.id, x); return x;
+}
 function recordsHtml() {
   const G = S.games.slice().sort((a, b) => a.end - b.end); if (!G.length) return '<p class="muted">Sem partidas.</p>';
   const cards = [];
@@ -95,8 +103,8 @@ function recordsHtml() {
   let run = 0, best = 0, bestEnd = null, un = 0, bestUn = 0;
   for (const g of G) { if (rk(g) === 'W') { run++; if (run > best) { best = run; bestEnd = g; } } else run = 0; if (rk(g) !== 'L') { un++; bestUn = Math.max(bestUn, un); } else un = 0; }
   if (best) cards.push(['Maior sequência de vitórias', best + ' seguidas', 'invicto por até ' + bestUn + ' partidas', bestEnd]);
-  const fast = G.filter(g => rk(g) === 'W' && g.oRes === 'checkmated').sort((a, b) => a.mv.split(' ').length - b.mv.split(' ').length)[0];
-  if (fast) cards.push(['Mate mais rápido', Math.ceil(fast.mv.split(' ').length / 2) + ' lances', 'vs ' + fast.opp + ' · ' + dateLabel(fast.end, true), fast]);
+  const fast = G.filter(g => rk(g) === 'W' && g.oRes === 'checkmated').sort((a, b) => gx(a).n - gx(b).n)[0];
+  if (fast) cards.push(['Mate mais rápido', Math.ceil(gx(fast).n / 2) + ' lances', 'vs ' + fast.opp + ' · ' + dateLabel(fast.end, true), fast]);
   const an = analyzedGames().map(g => ({ g, P: prep(g) })).filter(x => x.P.acc && x.P.moves.length >= 40);
   if (an.length) {
     const ba = an.reduce((a, x) => (x.P.acc[x.g.c] || 0) > (a.P.acc[a.g.c] || 0) ? x : a); cards.push(['Melhor precisão', pct(ba.P.acc[ba.g.c]), 'vs ' + ba.g.opp + ' · ' + dateLabel(ba.g.end, true), ba.g]);
@@ -117,12 +125,12 @@ function openingsDeep() {
   const PIN = store.get('pinLines', []); const now = Date.now() / 1000, cut = now - 90 * 86400;
   const rows = {};
   for (const g of S.games) {
-    const mv = g.mv.split(' '); if (mv.length < 10) continue;
-    const key = g.c + '|' + mv.slice(0, 8).join(' ');
-    const x = rows[key] = rows[key] || { key, c: g.c, mv: mv.slice(0, 8), n: 0, W: 0, D: 0, L: 0, rn: 0, rs: 0, on: 0, os: 0, ev: [], name: opName(g) };
+    const X = gx(g); if (X.n < 10) continue;
+    const key = g.c + '|' + X.k8;
+    const x = rows[key] || (rows[key] = { key, c: g.c, mv: X.k8.split(' '), n: 0, W: 0, D: 0, L: 0, rn: 0, rs: 0, on: 0, os: 0, ev: [], name: opName(g) });
     const r = rk(g), s = r === 'W' ? 1 : r === 'D' ? .5 : 0; x.n++; x[r]++;
     if (g.end >= cut) { x.rn++; x.rs += s; } else { x.on++; x.os += s; }
-    if (S.an[g.id]) { const P = prep(g); if (P.evs && P.evs[20]) x.ev.push(evFor(P.evs[20], g.c) / 100); }
+    const raw = S.an[g.id]; if (raw && raw.length > X.n && raw[20]) x.ev.push(evFor(evOf(raw[20]), g.c) / 100);
   }
   const all = Object.values(rows).filter(x => x.n >= 4 || PIN.includes(x.key));
   const base = scoreOf(S.games) || 50;
@@ -172,7 +180,7 @@ async function tradesEndsHtml() {
         if (Math.abs((a2.w - a2.b) - (a0.w - a0.b)) <= 1) { const d = sideWp(P.evs[i + 2], me) - sideWp(P.evs[i], me); (m.color === me ? T.mine : T.theirs).push(d); }
       }
     }
-    let i0 = -1; for (let i = 0; i < P.moves.length; i++) if (phaseOf(parseBoard(P.fens[i]), i) === 'final') { i0 = i; break; }
+    let i0 = -1; for (let i = 0; i < P.moves.length; i++) if (phAt(P, i) === 'final') { i0 = i; break; }
     if (i0 >= 0) {
       const t = egType(parseBoard(P.fens[i0])); const x = eg[t] = eg[t] || { t, n: 0, s: 0, me: [0, 0], op: [0, 0] };
       x.n++; x.s += rk(g) === 'W' ? 1 : rk(g) === 'D' ? .5 : 0;
@@ -212,10 +220,11 @@ function clockDeepHtml() {
 const STH = {};
 async function renderStats() {
   const ready = analyzedReady(), key0 = statsData().key;
-  if (STH.rec && STH.rec[0] === key0) $('#stRec').innerHTML = STH.rec[1]; else { const h = recordsHtml(); STH.rec = [key0, h]; $('#stRec').innerHTML = h; }
+  if (STH.rec && STH.rec[0] === key0) $('#stRec').innerHTML = STH.rec[1]; else if (!ready) $('#stRec').innerHTML = CALC;
   for (const id of ['stPhase', 'stOpen', 'stEnd', 'stClock']) if (!ready || !$('#' + id).dataset.k || $('#' + id).dataset.k !== statsData().key) $('#' + id).innerHTML = CALC;
   if (!ready) { await warmPrep(); if (S.view !== 'stats') return; }
   const key = statsData().key;
+  if (!STH.rec || STH.rec[0] !== key) { await new Promise(r => setTimeout(r, 0)); if (S.view !== 'stats') return; const h = recordsHtml(); STH.rec = [key, h]; $('#stRec').innerHTML = h; }
   for (const [id, fn] of [['stPhase', phaseCostHtml], ['stOpen', openingsDeep], ['stEnd', tradesEndsHtml], ['stClock', clockDeepHtml]]) {
     await new Promise(r => setTimeout(r, 0)); if (S.view !== 'stats') return;
     const el = $('#' + id); if (el.dataset.k === key && !el.innerHTML.includes('Calculando')) continue;
@@ -433,10 +442,15 @@ function mateKind(fen) {
 let MATESTAT = null;
 function mateStats() {
   if (MATESTAT && MATESTAT.n === S.games.length) return MATESTAT;
+  // o tipo de cada mate vem do processador em segundo plano; enquanto ele trabalha, não reproduz nada na tela
+  if (!GP.done && !GP.off && gpEnsure()) {
+    gpDoneP().then(() => { MATESTAT = null; const A = S.arena; if (A && A.lobby && A.kind === 'mates' && S.view === 'arena') renderLobby(); });
+    return { n: -1, by: {}, gave: 0, got: 0, pending: true };
+  }
   const by = {}; let gave = 0, got = 0;
   for (const g of S.games) {
     const mine = g.oRes === 'checkmated', theirs = g.res === 'checkmated'; if (!mine && !theirs) continue;
-    const P = prep(g); const k = mateKind(P.fens[P.fens.length - 1]); const x = by[k] = by[k] || { gave: [], got: [] };
+    const k = GP.mk.get(g.id) || (() => { const P = prep(g); return mateKind(P.fens[P.fens.length - 1]); })(); const x = by[k] = by[k] || { gave: [], got: [] };
     (mine ? x.gave : x.got).push(g); if (mine) gave++; else got++;
   }
   MATESTAT = { n: S.games.length, by, gave, got }; return MATESTAT;
@@ -444,7 +458,7 @@ function mateStats() {
 function matesLobbyHtml() {
   const st = mateStats(), d = done();
   let h = '<p>Os padrões de mate mais comuns, para resolver contra o motor. Cada um traz a ideia e o que olhar no tabuleiro.</p>';
-  h += '<p style="font-size:14px">Nas suas partidas: você deu <b>' + st.gave + '</b> mates e levou <b>' + st.got + '</b>.</p>';
+  h += st.pending ? '<p class="muted" style="font-size:14px">Contando os mates das suas partidas…</p>' : '<p style="font-size:14px">Nas suas partidas: você deu <b>' + st.gave + '</b> mates e levou <b>' + st.got + '</b>.</p>';
   h += '<div class="stack" style="gap:6px;max-height:50vh;overflow:auto">' + MATES.map((p, i) => { const x = st.by[p.id] || { gave: [], got: [] }, ok = d['mates:' + p.id] && d['mates:' + p.id].ok; return '<button class="repmv arow" type="button" data-ar="pick:' + i + '"' + (S.arena.sel === i ? ' aria-current="true"' : '') + '><span style="min-width:0"><b>' + esc(p.t) + '</b><span class="muted" style="display:block;font-size:12.5px">Mate em ' + p.n + (x.gave.length || x.got.length ? ' · nas suas partidas: deu ' + x.gave.length + ', levou ' + x.got.length : '') + '</span></span><span></span>' + (ok ? '<span class="tag W" style="padding:3px 7px">feito</span>' : '<span></span>') + '</button>'; }).join('') + '</div>';
   const p = MATES[Math.min(S.arena.sel, MATES.length - 1)], x = st.by[p.id];
   lobbyPreview(p.fen, 'w');
@@ -518,8 +532,9 @@ function dosTreeAction(a, D) {
 
 /* ---------- pré-cálculo em tempo ocioso (a primeira visita a cada aba fica leve) ---------- */
 (function idleWarm() {
-  const idle = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 2000 }) : f => setTimeout(f, 60);
-  const jobs = [() => lists(), () => punishQueue(), () => theoryQueue(), () => compareCard(), () => buildTraining()];
+  // só roda quando a tela está de fato parada (sem prazo forçado), um cálculo por vez
+  const idle = window.requestIdleCallback ? f => requestIdleCallback(d => { if (d.timeRemaining() < 12) idle(f); else f(); }) : f => setTimeout(f, 120);
+  const jobs = [() => buildTraining(), () => lists(), () => punishQueue(), () => theoryQueue(), () => compareCard(), () => clockStats(), () => repTree('w'), () => repTree('b'), () => { for (const g of S.games) opName(g); }];
   // depois dos cálculos, monta em segundo plano as abas ainda não abertas (escondidas, não desenham)
   for (const v of ['partidas', 'treino', 'analise']) jobs.push(() => { if (S.view === v || VKEY[v] === viewKey(v)) return; const cur = S.view; renderView(v); VKEY[v] = viewKey(v); S.view = cur; });
   const run = () => { const j = jobs.shift(); if (!j) return; try { j(); } catch (e) { /* segue */ } idle(run); };
@@ -581,7 +596,7 @@ function renderHero() {
     mood = H.lossRun >= 2 ? H.lossRun + ' derrotas seguidas: uma pausa curta agora costuma valer mais que a próxima partida.' : W >= 3 && W > L * 2 ? 'Dia inspirado. Aproveite, mas sem pressa nos lances.' : L > W ? 'Dia difícil até aqui. Revise uma das derrotas antes de continuar.' : 'Bora para a próxima? Olhe xeques, capturas e ameaças antes de cada lance.';
   }
   let html = '<p class="hero-line">' + line + '</p><p class="muted">' + esc(mood) + '</p>';
-  if (T.length) html += '<div class="todayg">' + T.slice(-8).map(g => { const P = S.an[g.id] ? prep(g) : null, acc = P && P.acc ? pct(P.acc[g.c]) : ''; return '<button type="button" class="tg ' + rk(g) + '" data-openply="' + g.id + ':0"><b>' + ({ W: 'V', D: 'E', L: 'D' }[rk(g)]) + '</b><span>vs ' + esc(g.opp) + '</span>' + (acc ? '<i class="mono">' + acc + '</i>' : '') + '</button>'; }).join('') + '</div>';
+  if (T.length) html += '<div class="todayg">' + T.slice(-8).map(g => { const P = S.an[g.id] ? prepIf(g) : null, acc = P && P.acc ? pct(P.acc[g.c]) : ''; return '<button type="button" class="tg ' + rk(g) + '" data-openply="' + g.id + ':0"><b>' + ({ W: 'V', D: 'E', L: 'D' }[rk(g)]) + '</b><span>vs ' + esc(g.opp) + '</span>' + (acc ? '<i class="mono">' + acc + '</i>' : '') + '</button>'; }).join('') + '</div>';
   html += '<div class="vxacts">' + (T.length ? '<button class="btn small primary" type="button" data-queue="today">Revisar as de hoje</button>' : '<button class="btn small primary" type="button" data-pz="warm">Aquecer com 3 exercícios</button>') + '<a class="btn small" href="#treino">Ir para o treino</a></div>';
   $('#pnToday').innerHTML = html;
   // números rápidos
@@ -592,7 +607,7 @@ function renderHero() {
   const rNow = (G.find(g => g.tc === tc && g.mR) || {}).mR, wk = Date.now() / 1000 - 7 * 86400;
   const r7 = (asc.filter(g => g.tc === tc && g.mR && g.end < wk).pop() || {}).mR;
   const week = G.filter(g => g.end >= wk), ws = scoreOf(week);
-  const accs = analyzedGames().slice().sort((a, b) => b.end - a.end).slice(0, 10).map(g => prep(g)).filter(P => P.acc).map(P => P.acc[P.g.c]);
+  const accs = analyzedGames().slice(0, 10).map(g => prepIf(g)).filter(P => P && P.acc).map(P => P.acc[P.g.c]);
   const q = [
     [win ? win + (win === 1 ? ' vitória' : ' vitórias') : unb ? unb + ' sem perder' : '—', win ? 'sequência atual' : unb ? 'sequência atual' : 'sem sequência agora'],
     [dailyCount() + ' de ' + GOAL, 'exercícios de hoje' + (streakDays() > 1 ? ' · ' + streakDays() + ' dias seguidos' : '')],

@@ -90,7 +90,7 @@ function lists() {
     for (let i = 0; i < P.moves.length; i++) {
       if (!myTurn(i)) continue; const c = P.cls[i];
       if (c.k !== 'blunder' && c.k !== 'mistake') continue;
-      if (phaseOf(parseBoard(P.fens[i]), i) !== 'final' || c.wb < 30) continue;
+      if (phAt(P, i) !== 'final' || c.wb < 30) continue;
       ends.push({ gid: g.id, ply: i, wp: c.wb, ev: P.evs[i], end: g.end, opp: g.opp, mode: c.wb >= 70 ? 'convert' : 'hold', san: P.moves[i].san, after: c.wa });
       break;
     }
@@ -959,7 +959,7 @@ function profileOf(games) {
   const R = { me: z(), op: z(), n: 0 };
   for (const g of games) {
     const P = prep(g); if (!P.cls) continue; R.n++;
-    P.cls.forEach((c, i) => { const s = P.moves[i].color === g.c ? R.me : R.op, ph = phaseOf(parseBoard(P.fens[i]), i); s.ph[ph][1]++; if (c.k === 'blunder' || c.k === 'mistake' || c.k === 'miss') s.ph[ph][0]++; });
+    P.cls.forEach((c, i) => { const s = P.moves[i].color === g.c ? R.me : R.op, ph = phAt(P, i); s.ph[ph][1]++; if (c.k === 'blunder' || c.k === 'mistake' || c.k === 'miss') s.ph[ph][0]++; });
     for (const [side, who] of [[g.c, 'me'], [other(g.c), 'op']]) {
       const wp = P.evs.map(e => sideWp(e, side)).slice(10); const res = rk(g) === 'D' ? 'D' : (rk(g) === 'W') === (side === g.c) ? 'W' : 'L';
       if (wp.some(v => v >= 85)) { R[who].conv[1]++; if (res === 'W') R[who].conv[0]++; }

@@ -15,13 +15,19 @@ function repBuild() {
   if (REPB && REPB.key === key) return REPB.p;
   const p = (async () => {
     const nodes = new Map(), games = S.games.slice(0, REP_GAMES);
+    // o começo de cada partida vem pronto do processador em segundo plano; sem ele, reproduz aqui
+    const heads = await gpHeads(games.map(g => g.id), REP_PLY);
+    let tk = performance.now();
     for (let gi = 0; gi < games.length; gi++) {
-      if (gi % 30 === 29) await new Promise(r => setTimeout(r, 0));
-      const g = games[gi], raw = S.an[g.id], res = rk(g);
-      const sans = String(g.mv || '').split(' ').filter(Boolean).slice(0, REP_PLY);
-      const c = new Chess(); let fen = c.fen(), prev = null; const path = [];
+      if (performance.now() - tk > 8) { await new Promise(r => setTimeout(r, 0)); tk = performance.now(); }
+      const g = games[gi], raw = S.an[g.id], res = rk(g), H = heads && heads.get(g.id);
+      const sans = H ? H.san : String(g.mv || '').split(' ').filter(Boolean).slice(0, REP_PLY);
+      const c = H ? null : new Chess(); let fen = H ? H.fens[0] : c.fen(), prev = null; const path = [];
       for (let i = 0; i < sans.length; i++) {
-        let m = null; try { m = c.move(sans[i]); } catch (e) { m = null; } if (!m) break;
+        let m = null;
+        if (H) { const u = H.u[i]; m = { color: fen.charAt(fen.indexOf(' ') + 1), san: H.san[i], from: u.slice(0, 2), to: u.slice(2, 4), promotion: u.length > 4 ? u.charAt(4) : undefined }; }
+        else { try { m = c.move(sans[i]); } catch (e) { m = null; } }
+        if (!m) break;
         if (m.color === g.c) {
           const k = g.c + '|' + posKey(fen); let nd = nodes.get(k);
           if (!nd) { nd = { key: k, c: g.c, fen, ply: i, path: path.slice(), last: prev, n: 0, mv: {}, best: {}, op: g.op || g.eco || '', gid: g.id }; nodes.set(k, nd); }
@@ -34,7 +40,7 @@ function repBuild() {
             if (eb && eb.best) nd.best[eb.best] = (nd.best[eb.best] || 0) + 1;
           }
         }
-        path.push(m.san); prev = [m.from, m.to]; fen = c.fen();
+        path.push(m.san); prev = [m.from, m.to]; fen = H ? H.fens[i + 1] : c.fen();
       }
     }
     const badOf = e => e.an >= 2 && e.bad / e.an >= .5;
@@ -243,17 +249,17 @@ function phaseRecs() {
   const out = [];
   for (const g of analyzedGames()) {
     const P = prep(g); if (!P.cls) continue;
-    if (!P.ph) P.ph = P.moves.map((m, i) => phaseOf(parseBoard(P.fens[i]), i));
+    const ph = i => phAt(P, i);
     const d = g.oR && g.mR ? g.oR - g.mR : null;
     const z = () => ({ abertura: { l: 0, a: 0, n: 0 }, 'meio-jogo': { l: 0, a: 0, n: 0 }, final: { l: 0, a: 0, n: 0 } });
     const r = { band: d == null ? null : d < -50 ? 'weak' : d > 50 ? 'strong' : 'even', res: rk(g), me: z(), op: z(), dec: null };
     let worst = -1, wi = -1;
     P.cls.forEach((c, i) => {
-      if (c.dz) return; const mine = P.moves[i].color === g.c, s = (mine ? r.me : r.op)[P.ph[i]];
+      if (c.dz) return; const mine = P.moves[i].color === g.c, s = (mine ? r.me : r.op)[ph(i)];
       s.l += c.loss / 100; s.a += c.acc; s.n++;
       if (mine && c.loss > worst) { worst = c.loss; wi = i; }
     });
-    if (r.res === 'L' && wi >= 0 && worst >= 10) r.dec = P.ph[wi];
+    if (r.res === 'L' && wi >= 0 && worst >= 10) r.dec = ph(wi);
     out.push(r);
   }
   PHK = key; PHD = out; return out;
@@ -547,10 +553,12 @@ document.addEventListener('click', e => {
   if (t.dataset.phb) { PHB = t.dataset.phb; const el = $('#stPhase'); if (el) el.innerHTML = '<div class="stack fade" style="gap:12px">' + phaseCostHtml() + '</div>'; }
 });
 function v14Data() {
+  // widget e lembrete já com o que se sabe; o repertório entra quando ficar pronto
+  setTimeout(() => { widgetPush(); remSchedule(); }, 1500);
   setTimeout(() => { repBuild().then(() => { widgetPush(); remSchedule(); const el = $('#repTile'); if (el) el.textContent = String(repToday() || 0); }).catch(() => {}); }, 1500);
 }
 function v14Start() {
-  swipeInit();
+  swipeInit(); warmPaint();
   if (gsOn()) { setTimeout(() => gsSync(false), 3500); setInterval(() => gsSync(false), 15 * 60000); }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && GS.timer && gsOn()) gsSync(false); if (document.visibilityState === 'visible') widgetPush(); });
 }

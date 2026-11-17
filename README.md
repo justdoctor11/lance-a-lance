@@ -68,6 +68,19 @@ Chegam pela atualização automática, menos o widget, que precisa do aplicativo
 - **Lembrete do dia** (Android): diz quantos exercícios faltam, a sua sequência e quantas posições do repertório há para treinar. Não toca no dia em que a meta já foi cumprida.
 - **Widget** (Android, aplicativo 1.3.0): sequência de dias, meta de hoje, revisões do repertório e a última partida. Para pôr na tela inicial, toque e segure na tela inicial → Widgets → Lance a Lance.
 
+## Desempenho (atualização 10)
+
+O trabalho pesado de xadrez (reproduzir cada partida, contar lances legais, conferir sacrifícios e as linhas do motor para o treino, o repertório e os tipos de mate) roda num processador em segundo plano (Web Worker), fora da tela, e o resultado fica guardado no aparelho. Na tela só se montam os dados prontos, em pedaços curtos.
+
+Medido num celular intermediário simulado (CPU 4× mais lenta), navegando pelas abas por 1 minuto:
+
+| | antes | primeira abertura depois da atualização | aberturas seguintes |
+|---|---|---|---|
+| maior travada | 12,5 s | 0,19 s | 0,11 s |
+| tempo total travado | 43,6 s | 0,9 s | 0,17 s |
+
+Os resultados (classificação dos lances, treino, repertório, mates) foram conferidos partida a partida contra o cálculo antigo: idênticos nas 325 partidas analisadas.
+
 ## Compilar localmente (opcional)
 
 - Windows: `npm ci` e `npm run dist:win` (o resultado fica em `release/`).
