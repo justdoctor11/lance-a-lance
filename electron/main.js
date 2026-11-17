@@ -4,7 +4,7 @@ const path = require('path');
 const { pathToFileURL } = require('url');
 
 const WWW = path.join(__dirname, '..', 'www');
-const ALLOWED = ['api.chess.com', 'lichess.org', 'raw.githubusercontent.com'];
+const ALLOWED = ['api.chess.com', 'lichess.org', 'raw.githubusercontent.com', 'tablebase.lichess.ovh'];
 const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '.wasm': 'application/wasm', '.woff2': 'font/woff2', '.json': 'application/json', '.css': 'text/css' };
 
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);

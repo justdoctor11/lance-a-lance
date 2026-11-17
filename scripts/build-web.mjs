@@ -29,9 +29,9 @@ const base = `*{-webkit-tap-highlight-color:transparent}html{color-scheme:light 
 // O app propriamente dito: é isto que as atualizações substituem.
 const payload = {
   build: BUILD, minShell: MIN_SHELL, latestShell: SHELL, at: new Date().toISOString(),
-  css: rd('src/style.css') + '\n/* Peças cburnett (Colin M.L. Burnett, GPLv2+) */\n' + rd('vendor/pieces-cburnett.css') + '\nhtml.native-android .acct{max-width:40vw}',
+  css: rd('src/style.css') + '\n/* Peças cburnett (Colin M.L. Burnett, GPLv2+) */\n' + rd('vendor/pieces-cburnett.css') + '\n/* Peças Merida (GPLv2+), Chessnut (Apache 2.0), Fantasy e Spatial (MIT) */\n' + rd('vendor/pieces-extra.css') + '\nhtml.native-android .acct{max-width:40vw}',
   body: rd('src/body.html'),
-  js: rd('src/app.js')
+  js: rd('src/app.js').replace('/*@MORE@*/', () => rd('src/more.js'))
 };
 const safeJson = o => JSON.stringify(o).replace(/</g, '\\u003c');
 

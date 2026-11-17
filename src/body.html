@@ -48,6 +48,7 @@
             <div class="chart" id="pnChart"></div>
           </section>
           <section class="callout" id="pnInsight"></section>
+          <section class="card pad stack" id="pnRadar" style="gap:12px"></section>
           <section class="card pad stack" id="pnWeeks" style="gap:10px"></section>
           <section class="card pad stack" id="pnCmp" style="gap:12px"></section>
           <section class="card pad stack" style="gap:10px">
@@ -79,7 +80,7 @@
         </div>
       </div>
       </div>
-      <p class="foot">Peças: conjunto cburnett (licença aberta, por Colin M.L. Burnett). Motor: Stockfish (GPL).</p>
+      <p class="foot">Peças: cburnett (Colin M.L. Burnett, GPLv2+), Merida (Armando H. Marroquin, GPLv2+), Chessnut (Alexis Luengas, Apache 2.0), Fantasia e Espacial (Maurizio Monge, MIT). Motor: Stockfish (GPL). Tabela de finais: Lichess.</p>
     </div>
   </section>
 
@@ -118,10 +119,11 @@
           <button class="btn primary w" type="button" id="bNext" aria-label="Próximo lance"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 4l7 6-7 6"></path></svg></button>
           <button class="btn" type="button" id="bLast" aria-label="Fim da partida"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M15 4v12M5 4l7 6-7 6"></path></svg></button>
           <button class="btn" type="button" id="bFlip" aria-label="Virar tabuleiro"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8a6 6 0 0 1 11-2l1 2M16 12a6 6 0 0 1-11 2l-1-2M16 4v4h-4M4 16v-4h4"></path></svg></button>
+          <button class="btn" type="button" data-focus aria-label="Modo foco"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"></path></svg></button>
           <span class="kbd">← → navegam · F vira</span>
         </div>
         <div class="card graph">
-          <div style="display:flex;justify-content:space-between"><span class="label">Avaliação ao longo da partida</span><span class="label" style="text-transform:none;letter-spacing:0">toque para pular</span></div>
+          <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="label">Avaliação ao longo da partida</span><span class="label" style="text-transform:none;letter-spacing:0"><span id="gleg" hidden><i class="dash"></i>seu relógio · </span>toque para pular</span></div>
           <div class="gbox" id="gbox" role="slider" aria-label="Posição na partida" tabindex="0"></div>
           <div id="tgraph" class="stack" style="gap:6px" hidden>
             <div style="display:flex;justify-content:space-between;gap:10px;flex-wrap:wrap"><span class="label">Tempo por lance</span><span class="muted" id="tnote" style="font-size:12px"></span></div>
@@ -144,6 +146,7 @@
         <p class="sub">Exercícios tirados dos seus próprios erros, mais um plano montado a partir deles</p>
       </div>
       <div class="goal" id="trGoal"></div>
+      <div class="hub" id="trHub"></div>
       <div class="tr">
         <section class="card puz" id="puz">
           <div class="chips" id="pzModes" role="group" aria-label="Modo de treino"></div>
@@ -162,8 +165,12 @@
         </section>
         <div class="stack">
           <section class="card pad stack" style="gap:12px">
-            <h2 class="h-card">Plano da semana</h2>
-            <div class="steps" id="trPlan"></div>
+            <div class="stack" style="gap:2px"><h2 class="h-card">Plano da semana</h2><p class="sub">Montado com as suas fraquezas; os anéis enchem conforme você treina</p></div>
+            <div class="stack" style="gap:14px" id="trPlan"></div>
+          </section>
+          <section class="card pad stack" style="gap:12px">
+            <h2 class="h-card">Prioridades</h2>
+            <div class="steps" id="trPrio"></div>
           </section>
 
           <section class="card pad stack" style="gap:10px">
@@ -193,6 +200,23 @@
         <div class="chips" id="thCol" role="group" aria-label="Cor"></div>
         <div class="stack" style="gap:10px" id="thList"></div>
       </section>
+    </div>
+  </section>
+  <!-- ARENA: desafios contra o motor -->
+  <section class="view" id="v-arena" aria-label="Treino contra o motor">
+    <div class="an">
+      <div class="an-main">
+        <div class="an-head" id="arHead"></div>
+        <div class="clkrow" id="arClkTop"></div>
+        <div class="boardrow"><div class="boardbox"><div id="arBoard"></div></div></div>
+        <div class="clkrow" id="arClkBot"></div>
+        <div class="ctrls">
+          <button class="btn" type="button" data-focus aria-label="Modo foco"><svg width="20" height="20" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 7V3h4M13 3h4v4M17 13v4h-4M7 17H3v-4"></path></svg></button>
+        </div>
+      </div>
+      <aside class="an-side">
+        <section class="card coach" id="arPanel" aria-live="polite"></section>
+      </aside>
     </div>
   </section>
 </main>
@@ -244,6 +268,19 @@
   <div class="sheet">
     <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="h-card" id="prefsTitle" style="font-size:20px">Ajustes</h2><button class="btn small" type="button" id="prefsClose">Fechar</button></div>
     <div class="stack" style="gap:16px" id="prefsBody"></div>
+  </div>
+</div>
+<div class="modal" id="dos" hidden role="dialog" aria-modal="true" aria-labelledby="dosTitle">
+  <div class="sheet wide">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="h-card" id="dosTitle" style="font-size:20px">Dossiê</h2><button class="btn small" type="button" data-close>Fechar</button></div>
+    <div class="stack" style="gap:14px" id="dosBody"></div>
+  </div>
+</div>
+<div class="modal" id="card" hidden role="dialog" aria-modal="true" aria-labelledby="cardTitle">
+  <div class="sheet">
+    <div style="display:flex;justify-content:space-between;align-items:center;gap:10px"><h2 class="h-card" id="cardTitle" style="font-size:20px">Cartão da partida</h2><button class="btn small" type="button" data-close>Fechar</button></div>
+    <div class="cardimg" id="cardImg"></div>
+    <div class="vxacts"><button class="btn primary" type="button" data-cardsave="save">Salvar imagem</button><button class="btn" type="button" data-cardsave="share">Compartilhar</button></div>
   </div>
 </div>
 <div class="toast" id="toast" role="status"></div>

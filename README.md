@@ -30,6 +30,21 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - Análises e progresso do treino ficam salvos em cada aparelho.
 - O app já vem com as 2.080 partidas de justdoctor11, 325 análises e o relatório de teoria e armadilhas de 10/11/2026.
 
+## Treinos (versão 1.2)
+
+- **Converter a vitória**: as partidas em que você chegou a 85% ou mais de chance de vencer e não venceu. Você joga de novo a partir dali contra o motor.
+- **Defenda a posição**: partidas perdidas a partir do momento em que você ficou um pouco pior (entre −1,2 e −4). O objetivo é igualar, empatar ou aguentar 25 lances.
+- **Raio-X da peça**: 60 segundos para marcar as peças soltas de cada posição.
+- **Puna o erro**: a posição logo depois de um erro seu, jogando do lado do adversário.
+- **Curso de finais**: 9 posições essenciais, conferidas com o Stockfish. Com internet, o adversário usa a tabela de finais do Lichess.
+- **Seus finais**: os finais das suas partidas em que você errou.
+- **Treino de relógio**: partida contra o motor com relógio de verdade e metas de ritmo. No fim, o app confere seus lances.
+- **Adivinhe o lance**: revisão ativa dos momentos decisivos de uma partida, com pontuação.
+- **Dossiê do adversário**: resumo das partidas públicas recentes do adversário.
+- **Plano semanal**: montado com as suas fraquezas, com lembrete diário (Android).
+- **Cartão da partida**: imagem para salvar ou compartilhar.
+- **Perfil em radar**: seis áreas comparadas com adversários do seu nível.
+
 ## Compilar localmente (opcional)
 
 - Windows: `npm ci` e `npm run dist:win` (o resultado fica em `release/`).
@@ -41,5 +56,7 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - Stockfish (GPLv3), motor de xadrez, via pacote `stockfish` (WebAssembly).
 - chess.js (BSD-2-Clause).
 - Peças cburnett de Colin M.L. Burnett (GPLv2 ou posterior), via chessground.
+- Peças Merida de Armando Hernandez Marroquin (GPLv2 ou posterior), Chessnut de Alexis Luengas (Apache 2.0), Fantasy e Spatial de Maurizio Monge (MIT), todas copiadas do repositório lichess-org/lila (`vendor/pieces/`).
+- Tabela de finais: API pública do Lichess (tablebase.lichess.ovh), consultada durante o uso.
 - Fontes Geist e Geist Mono (SIL Open Font License 1.1).
 - Nomes de aberturas: base `lichess-org/chess-openings` (CC0).
