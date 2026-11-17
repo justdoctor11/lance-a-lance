@@ -423,7 +423,7 @@ class Board {
   }
   xy(i) { const f = i % 8, r = i >> 3; return this.flip ? [7 - f, r] : [f, 7 - r]; }
   tf(i) { const [x, y] = this.xy(i); return 'translate(' + (x * 100) + '%,' + (y * 100) + '%)'; }
-  instant(fn) { this.el.classList.add('instant'); fn(); void this.el.offsetWidth; requestAnimationFrame(() => this.el.classList.remove('instant')); }
+  instant(fn) { this.el.classList.add('instant'); fn(); const t = this.itok = {}; requestAnimationFrame(() => requestAnimationFrame(() => { if (this.itok === t) this.el.classList.remove('instant'); })); }
   drawCoords() {
     let h = '';
     for (let k = 0; k < 8; k++) {
@@ -607,7 +607,8 @@ async function analyzeGame(g, onProg) {
 /* ---------- textos ---------- */
 const TC = { rapid: 'Rápida', blitz: 'Blitz', bullet: 'Bullet', daily: 'Diária', classical: 'Clássica' };
 const tcLabel = g => (TC[g.tc] || 'Partida') + (g.tc !== 'daily' && +g.ctl ? ' ' + Math.round(+g.ctl / 60) + ' min' : '');
-const dateLabel = (t, y) => new Date(t * 1000).toLocaleDateString('pt-BR', y ? { day: '2-digit', month: 'short', year: 'numeric' } : { day: '2-digit', month: 'short' }).replace('.', '');
+const DFMT = [new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short' }), new Intl.DateTimeFormat('pt-BR', { day: '2-digit', month: 'short', year: 'numeric' })], DCACHE = new Map();
+const dateLabel = (t, y) => { const k = t + (y ? 'y' : ''); let v = DCACHE.get(k); if (v == null) { v = DFMT[y ? 1 : 0].format(new Date(t * 1000)).replace('.', ''); if (DCACHE.size > 5000) DCACHE.clear(); DCACHE.set(k, v); } return v; };
 const HOW = { checkmated: 'por mate', resigned: 'por desistência', timeout: 'por tempo', abandoned: 'por abandono', lose: '', lost: '' };
 const DRAWS = { agreed: 'Empate combinado', repetition: 'Empate por repetição', stalemate: 'Afogamento', insufficient: 'Empate: material insuficiente', '50move': 'Empate: regra dos 50 lances', timevsinsufficient: 'Empate: tempo vs. material insuficiente' };
 function resultOf(g) {
@@ -679,28 +680,43 @@ function route() {
   if (v === S.view && $('#v-' + v).classList.contains('on')) return;
   showView(v);
 }
-function showView(v) {
-  const vtOk = !!document.startViewTransition && S.view && S.view !== v && store.get('glass', 'on') !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
-  document.documentElement.classList.toggle('vt', vtOk);
-  if (vtOk) { S.view = v; try { document.startViewTransition(() => showViewNow(v)); return; } catch (e) { /* sem transição */ } }
-  showViewNow(v);
+/* Troca de aba: a aba aparece no mesmo toque; só reconstrói se os dados mudaram, e depois do primeiro quadro. */
+const VKEY = {};
+function dataKey() { return acctKey() + ':' + S.games.length + ':' + (S.games[0] ? S.games[0].id : '') + ':' + Object.keys(S.an).length + ':' + Object.keys(CRIT).length; }
+function viewKey(v) {
+  const b = dataKey(), today = JSON.stringify(store.get('act', {})[dayKey(new Date())] || {}) + ':' + dailyCount();
+  if (v === 'painel') return b + ':' + today;
+  if (v === 'partidas') return b + ':' + S.filter + ':' + (S.limit || 60) + ':' + ANALYZING.size;
+  if (v === 'analise') return S.vx || S.guess || S.pendingGuess || S.shownGid !== S.gid || S.shownPly !== S.ply ? null : b + ':' + S.gid;
+  if (v === 'treino') return S.pendingReview || S.pendingWarm || S.pendingPz ? null : b + ':' + today + ':' + JSON.stringify(store.get('arena', {})).length + ':' + store.get('xbest', 0);
+  if (v === 'stats') return b;
+  return null;
 }
-function showViewNow(v) {
-  S.view = v;
-  for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
-  const nv = v === 'arena' ? 'treino' : v;
-  $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
-  if (v !== 'analise' && S.guess) S.guess = null;
-  movePill();
+function renderView(v) {
   if (v === 'painel') renderPainel();
   if (v === 'partidas') renderPartidas();
   if (v === 'analise') renderAnalise();
   if (v === 'treino') renderTreino();
   if (v === 'arena') renderArena();
   if (v === 'stats') renderStats();
-  window.scrollTo(0, 0);
 }
+function showView(v) {
+  const first = !S.view;
+  S.view = v;
+  for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
+  const nv = v === 'arena' ? 'treino' : v;
+  $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
+  if (v !== 'analise' && S.guess) S.guess = null;
+  window.scrollTo(0, 0);
+  requestAnimationFrame(movePill);
+  const k = viewKey(v);
+  if (k && VKEY[v] === k) { if (v === 'painel') renderHero(); return; }
+  const run = () => { if (S.view !== v) return; renderView(v); VKEY[v] = viewKey(v); };
+  if (first) run(); else { const tok = S.vtok = {}; requestAnimationFrame(() => setTimeout(() => { if (S.vtok === tok) run(); }, 0)); }
+}
+const PILLMQ = matchMedia('(max-width: 899px)');
 function movePill() {
+  if (PILLMQ.matches) return;
   const nav = $('#tabs'), a = $('#tabs a[aria-current="page"]'), pill = $('#tabs .pill');
   if (!a || !nav.offsetParent) return;
   pill.style.width = a.offsetWidth + 'px'; pill.style.transform = 'translateX(' + a.offsetLeft + 'px)';
@@ -879,6 +895,7 @@ function setPly(n) {
   if (n === S.ply) return; const step = Math.abs(n - S.ply) === 1; S.ply = n; showPly(P, n, step);
 }
 function showPly(P, n, animate) {
+  S.shownGid = P.g.id; S.shownPly = n;
   AB.setPosition(P.fens[n], animate);
   const m = n > 0 ? P.moves[n - 1] : null; const marks = {}; const arrows = [];
   if (m) {
@@ -899,9 +916,9 @@ function showPly(P, n, animate) {
   const cur = $('#gcur'); if (cur) cur.style.left = (n / Math.max(1, P.moves.length) * 100) + '%';
   const tc0 = $('#tcur'); if (tc0) tc0.style.left = (Math.max(0, n - 1) / Math.max(1, P.moves.length) * 100) + '%';
   $$('#moves .mv').forEach(b => b.setAttribute('aria-current', String(+b.dataset.p === n)));
-  const act = $('#moves .mv[aria-current="true"]'); const box = $('#moves');
-  if (act) { const top = act.offsetTop - box.clientHeight / 2 + act.offsetHeight / 2; box.scrollTop = Math.max(0, top); }
-  else if (n === 0) box.scrollTop = 0;
+  // rolar a lista de lances no próximo quadro: evita medir o layout no meio da troca de tela
+  const mtok = S.mvTok = {};
+  requestAnimationFrame(() => { if (S.mvTok !== mtok || S.view !== 'analise') return; const act = $('#moves .mv[aria-current="true"]'), box = $('#moves'); if (act) { const top = act.offsetTop - box.clientHeight / 2 + act.offsetHeight / 2; box.scrollTop = Math.max(0, top); } else if (n === 0) box.scrollTop = 0; });
   $('#gbox').setAttribute('aria-valuenow', String(n));
   renderCoach(P, n);
   armAnalysis();
@@ -1827,6 +1844,7 @@ function renderTreino() {
   renderGoal();
   if (S.pendingReview) { const g = S.pendingReview; S.pendingReview = null; setPzMode('review', g); }
   else if (S.pendingWarm) { S.pendingWarm = false; setPzMode('warm'); }
+  else if (S.pendingPz) { const k = S.pendingPz; S.pendingPz = null; setPzMode(k); }
   else if (!S.pzMode || !S.pzQueue) setPzMode('mine');
   else { renderPzModes(); renderPzCount(); if (!PZ) loadPuzzle(); }
   $('#trHub').innerHTML = hubHtml();
@@ -2257,7 +2275,7 @@ function wire() {
     const ln = e.target.closest('[data-line]');
     if (ln) { startLine(ln.dataset.line, ln.dataset.uci.split(' '), +ln.dataset.base); return; }
     const vxb = e.target.closest('[data-vx]'); if (vxb) { vxAction(vxb.dataset.vx); return; }
-    const pzb = e.target.closest('[data-pz]'); if (pzb) { const k = pzb.dataset.pz; if (S.view === 'treino') { setPzMode(k); if (k === 'theory') $('#puz').scrollIntoView({ behavior: 'smooth', block: 'start' }); } else { if (k === 'warm') S.pendingWarm = true; location.hash = 'treino'; } return; }
+    const pzb = e.target.closest('[data-pz]'); if (pzb) { const k = pzb.dataset.pz; if (S.view === 'treino') { setPzMode(k); if (k === 'theory') $('#puz').scrollIntoView({ behavior: 'smooth', block: 'start' }); } else { if (k === 'warm') S.pendingWarm = true; else S.pendingPz = k; location.hash = 'treino'; } return; }
     const tht = e.target.closest('[data-thtab]'); if (tht) { TH.tab = tht.dataset.thtab; renderTheory(); return; }
     const thc = e.target.closest('[data-thcol]'); if (thc) { TH.c = thc.dataset.thcol; renderTheory(); return; }
     const thr = e.target.closest('[data-thtree]'); if (thr) { const v = thr.dataset.thtree, i = v.indexOf('|'); REP.c = v.slice(0, i); const pth = v.slice(i + 1); REP.path = pth ? pth.split(' ') : []; renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }

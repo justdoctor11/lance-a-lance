@@ -88,8 +88,10 @@ p{margin:0}
 }
 
 main{padding-block:20px 48px}
-.view{display:none}
-.view.on{display:block;animation:viewIn .32s var(--ease)}
+.view{display:block}
+/* telas escondidas ficam "congeladas" (não desenham nem ocupam espaço, mas guardam o layout) e voltam prontas */
+.view:not(.on){content-visibility:hidden;height:0;overflow:hidden;contain-intrinsic-size:none}
+.view.on{animation:viewIn .32s var(--ease)}
 @keyframes viewIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
 .stack{display:flex;flex-direction:column;gap:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
@@ -491,17 +493,9 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 .btn,.chip,.tile,.rec,.repmv,.sw,.seg button{transition:transform .14s var(--ease),background-color .2s var(--ease),border-color .2s var(--ease),box-shadow .2s var(--ease),color .2s var(--ease)}
 .tile:hover,.rec:hover{transform:translateY(-2px)}
 .tile:active,.rec:active,.chip:active,.repmv:active,.sw:active{transform:scale(.97)}
-.view.on > .stack > *,.view.on > .an > *,.view.on > .tr > *{animation:rise .42s var(--ease) both}
-.view.on > .stack > :nth-child(2){animation-delay:.03s}.view.on > .stack > :nth-child(3){animation-delay:.06s}.view.on > .stack > :nth-child(4){animation-delay:.09s}.view.on > .stack > :nth-child(5){animation-delay:.12s}.view.on > .stack > :nth-child(n+6){animation-delay:.15s}
-@keyframes rise{from{opacity:0;transform:translateY(10px)}}
-:root.vt .view.on,:root.vt .view.on > .stack > *,:root.vt .view.on > .an > *{animation:none}
-.top{view-transition-name:topbar}
-@media (max-width:899px){.bnav{view-transition-name:bnav}}
-::view-transition-group(topbar),::view-transition-group(bnav){animation:none}
-::view-transition-old(root){animation:vtOut .12s ease-in both}
-::view-transition-new(root){animation:vtIn .28s var(--ease) both}
-@keyframes vtOut{to{opacity:0}}
-@keyframes vtIn{from{opacity:0;transform:translateY(12px)}}
+/* troca de aba: uma única camada esmaece e sobe (só opacidade e transform) */
+.view.on{animation:viewIn .2s var(--ease)}
+@keyframes viewIn{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}
 :root[data-glass="off"] .view.on,:root[data-glass="off"] .view.on *{animation-duration:.01ms!important}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after,::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:.01ms!important;transition-duration:.01ms!important}}
 #gmList .grow{content-visibility:auto;contain-intrinsic-size:auto 66px}
@@ -576,8 +570,6 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 .quote figcaption{display:flex;align-items:center;justify-content:space-between;gap:10px;font:700 13px var(--f-display);color:var(--accent-ink)}
 .qnav{display:flex;gap:4px}
 .qnav button{width:30px;height:30px;border-radius:50%;border:1px solid var(--card-line);background:color-mix(in srgb,var(--surface) 70%,transparent);color:var(--ink);font-size:16px;line-height:1}
-.quote.qin .qtext,.quote.qin figcaption>span:first-child{animation:qIn .5s var(--ease) both}
-@keyframes qIn{from{opacity:0;transform:translateY(6px)}}
 .qstats{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:10px}
 .qs{display:flex;flex-direction:column;gap:2px;padding:12px 14px;border-radius:14px;background:var(--card-bg);border:1px solid var(--card-line);box-shadow:inset 0 1px 0 var(--card-hi)}
 .qs b{font-size:22px;letter-spacing:-.02em}

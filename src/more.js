@@ -970,7 +970,7 @@ function profileOf(games) {
 }
 let RADAR = null, RADARKEY = '';
 function radarCard() {
-  const key = LISTKEY + ':' + analyzedGames().length; const gs = analyzedGames().slice().sort((a, b) => b.end - a.end);
+  const key = acctKey() + ':' + analyzedGames().length + ':' + Object.keys(CRIT).length; const gs = analyzedGames().slice().sort((a, b) => b.end - a.end);
   if (gs.length < 20) return '<h2 class="h-card">Seu perfil</h2><p class="muted">Analise pelo menos 20 partidas para montar o radar.</p>';
   if (!RADAR || RADARKEY !== key) { const half = Math.min(60, Math.floor(gs.length / 2)); RADAR = { now: profileOf(gs.slice(0, half)), before: profileOf(gs.slice(half, half * 2)), half }; RADARKEY = key; }
   const { now, before, half } = RADAR, n = now.ax.length, cx = 150, cy = 140, R0 = 100;

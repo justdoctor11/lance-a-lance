@@ -520,6 +520,8 @@ function dosTreeAction(a, D) {
 (function idleWarm() {
   const idle = window.requestIdleCallback ? f => requestIdleCallback(f, { timeout: 2000 }) : f => setTimeout(f, 60);
   const jobs = [() => lists(), () => punishQueue(), () => theoryQueue(), () => compareCard(), () => buildTraining()];
+  // depois dos cálculos, monta em segundo plano as abas ainda não abertas (escondidas, não desenham)
+  for (const v of ['partidas', 'treino', 'analise']) jobs.push(() => { if (S.view === v || VKEY[v] === viewKey(v)) return; const cur = S.view; renderView(v); VKEY[v] = viewKey(v); S.view = cur; });
   const run = () => { const j = jobs.shift(); if (!j) return; try { j(); } catch (e) { /* segue */ } idle(run); };
   setTimeout(() => warmPrep().then(() => idle(run)), 2500);
 })();
@@ -554,7 +556,7 @@ function showQuote(step) {
   else QI = (QI + (step || 1) + QUOTES.length) % QUOTES.length;
   const [t, a] = QUOTES[QI];
   el.innerHTML = '<blockquote class="qtext">' + esc(t) + '</blockquote><figcaption><span>' + esc(a) + '</span><span class="qnav"><button type="button" data-quote="-1" aria-label="Frase anterior">‹</button><button type="button" data-quote="1" aria-label="Próxima frase">›</button></span></figcaption>';
-  el.classList.remove('qin'); void el.offsetWidth; el.classList.add('qin');
+  if (el.animate) for (const c of el.querySelectorAll('.qtext,figcaption>span:first-child')) c.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.2,.8,.2,1)' });
 }
 function quoteTimer() { if (QT) clearInterval(QT); QT = setInterval(() => { if (S.view === 'painel' && !document.hidden) showQuote(1); }, 11000); }
 function renderHero() {
