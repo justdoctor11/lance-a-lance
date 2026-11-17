@@ -45,6 +45,17 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - **Cartão da partida**: imagem para salvar ou compartilhar.
 - **Perfil em radar**: seis áreas comparadas com adversários do seu nível.
 
+## Novidades da versão 1.3 (chega pela atualização automática)
+
+- **Análise com prova**: toda afirmação de ganho de material traz a linha do motor e o saldo de material quando as trocas terminam.
+- **Zona decidida**: o trecho em que a partida já estava decidida fica marcado e sai da precisão.
+- **Momentos críticos**: o motor compara os 2 melhores lances e marca as posições em que só um lance segurava. Isso gera o modo de exercícios "Lance único".
+- **Estatísticas**: recordes, aberturas por linha (com tendência e linhas acompanhadas), trocas e tipos de final, e raio-X do relógio.
+- **Adversário humano (Maia3, CSSLab/Universidade de Toronto)**: o modelo (cerca de 58 MB com o ONNX Runtime Web) é baixado na primeira vez, do repositório oficial e do jsDelivr, e conferido por SHA-256 antes de rodar.
+- **Novos treinos**: Ache o erro, Padrões de mate, quebra-cabeças às cegas.
+- **Conforto**: fila de revisão, confirmação de lance com toque duplo, árvore de aberturas do adversário no dossiê.
+- **Visual**: vidro, gradientes e transições entre telas. Nos Ajustes, "Simples" desliga os efeitos em aparelhos mais fracos.
+
 ## Compilar localmente (opcional)
 
 - Windows: `npm ci` e `npm run dist:win` (o resultado fica em `release/`).
@@ -59,5 +70,7 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - Peças Merida de Armando Hernandez Marroquin (GPLv2 ou posterior), Chessnut de Alexis Luengas (Apache 2.0), Fantasy e Spatial de Maurizio Monge (MIT), Staunty, Maestro e Cardinal de sadsnake1 e California de Jerry S. (CC BY-NC-SA 4.0, uso sem fins comerciais, com crédito), todas copiadas do repositório lichess-org/lila (`vendor/pieces/`).
 - Peças Moderno (`scripts/pieces-moderno.mjs`) e Lance: desenhos originais deste app.
 - Tabela de finais: API pública do Lichess (tablebase.lichess.ovh), consultada durante o uso.
+- Maia3 (modelo e lista de lances) do repositório CSSLab/maia-platform-frontend (GPLv3), baixado sob demanda. O projeto Maia2 é MIT.
+- ONNX Runtime Web 1.23.2 (MIT), baixado sob demanda do jsDelivr.
 - Fontes Geist e Geist Mono (SIL Open Font License 1.1).
 - Nomes de aberturas: base `lichess-org/chess-openings` (CC0).

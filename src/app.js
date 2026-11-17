@@ -251,7 +251,7 @@ function evTxt(e) {
   const v = (e.cp || 0) / 100; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1).replace('.', ',');
 }
 const isMateFor = (e, side) => e && e.mate != null && e.mate !== 0 && (side === 'w' ? e.mate > 0 : e.mate < 0);
-const CLS = { brill: { t: 'Brilhante', s: '!!' }, great: { t: 'Ótimo', s: '!' }, best: { t: 'Melhor', s: '★' }, exc: { t: 'Excelente', s: '✓✓' }, good: { t: 'Bom', s: '✓' }, inacc: { t: 'Imprecisão', s: '?!' }, mistake: { t: 'Erro', s: '?' }, blunder: { t: 'Capivarada', s: '??' }, miss: { t: 'Chance perdida', s: '✕' }, forced: { t: 'Único lance', s: '□' } };
+const CLS = { brill: { t: 'Brilhante', s: '!!' }, great: { t: 'Ótimo', s: '!' }, best: { t: 'Melhor', s: '★' }, exc: { t: 'Excelente', s: '✓✓' }, good: { t: 'Bom', s: '✓' }, inacc: { t: 'Imprecisão', s: '?!' }, mistake: { t: 'Erro', s: '?' }, blunder: { t: 'Capivarada', s: '??' }, miss: { t: 'Chance perdida', s: '✕' }, forced: { t: 'Único lance', s: '□' }, dz: { t: 'Posição decidida', s: '·' } };
 const BAD = { inacc: 1, mistake: 1, blunder: 1, miss: 1 };
 
 const PREP = new Map();
@@ -298,11 +298,20 @@ function classify(P) {
       if (wb < 92 && wa >= 40 && isSac(m, P.fens[i], P.evs[i + 1])) k = 'brill';
       else if (k === 'best' && prev && (prev.k === 'mistake' || prev.k === 'blunder') && prev.loss >= 20 && wa >= 60) k = 'great';
     }
+    let only = false;
+    if (k === 'best' && typeof critOf === 'function') { const cr = critOf(P, i); if (cr && cr.gap >= 15 && cr.wp >= 30) { k = 'great'; only = true; } }
     const acc = Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * loss) - 3.1669));
-    out.push({ k, loss, wb, wa, acc, uci, isBest });
+    out.push({ k, loss, wb, wa, acc, uci, isBest, only });
   }
-  P.cls = out;
-  P.acc = { w: avg(out.filter((_, i) => i % 2 === 0).map(x => x.acc)), b: avg(out.filter((_, i) => i % 2 === 1).map(x => x.acc)) };
+  // zona decidida: do primeiro lance em que a partida fica decidida (97%+) e não volta mais
+  const w = P.evs.map(wpWhite), N = w.length; let dz = null, dzSide = null;
+  const lastSide = w[N - 1] >= 97 ? 'w' : w[N - 1] <= 3 ? 'b' : null;
+  if (lastSide) { let j = N - 1; const dec = x => lastSide === 'w' ? x >= 97 : x <= 3; while (j > 0 && dec(w[j - 1])) j--; if (j < N - 2 && j >= 2) { dz = j; dzSide = lastSide; } }
+  if (dz != null) for (let i = dz; i < out.length; i++) { out[i].dz = true; if (P.moves[i].color !== dzSide && !BAD[out[i].k] && out[i].k !== 'best' && out[i].k !== 'forced') out[i].k = 'dz'; }
+  P.cls = out; P.dz = dz; P.dzSide = dzSide;
+  const live = (x, i) => !x.dz || dz == null;
+  const accOf = par => { const L = out.filter((x, i) => i % 2 === par && live(x, i)).map(x => x.acc); return L.length ? avg(L) : avg(out.filter((_, i) => i % 2 === par).map(x => x.acc)); };
+  P.acc = { w: accOf(0), b: accOf(1) };
 }
 
 /* ---------- treinador ---------- */
@@ -314,7 +323,8 @@ function coachFor(P, i) {
   const eb = P.evs[i], ea = P.evs[i + 1];
   const lead = {
     brill: 'Lance brilhante: um sacrifício que o motor aprova. A peça pode ser capturada, mas a compensação vale mais.',
-    great: 'Ótimo lance: o adversário tinha acabado de errar e você encontrou a punição exata.',
+    great: c && c.only ? 'Ótimo lance: era o único que mantinha a posição. O segundo melhor perdia ' + ((typeof critOf === 'function' && critOf(P, i)) ? critOf(P, i).gap : 15) + ' pontos de chance de vitória.' : 'Ótimo lance: o adversário tinha acabado de errar e você encontrou a punição exata.',
+    dz: 'Posição já decidida: desde o lance ' + (P.dz != null ? Math.floor(P.dz / 2) + 1 : '') + ' a vantagem das ' + SIDE[P.dzSide || 'w'] + ' não muda o resultado. Aqui o motor vê quase todos os lances como equivalentes; o que conta é o plano mais simples. Esses lances ficam fora da precisão.',
     best: 'Lance do motor: exatamente o que a posição pedia.',
     exc: 'Excelente: praticamente tão bom quanto a escolha do motor.',
     good: 'Lance razoável; existe algo um pouco mais preciso.',
@@ -331,20 +341,21 @@ function coachFor(P, i) {
       const BF = factsFor(P.fens[i], bl[0].m, i); const why = ideaShort(BF, bl[0].m);
       out.best = { san: bl[0].san, line: bl.slice(0, 6), uci: eb.best, why };
       if (isMateFor(eb, me)) out.best.extra = 'Havia mate forçado em ' + Math.abs(eb.mate) + '.';
-      else { const g = materialSwing(P.fens[i], bl.slice(0, 6), me); if (g >= 2) out.best.extra = 'Na linha do motor, as ' + SIDE[me] + ' ganham cerca de ' + g + ' pontos de material.'; }
+      else { const R2 = settledSwing(P.fens[i], bl.slice(0, 8), me); out.best.proof = R2; if (R2.sure && R2.v >= 2) out.best.extra = 'Na linha do motor, as ' + SIDE[me] + ' ganham cerca de ' + R2.v + ' pontos de material.'; }
     }
   }
   if (BAD[c.k] && ea && ea.best) {
     const rl = lineSan(m.after, ea.pv.length ? ea.pv : [ea.best]);
     if (rl[0]) {
       const RF = factsFor(m.after, rl[0].m, i + 1); const why = ideaShort(RF, rl[0].m);
-      out.reply = { san: rl[0].san, line: rl.slice(0, 6), uci: ea.best };
+      out.reply = { san: rl[0].san, line: rl.slice(0, 8), uci: ea.best };
       let s = 'Agora as ' + SIDE[op] + ' podem responder ' + fig(rl[0].san) + (why ? ', que ' + why : '') + '.';
       if (isMateFor(ea, op)) s += ' Há mate forçado em ' + Math.abs(ea.mate) + '.';
-      else { const g = materialSwing(m.after, rl.slice(0, 6), op); if (g >= 2) s += ' Seguindo a linha do motor, as ' + SIDE[op] + ' ganham cerca de ' + g + ' pontos de material.'; }
+      else { const R2 = settledSwing(m.after, rl.slice(0, 8), op); out.reply.proof = R2; if (R2.sure && R2.v >= 2) s += ' Seguindo a linha do motor, as ' + SIDE[op] + ' ganham cerca de ' + R2.v + ' pontos de material.'; }
       out.punish.push(s);
     }
   }
+  if (typeof critOf === 'function') { const cr = critOf(P, i); if (cr && cr.gap >= 15 && cr.wp >= 30 && c.k !== 'great') { const sl = lineSan(P.fens[i], [cr.best]); out.crit = 'Momento crítico: só um lance mantinha a posição' + (sl[0] ? ' (' + fig(sl[0].san) + ')' : '') + '; qualquer outro perdia ' + cr.gap + ' pontos de chance ou mais.'; } }
   if (F.myHang.length && !F.mate && c.k !== 'best' && c.k !== 'exc') {
     const h = F.myHang[0];
     out.warn.push('Atenção: ' + pz(h.t) + ' em ' + iSq(h.idx) + ' ficou ' + (h.undef ? 'sem defesa' : 'atacado por uma peça de menor valor') + '.');
@@ -494,7 +505,11 @@ class Board {
     el.addEventListener('pointerdown', e => {
       if (!this.live || e.button > 0) return;
       const i = this.sqAt(e); if (i == null) return;
-      if (this.sel != null && this.targets(this.sel).includes(iSq(i))) { const f = this.sel; this.unselect(); this.live.onMove(iSq(f), iSq(i)); return; }
+      if (this.sel != null && this.targets(this.sel).includes(iSq(i))) {
+        if (confirmOn() && this.pend !== i) { this.pend = i; const mk = Object.assign({}, this.marks, { okp: [iSq(i)] }); this.setMarks(mk); haptic('move'); return; }
+        const f = this.sel; this.pend = null; this.unselect(); this.live.onMove(iSq(f), iSq(i)); return;
+      }
+      this.pend = null;
       const B = parseBoard(this.fen); const p = B[i];
       if (p && p.c === this.live.color) {
         this.select(i);
@@ -550,18 +565,20 @@ const Engine = {
     });
   },
   go(fen, ms, opts) {
-    const elo = (opts && opts.elo) || 0;
+    const elo = (opts && opts.elo) || 0, multi = (opts && opts.multi) || 1;
     const run = () => new Promise(res => {
-      let last = null; const turn = fen.split(' ')[1];
+      let last = null; const turn = fen.split(' ')[1], lines = [];
+      const parse = l => { let cp = null, mate = null; const mm = l.match(/score (cp|mate) (-?\d+)/); if (mm) { if (mm[1] === 'cp') cp = +mm[2]; else mate = +mm[2]; } const s = turn === 'w' ? 1 : -1; return { cp: cp == null ? null : cp * s, mate: mate == null ? null : mate * s, pv: l.split(' pv ')[1].trim().split(' ').slice(0, 8) }; };
       this.h = l => {
-        if (l.startsWith('info') && l.includes(' pv ') && l.includes(' score ')) last = l;
+        if (l.startsWith('info') && l.includes(' pv ') && l.includes(' score ')) { const mp = l.match(/ multipv (\d+)/), k = mp ? +mp[1] : 1; if (k === 1) last = l; if (multi > 1) lines[k - 1] = parse(l); }
         if (l.startsWith('bestmove')) {
           this.h = null; let cp = null, mate = null, pv = [];
-          if (last) { const mm = last.match(/score (cp|mate) (-?\d+)/); if (mm) { if (mm[1] === 'cp') cp = +mm[2]; else mate = +mm[2]; } pv = last.split(' pv ')[1].trim().split(' ').slice(0, 8); }
-          const s = turn === 'w' ? 1 : -1; const best = l.split(' ')[1];
-          res({ cp: cp == null ? null : cp * s, mate: mate == null ? null : mate * s, best: best === '(none)' ? null : best, pv });
+          if (last) { const x = parse(last); cp = x.cp; mate = x.mate; pv = x.pv; }
+          const best = l.split(' ')[1];
+          res({ cp, mate, best: best === '(none)' ? null : best, pv, lines: multi > 1 ? lines : null });
         }
       };
+      if ((this.mpv || 1) !== multi) { this.w.postMessage('setoption name MultiPV value ' + multi); this.mpv = multi; }
       if (this.elo !== elo) { if (elo) { this.w.postMessage('setoption name UCI_LimitStrength value true'); this.w.postMessage('setoption name UCI_Elo value ' + elo); } else this.w.postMessage('setoption name UCI_LimitStrength value false'); this.elo = elo; }
       this.w.postMessage('position fen ' + fen); this.w.postMessage('go movetime ' + ms);
     });
@@ -598,8 +615,10 @@ function resultOf(g) {
   if (DRAWS[g.res]) return { k: 'D', short: 'E', label: DRAWS[g.res] };
   return { k: 'L', short: 'D', label: 'Derrota ' + (HOW[g.res] || '') };
 }
-function opName(g) {
-  let s = String(g.op || g.eco || 'Abertura').replace(/\s*\.\.\..*$/, '').replace(/\s\d+\..*$/, '').trim();
+const OPN = new Map();
+function opName(g) { const raw = String(g.op || g.eco || 'Abertura'); let v = OPN.get(raw); if (v == null) { v = opNameRaw(raw); OPN.set(raw, v); } return v; }
+function opNameRaw(raw) {
+  let s = raw.replace(/\s*\.\.\..*$/, '').replace(/\s\d+\..*$/, '').trim();
   const T = [['Queens Pawn Game', 'Jogo do Peão da Dama'], ['Kings Pawn Game', 'Jogo do Peão do Rei'], ['Kings Pawn Opening', 'Abertura do Peão do Rei'], ['Queens Gambit Declined', 'Gambito da Dama Recusado'], ['Queens Gambit Accepted', 'Gambito da Dama Aceito'], ['Queens Gambit', 'Gambito da Dama'],
     ['Sicilian Defense', 'Defesa Siciliana'], ['Alapin Sicilian Defense', 'Siciliana Alapin'], ['Caro Kann Defense', 'Caro-Kann'], ['Scotch Game', 'Abertura Escocesa'], ['Scotch Gambit', 'Gambito Escocês'], ['Englund Gambit', 'Gambito Englund'], ['Scandinavian Defense', 'Defesa Escandinava'], ['Philidor Defense', 'Defesa Philidor'], ['French Defense', 'Defesa Francesa'], ['Kings Indian Defense', 'Índia do Rei'], ['Alekhine Defense', 'Defesa Alekhine'], ['Alekhines Defense', 'Defesa Alekhine'], ['Modern Defense', 'Defesa Moderna'], ['Pirc Defense', 'Defesa Pirc'], ['Ruy Lopez Opening', 'Ruy López'], ['Ruy Lopez', 'Ruy López'], ['Giuoco Piano Game', 'Giuoco Piano'], ['Italian Game', 'Italiana'], ['Petrovs Defense', 'Defesa Petrov'], ['Russian Game', 'Defesa Petrov'], ['Kings Fianchetto Opening', 'Fianqueto do Rei'], ['Zukertort Opening', 'Abertura Zukertort'], ['Vienna Game', 'Partida Vienense'], ['Four Knights Game', 'Quatro Cavalos'], ['Two Knights Defense', 'Dois Cavalos'], ['Accelerated Dragon', 'Dragão Acelerado'], ['Smith-Morra Gambit', 'Gambito Smith-Morra'],
     ['Exchange Variation', 'variante da troca'], ['Advance Variation', 'variante do avanço'], ['Classical Variation', 'variante clássica'], ['Main Line', 'linha principal'], ['Variation', 'variante'], ['Old Sicilian', 'Siciliana antiga'], ['Advance', 'Avanço'], ['Exchange', 'Troca'], ['Kings Knight', 'Cavalo do Rei'], ['Opening', 'Abertura'], ['Defense', 'Defesa'], ['Gambit', 'Gambito'], ['Attack', 'Ataque'], ['Declined', 'Recusado'], ['Accepted', 'Aceito']];
@@ -626,7 +645,7 @@ function buildTraining() {
       if (isMateFor(eb, me)) tags.mate++;
       if (isMateFor(ea, other(me)) && !isMateFor(eb, other(me))) tags.allowMate++;
       const rl = lineSan(m.after, ea && ea.pv.length ? ea.pv : (ea && ea.best ? [ea.best] : []));
-      if (rl.length && materialSwing(m.after, rl.slice(0, 6), other(me)) >= 2) tags.hang++;
+      if (rl.length) { const R2 = settledSwing(m.after, rl.slice(0, 8), other(me)); if (R2.sure && R2.v >= 2) tags.hang++; }
       const bl = lineSan(P.fens[i], eb && eb.pv.length ? eb.pv : (eb && eb.best ? [eb.best] : []));
       if (bl.length && !isMateFor(eb, me)) { const BF = factsFor(P.fens[i], bl[0].m, i); if (BF.fork || BF.pins.length || materialSwing(P.fens[i], bl.slice(0, 6), me) >= 2) tags.tactic++; }
       if (c.k !== 'inacc' && eb && eb.best) puzzles.push({ key: g.id + ':' + i, gid: g.id, ply: i, k: c.k, loss: c.loss, side: me, best: eb.best, played: m.san, mate: isMateFor(eb, me) ? Math.abs(eb.mate) : 0 });
@@ -653,7 +672,7 @@ const LESSONS = {
 };
 
 /* ---------- navegação ---------- */
-const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena'];
+const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats'];
 function route() {
   const h = (location.hash || '').replace('#', '');
   const v = VIEWS.includes(h) ? h : 'painel';
@@ -661,6 +680,12 @@ function route() {
   showView(v);
 }
 function showView(v) {
+  const vtOk = !!document.startViewTransition && S.view && S.view !== v && store.get('glass', 'on') !== 'off' && !matchMedia('(prefers-reduced-motion: reduce)').matches;
+  document.documentElement.classList.toggle('vt', vtOk);
+  if (vtOk) { S.view = v; try { document.startViewTransition(() => showViewNow(v)); return; } catch (e) { /* sem transição */ } }
+  showViewNow(v);
+}
+function showViewNow(v) {
   S.view = v;
   for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
   const nv = v === 'arena' ? 'treino' : v;
@@ -672,6 +697,7 @@ function showView(v) {
   if (v === 'analise') renderAnalise();
   if (v === 'treino') renderTreino();
   if (v === 'arena') renderArena();
+  if (v === 'stats') renderStats();
   window.scrollTo(0, 0);
 }
 function movePill() {
@@ -838,8 +864,8 @@ function renderAnalise() {
   AB.setFlip(S.flip); $('#evV').classList.toggle('flip', S.flip);
   const me = g.c === 'w' ? [S.me, g.mR] : [g.opp, g.oR], them = g.c === 'w' ? [g.opp, g.oR] : [S.me, g.mR];
   $('#anHead').innerHTML = '<div class="stack" style="gap:3px;min-width:0"><span class="label">' + tcLabel(g) + ' · ' + dateLabel(g.end, true) + ' · ' + esc(opName(g)) + '</span><span class="who">' + esc(me[0]) + (me[1] ? ' <span>' + me[1] + '</span>' : '') + ' <span>vs</span> ' + esc(them[0]) + (them[1] ? ' <span>' + them[1] + '</span>' : '') + '</span></div>' +
-    '<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag ' + R.k + '">' + esc(R.label.trim()) + '</span>' + (P.acc ? '<span class="tag plain">Precisão: você ' + pct(P.acc[g.c]) + ' · adversário ' + pct(P.acc[other(g.c)]) + '</span>' : '') + (P.cls ? '<button class="btn small accent" type="button" data-guess="start">Adivinhe o lance</button>' : '') + '<button class="btn small" type="button" data-dos="' + esc(g.opp) + '">Dossiê</button><button class="btn small" type="button" data-card>Cartão</button><button class="btn small" type="button" data-pgn>PGN</button></div>';
-  drawGraph(P); drawTime(P); drawMoves(P);
+    '<div style="display:flex;gap:8px;flex-wrap:wrap"><span class="tag ' + R.k + '">' + esc(R.label.trim()) + '</span>' + (P.acc ? '<span class="tag plain">Precisão: você ' + pct(P.acc[g.c]) + ' · adversário ' + pct(P.acc[other(g.c)]) + '</span>' : '') + (P.cls ? '<button class="btn small accent" type="button" data-guess="start">Adivinhe o lance</button>' : '') + '<button class="btn small" type="button" data-dos="' + esc(g.opp) + '">Dossiê</button><button class="btn small" type="button" data-card>Cartão</button><button class="btn small" type="button" data-pgn>PGN</button><span class="tag plain" id="critChip" hidden>Momentos críticos…</span></div>' + queueBar(g);
+  drawGraph(P); drawTime(P); drawMoves(P); critAuto(P);
   S.ply = Math.max(0, Math.min(S.ply, P.moves.length));
   if (S.guess && S.guess.gid !== g.id) S.guess = null;
   if (S.guess) guessShow(); else if (S.vx) showVariant(false); else showPly(P, S.ply, false);
@@ -1313,7 +1339,8 @@ function drawGraph(P) {
   });
   let clk = ''; const b = baseOf(P.g);
   if (b && P.g.clk && P.g.clk.length >= 4) { const cp = []; P.g.clk.forEach((t, i) => { if ((i % 2 === 0) === (P.g.c === 'w')) cp.push(((i + 1) / Math.max(1, n) * 1000).toFixed(1) + ',' + (100 - Math.min(1, t / b) * 100).toFixed(1)); }); clk = '<polyline points="0,0 ' + cp.join(' ') + '" fill="none" stroke="var(--accent)" stroke-width="2" stroke-dasharray="5 4" vector-effect="non-scaling-stroke"></polyline>'; }
-  box.innerHTML = '<svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,100 ' + pts + ' 1000,100" fill="var(--evw)"></polygon>' + clk + '</svg><div class="mid"></div>' + dots + '<div class="cur" id="gcur"></div>';
+  const dzb = P.dz != null ? '<div class="dzband" style="left:' + (P.dz / Math.max(1, n) * 100) + '%"><span>decidida</span></div>' : '';
+  box.innerHTML = '<svg viewBox="0 0 1000 100" preserveAspectRatio="none" aria-hidden="true"><polygon points="0,100 ' + pts + ' 1000,100" fill="var(--evw)"></polygon>' + clk + '</svg>' + dzb + '<div class="mid"></div>' + dots + '<div class="cur" id="gcur"></div>';
   const gl = $('#gleg'); if (gl) gl.hidden = !clk;
 }
 function drawMoves(P) {
@@ -1344,6 +1371,7 @@ function renderCoach(P, n) {
       const ms = []; P.cls.forEach((c, i) => { if (P.moves[i].color === g.c && (c.k === 'blunder' || c.k === 'mistake' || c.k === 'miss')) ms.push(i); });
       const gl = P.cls.some((c, i) => P.moves[i].color === g.c && (c.loss >= 8 || c.k === 'great'));
       if (gl) h += '<div class="vxacts"><button class="btn small accent" type="button" data-guess="start">Adivinhe o lance: reveja os momentos decisivos</button></div>';
+      if (P.dz != null) h += '<p class="muted" style="font-size:13.5px">A partida ficou decidida no lance ' + (Math.floor(P.dz / 2) + 1) + ' (faixa clara no gráfico). A precisão conta só os lances até ali.</p>';
       if (ms.length) h += '<div class="blk"><h3>Momentos para revisar</h3><div class="moments">' + ms.slice(0, 5).map(i => '<button type="button" data-goto="' + (i + 1) + '"><span class="kb k-' + P.cls[i].k + '">' + esc(CLS[P.cls[i].k].s) + '</span><span class="mono">' + (Math.floor(i / 2) + 1) + (i % 2 ? '…' : '.') + ' ' + esc(fig(P.moves[i].san)) + '</span><span class="muted" style="margin-left:auto;font-size:13px">' + CLS[P.cls[i].k].t + '</span></button>').join('') + '</div></div>';
       else h += '<p>Nenhum erro grave seu nesta partida. Avance lance a lance para ver as ideias de cada lado.</p>';
     } else {
@@ -1359,10 +1387,13 @@ function renderCoach(P, n) {
   if (c) h += '<p class="muted" style="font-size:13.5px">Chance estimada de vitória das ' + SIDE[m.color] + ': <b style="color:var(--ink)">' + pct(c.wb) + ' → ' + pct(c.wa) + '</b></p>';
   const tl = timeLine(P, i); if (tl) h += '<p class="muted" style="font-size:13.5px;margin-top:-8px">' + esc(tl) + '</p>';
   h += '<div class="blk"><h3>O que o lance faz</h3><p>' + esc(C.idea.join(' ')) + '</p></div>';
-  if (C.verdict.length || C.punish.length) h += '<div class="blk"><h3' + (c && BAD[c.k] ? ' class="bad"' : '') + '>' + (c && BAD[c.k] ? 'Por que custa caro' : 'Avaliação') + '</h3><p>' + esc(C.verdict.concat(C.punish).join(' ')) + '</p>' + (C.reply ? lineButtons(m.after, C.reply.line, i + 1) : '') + '</div>';
+  if (C.verdict.length || C.punish.length) h += '<div class="blk"><h3' + (c && BAD[c.k] ? ' class="bad"' : '') + '>' + (c && BAD[c.k] ? 'Por que custa caro' : 'Avaliação') + '</h3><p>' + esc(C.verdict.concat(C.punish).join(' ')) + '</p>' + (C.reply ? lineButtons(m.after, C.reply.line.slice(0, 6), i + 1) + proofHtml(C.reply.line, other(m.color), C.reply.proof) : '') + '</div>';
+  if (C.crit) h += '<div class="callout crit"><span class="label">Momento crítico</span><p style="font-size:14px">' + esc(C.crit) + '</p></div>';
   if (C.warn.length) h += '<div class="warn">' + esc(C.warn.join(' ')) + '</div>';
-  if (C.best) h += '<div class="bestbox"><h3>Melhor era ' + esc(num + fig(C.best.san)) + '</h3><p>' + esc((C.best.why ? cap(C.best.why) + '.' : 'Lance mais preciso segundo o motor.') + (C.best.extra ? ' ' + C.best.extra : '')) + '</p>' + lineButtons(P.fens[i], C.best.line, i) + '</div>';
+  if (C.best) h += '<div class="bestbox"><h3>Melhor era ' + esc(num + fig(C.best.san)) + '</h3><p>' + esc((C.best.why ? cap(C.best.why) + '.' : 'Lance mais preciso segundo o motor.') + (C.best.extra ? ' ' + C.best.extra : '')) + '</p>' + lineButtons(P.fens[i], C.best.line, i) + proofHtml(C.best.line, m.color, C.best.proof) + '</div>';
   h += plansHtml(C.plans, g.c);
+  if (MAIA_AN && MAIA_AN.fen !== P.fens[n]) MAIA_AN = null;
+  h += '<div id="maiaAn">' + maiaAnHtml() + '</div>';
   h += '<div class="vxacts"><button class="btn small" type="button" data-vx="play">Jogar daqui contra o motor</button><span class="muted" style="font-size:13px">ou mova uma peça para testar outro lance</span></div>';
   h += '<button class="btn accent" type="button" id="askBtn" hidden><svg width="18" height="18" viewBox="0 0 20 20" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 5a2 2 0 0 1 2-2h10a2 2 0 0 1 2 2v7a2 2 0 0 1-2 2H9l-4 3v-3H5a2 2 0 0 1-2-2z"></path></svg>Pergunte ao treinador</button><div class="ask" id="askOut"></div>';
   box.innerHTML = '<div class="fade stack" style="gap:14px">' + h + '</div>';
@@ -1447,6 +1478,7 @@ function sessionCard() {
   const dl = Object.entries(H.deltas).filter(([, v]) => v != null).map(([k, v]) => '<span class="mono ' + (v >= 0 ? 'up' : 'down') + '">' + TC[k] + ' ' + (v >= 0 ? '+' : '−') + Math.abs(v) + '</span>').join(' · ');
   let h = '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px;flex-wrap:wrap"><h2 class="h-card">Sessão de hoje</h2><span class="muted" style="font-size:13px">' + H.today.length + ' partidas</span></div>';
   h += H.today.length ? '<div class="lgstats"><div><b class="mono">' + W + '</b><span>vitórias</span></div><div><b class="mono">' + D + '</b><span>empates</span></div><div><b class="mono">' + Lx + '</b><span>derrotas</span></div><div><b class="mono">' + sp(scoreOf(H.today)) + '%</b><span>aproveitamento</span></div></div>' + (dl ? '<p style="font-size:14px">Rating hoje: ' + dl + '</p>' : '') : '<p class="muted">Nenhuma partida hoje ainda.</p>';
+  if (H.today.length) h += '<div class="vxacts"><button class="btn small accent" type="button" data-queue="today">Revisar as partidas de hoje em sequência</button></div>';
   if (H.active) {
     const n = H.cur.length, after = scoreOf(H.sess.c), early = scoreOf(H.sess.a);
     h += '<p style="font-size:14px">Sessão atual: <b>' + n + ' partida' + (n > 1 ? 's' : '') + '</b>' + (H.lossRun ? ' · ' + H.lossRun + ' derrota' + (H.lossRun > 1 ? 's' : '') + ' seguida' + (H.lossRun > 1 ? 's' : '') : '') + '.</p>';
@@ -1526,7 +1558,9 @@ function shortCard() {
 }
 
 /* ---------- você × adversários do seu nível ---------- */
-function compareCard() {
+let CMPH = null, CMPK = '';
+function compareCard() { const k = acctKey() + ':' + analyzedGames().length + ':' + Object.keys(CRIT).length; if (CMPH && CMPK === k) return CMPH; CMPK = k; return (CMPH = compareCardRaw()); }
+function compareCardRaw() {
   const me = { acc: [], bl: 0, er: 0, ph: { abertura: [0, 0], 'meio-jogo': [0, 0], final: [0, 0] } }, op = { acc: [], bl: 0, er: 0, ph: { abertura: [0, 0], 'meio-jogo': [0, 0], final: [0, 0] } };
   let n = 0;
   for (const g of S.games) {
@@ -1683,7 +1717,7 @@ function pieceSvg(t, white) {
 }
 function applyPrefs() {
   const set = store.get('pieces', 'classic'), th = store.get('theme', 'system'), root = document.documentElement;
-  root.dataset.pieces = set; root.dataset.board = store.get('board', 'classic'); root.dataset.coords = store.get('coords', 'on');
+  root.dataset.pieces = set; root.dataset.board = store.get('board', 'classic'); root.dataset.coords = store.get('coords', 'on'); root.dataset.glass = store.get('glass', 'on');
   if (th === 'oled') { root.setAttribute('data-theme', 'dark'); root.setAttribute('data-oled', ''); }
   else { root.removeAttribute('data-oled'); if (th === 'system') root.removeAttribute('data-theme'); else root.setAttribute('data-theme', th); }
   if (!$('#lanceSet')) {
@@ -1699,6 +1733,8 @@ function openPrefs() {
     '<div class="stack" style="gap:6px"><span class="label">Tabuleiro</span><div class="swatches">' + [['classic', 'Clássico'], ['wood', 'Madeira'], ['walnut', 'Nogueira'], ['marble', 'Mármore'], ['slate', 'Ardósia'], ['leather', 'Couro'], ['green', 'Torneio'], ['blue', 'Azul'], ['sand', 'Areia'], ['ice', 'Gelo'], ['amethyst', 'Ametista'], ['coral', 'Coral'], ['night', 'Noturno']].map(([v, t]) => '<button type="button" class="sw" data-pref="board:' + v + '" aria-pressed="' + (store.get('board', 'classic') === v) + '"><span class="swb" data-board="' + v + '"></span>' + t + '</button>').join('') + '</div></div>' +
     '<div class="stack" style="gap:6px"><span class="label">Tema</span>' + seg('theme', store.get('theme', 'system'), [['system', 'Sistema'], ['light', 'Claro'], ['dark', 'Escuro'], ['oled', 'Preto (OLED)']]) + '</div>' +
     '<div class="stack" style="gap:6px"><span class="label">Coordenadas no tabuleiro</span>' + seg('coords', store.get('coords', 'on'), [['on', 'Mostrar'], ['off', 'Esconder']]) + '</div>' +
+    '<div class="stack" style="gap:6px"><span class="label">Efeitos de vidro e transições</span>' + seg('glass', store.get('glass', 'on'), [['on', 'Ligados'], ['off', 'Simples (mais leve)']]) + '</div>' +
+    '<div class="stack" style="gap:6px"><span class="label">Confirmar lance com toque duplo</span>' + seg('confirm', store.get('confirm', false) ? 'on' : 'off', [['off', 'Não'], ['on', 'Sim (evita soltar na casa errada)']]) + '</div>' +
     '<div class="stack" style="gap:6px"><span class="label">Sons de lance</span>' + seg('snd', store.get('snd', true) ? 'on' : 'off', [['on', 'Ligados'], ['off', 'Desligados']]) + '</div>' +
     (NATIVE && NATIVE.platform === 'android' || matchMedia('(pointer:coarse)').matches ? '<div class="stack" style="gap:6px"><span class="label">Vibração</span>' + seg('hap', store.get('hap', true) ? 'on' : 'off', [['on', 'Ligada'], ['off', 'Desligada']]) + '</div>' : '') +
     (window.__checkUpdate ? '<div class="stack" style="gap:8px"><span class="label">Versão</span><p class="muted" style="font-size:14px">App ' + esc(String(window.__APP_BUILD)) + ' · aplicativo ' + esc(window.__SHELL || '') + (NATIVE ? (NATIVE.platform === 'android' ? ' (Android)' : NATIVE.portable ? ' (Windows portátil)' : ' (Windows)') : '') + '. As atualizações do app chegam sozinhas.</p><div class="vxacts"><button class="btn small" type="button" data-upd="check">Procurar atualização</button></div></div>' : '');
@@ -1708,6 +1744,7 @@ function setPref(a) {
   const [k, v] = a.split(':');
   if (k === 'snd') { store.set('snd', v === 'on'); if (v === 'on') sound('move'); }
   else if (k === 'hap') { store.set('hap', v === 'on'); if (v === 'on') haptic('ok'); }
+  else if (k === 'confirm') store.set('confirm', v === 'on');
   else store.set(k, v);
   applyPrefs(); openPrefs();
 }
@@ -1747,6 +1784,7 @@ function setPzMode(mode, arg) {
   else if (mode === 'review') { S.pzQueue = reviewList(arg); S.pzGid = arg; }
   else if (mode === 'theory') { S.pzQueue = theoryQueue(); if (arg) { const i = S.pzQueue.findIndex(p => p.key === arg); if (i >= 0) S.puz = i; } }
   else if (mode === 'warm') S.pzQueue = shuffle(T.puzzles.filter(p => p.k === 'blunder')).slice(0, 3);
+  else if (mode === 'crit') { const q = critQueue(); S.pzQueue = q.filter(p => !solved[p.key]).concat(q.filter(p => solved[p.key])); }
   else if (mode === 'punish') { const q = punishQueue(); S.pzQueue = q.filter(p => !solved[p.key]).concat(q.filter(p => solved[p.key])); }
   else if (mode === 'timed') { S.pzQueue = shuffle(T.puzzles); S.tm = { ok: 0, miss: 0, end: Date.now() + 180000, over: false }; startTimer(); }
   else S.pzQueue = T.puzzles.filter(p => !solved[p.key]).concat(T.puzzles.filter(p => solved[p.key]));
@@ -1764,10 +1802,12 @@ function finishTimed() {
 function renderPzModes() {
   const due = dueList().length;
   const modes = [['mine', 'Meus erros'], ['punish', 'Puna o erro'], ['due', 'Revisar hoje' + (due ? ' (' + due + ')' : '')], ['timed', 'Contra o relógio']];
+  if (Object.keys(CRIT).length) modes.splice(2, 0, ['crit', 'Lance único']);
   if (REPORT && (REPORT.errors.length || REPORT.against.length)) modes.splice(2, 0, ['theory', 'Teoria']);
   if (S.pzMode === 'review') modes.push(['review', 'Revisão da partida']);
   if (S.pzMode === 'warm') modes.push(['warm', 'Aquecimento']);
   $('#pzModes').innerHTML = modes.map(([k, t]) => '<button class="chip" type="button" data-pz="' + k + '" aria-pressed="' + (S.pzMode === k) + '">' + t + '</button>').join('');
+  const bv = store.get('blind', 'off'); const pb = $('#pzBlind'); if (pb) pb.innerHTML = [['off', 'Normal'], ['p', 'Sem peões'], ['all', 'Às cegas']].map(([k, t]) => '<button type="button" data-blind="' + k + '" aria-pressed="' + (bv === k) + '">' + t + '</button>').join('');
 }
 function renderPzCount() {
   const Q = S.pzQueue || [], el = $('#pzCount'); const solved = store.get('solved', {});
@@ -1833,11 +1873,13 @@ function loadPuzzle() {
   $('#pzFrom').textContent = (S.pzMode === 'review' ? 'Momento decisivo ' + (S.puz + 1) + ' de ' + Q.length + ' · ' : '') + 'Sua partida vs ' + g.opp + ' · ' + dateLabel(g.end);
   $('#pzQ').innerHTML = '<b>' + SIDEC[p.side] + ' jogam.</b> ' + (S.pzMode === 'timed' ? (p.mate && p.mate <= 4 ? 'Mate em ' + p.mate + '.' : 'Encontre o melhor lance.') :
     S.pzMode === 'review' ? 'Aqui você jogou ' + esc(fig(p.played)) + '. Antes de ver a resposta: o que você jogaria?' :
+    p.crit ? 'Momento crítico: só um lance mantém a posição (o segundo melhor perde ' + p.crit + ' pontos de chance). Na partida você jogou ' + esc(fig(p.played)) + (p.found ? ', e acertou.' : '.') :
     'Na partida você jogou ' + esc(fig(p.played)) + ' (' + CLS[p.k].t.toLowerCase() + '). ' + (p.mate && p.mate <= 4 ? 'Encontre o mate em ' + p.mate + '.' : p.mate ? 'Há um mate forçado: encontre o primeiro lance.' : 'Encontre o lance mais forte.'));
   PB.setFlip(p.side === 'b'); PB.setPosition(fen, false);
   armPuzzle(fen, p.side, prev ? { last: [prev.from, prev.to] } : {});
 }
 function armPuzzle(fen, side, marks) {
+  setTimeout(blindApply, 0);
   const c = new Chess(fen); const dests = {};
   for (const m of c.moves({ verbose: true })) { const a = dests[m.from] = dests[m.from] || []; if (!a.includes(m.to)) a.push(m.to); }
   PB.setMarks(marks); PB.setArrows([]);
@@ -1867,7 +1909,7 @@ async function tryPuzzleMove(from, to) {
     cur.alt = alt;
   }
   if (good) {
-    PZ.done = true; PB.setMarks({ last: [m.from, m.to], ok: m.to });
+    PZ.done = true; blindReveal(); PB.setMarks({ last: [m.from, m.to], ok: m.to });
     const solved = store.get('solved', {}); solved[PZ.p.key] = 1; store.set('solved', solved);
     if (PZ.first) srsRecord(PZ.p.key, true); bumpDaily(); renderGoal(); haptic('ok');
     if (PZ.p.kind === 'punish') act('punish'); else if (PZ.p.fen) act('theory');
@@ -1877,7 +1919,7 @@ async function tryPuzzleMove(from, to) {
   }
   if (PZ.first) srsRecord(PZ.p.key, false); PZ.first = false; haptic('err');
   PB.setMarks({ last: [m.from, m.to], bad: m.to });
-  if (S.pzMode === 'timed') { S.tm.miss++; PZ.done = true; fb.className = 'fb no'; fb.textContent = fig(m.san) + ' não resolve. Melhor era ' + bestSan() + '.'; renderPzCount(); setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 900); return; }
+  if (S.pzMode === 'timed') { S.tm.miss++; PZ.done = true; blindReveal(); fb.className = 'fb no'; fb.textContent = fig(m.san) + ' não resolve. Melhor era ' + bestSan() + '.'; renderPzCount(); setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 900); return; }
   fb.className = 'fb no'; fb.textContent = fig(m.san) + ' não resolve. ' + (cur.alt == null ? 'O lance procurado é outro.' : 'Sua chance cairia ' + Math.round(cur.alt) + ' pontos percentuais.') + ' Tente de novo.';
   setTimeout(() => { if (!PZ || PZ.done || PZ !== cur) return; PB.setPosition(PZ.fen, true); const prev = PZ.P && PZ.p.ply > 0 ? PZ.P.moves[PZ.p.ply - 1] : null; armPuzzle(PZ.fen, PZ.p.side, PZ.p.last ? { last: PZ.p.last } : prev ? { last: [prev.from, prev.to] } : {}); }, 900);
 }
@@ -1895,7 +1937,7 @@ function puzzleHint() {
 }
 async function puzzleSolution() {
   if (!PZ) return; if (PZ.first) { srsRecord(PZ.p.key, false); PZ.first = false; }
-  PZ.done = true; PB.setLive(null);
+  PZ.done = true; blindReveal(); PB.setLive(null);
   if (S.pzMode === 'timed' && S.tm && !S.tm.over) S.tm.miss++;
   const eb = pzEv(); const l = lineSan(PZ.fen, eb.pv.length ? eb.pv : [eb.best], 6);
   const fb = $('#pzFb'); fb.className = 'fb hint'; fb.textContent = 'Solução: ' + explainBest() + (S.pzMode === 'review' ? ' ' + reviewNote() : '');
@@ -2001,8 +2043,9 @@ function renderTheory() {
   const fn = { lines: thLine, errors: x => thError(x, false), against: x => thError(x, true), favor: thFavor, classic: thClassic }[TH.tab];
   list.innerHTML = items.length ? items.slice(0, 15).map(x => '<article class="thitem">' + fn(x) + '</article>').join('') : '<p class="muted">Nada aqui por enquanto.</p>';
 }
+let THQ = null, THQR = null;
 function theoryQueue() {
-  if (!REPORT) return []; const seen = new Set(), out = [];
+  if (!REPORT) return []; if (THQ && THQR === REPORT) return THQ; const seen = new Set(), out = []; THQR = REPORT; THQ = out;
   for (const x of REPORT.errors.concat(REPORT.against)) {
     const key = 'th:' + x.c + ':' + x.path; if (seen.has(key)) continue; seen.add(key);
     const fen = fenAt(x.path), e = evOf(x.ev); if (!e || !e.best) continue;
@@ -2185,6 +2228,7 @@ function openSync() {
 function closeSync() { $('#sync').hidden = true; }
 
 /*@MORE@*/
+/*@MORE2@*/
 
 /* ---------- eventos ---------- */
 function wire() {
@@ -2227,6 +2271,13 @@ function wire() {
     if (e.target.closest('#repEval')) { repEval(); return; }
     const tb = e.target.closest('#tbox i'); if (tb) { setPly(+tb.dataset.p); return; }
     const opl = e.target.closest('[data-openply]'); if (opl) { const q = opl.dataset.openply.split(':'); openGame(q[0], +q[1]); return; }
+    const mb = e.target.closest('[data-maia]'); if (mb) { if (mb.dataset.maia === 'load') maiaLoad(); else maiaAnalyze(); return; }
+    const qb = e.target.closest('[data-q]'); if (qb) { queueAction(qb.dataset.q); return; }
+    const qs = e.target.closest('[data-queue]'); if (qs) { const ids = qs.dataset.queue === 'today' ? habits().today.slice().sort((a, b) => a.end - b.end).map(g => g.id) : ($$('#gmList [data-open]').map(b => b.dataset.open).slice(0, 25)); startQueue(ids, qs.dataset.queue === 'today' ? 'Partidas de hoje' : 'Fila de revisão'); return; }
+    const pin = e.target.closest('[data-pin]'); if (pin) { const L = store.get('pinLines', []), k = pin.dataset.pin, i = L.indexOf(k); if (i >= 0) L.splice(i, 1); else L.push(k); store.set('pinLines', L); STH.stOpen = null; $('#stOpen').innerHTML = '<div class="stack" style="gap:12px">' + openingsDeep() + '</div>'; return; }
+    const dt = e.target.closest('[data-dt]'); if (dt && S.dos) { dosTreeAction(dt.dataset.dt, S.dos); return; }
+    if (e.target.closest('[data-crit-bulk]')) { critBulk(30); return; }
+    const bl = e.target.closest('[data-blind]'); if (bl) { store.set('blind', bl.dataset.blind); renderPzModes(); blindApply(); return; }
     const arb = e.target.closest('[data-ar]'); if (arb) { const a = arb.dataset.ar; if (a.startsWith('open:')) openArena(a.slice(5)); else arAction(a); return; }
     const gs = e.target.closest('[data-guess]'); if (gs) { if (gs.dataset.guess === 'start') startGuess(); else guessAction(gs.dataset.guess); return; }
     const gg = e.target.closest('[data-guess-game]'); if (gg) { S.pendingGuess = gg.dataset.guessGame; openGame(gg.dataset.guessGame, 0); return; }

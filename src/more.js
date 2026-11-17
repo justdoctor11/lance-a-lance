@@ -117,7 +117,7 @@ const GOALTXT = { mate: 'Dê xeque-mate.', promote: 'Promova o peão (ou deixe o
 /* ---------- arena: o tabuleiro dos desafios ---------- */
 let AR = null, ARTICK = 0;
 const AR_ELOS = [[1350, '1350'], [1600, '1600'], [1900, '1900'], [2200, '2200'], [0, 'Máximo']];
-const KIND_LAB = { convert: 'Converter a vitória', defend: 'Defenda a posição', end: 'Curso de finais', mine: 'Seus finais', clock: 'Treino de relógio', xray: 'Raio-X da peça' };
+const KIND_LAB = { convert: 'Converter a vitória', defend: 'Defenda a posição', end: 'Curso de finais', mine: 'Seus finais', clock: 'Treino de relógio', xray: 'Raio-X da peça', spot: 'Ache o erro', mates: 'Padrões de mate' };
 function openArena(kind) {
   stopArenaTimers();
   S.arena = { kind, lobby: true, sel: 0 };
@@ -133,6 +133,7 @@ function arBoard() {
 }
 function renderArena() {
   arBoard(); const A = S.arena;
+  if (arHuman() && MAIA.st === 'off' && store.get('maiaOk', false)) maiaLoad();
   if (!A) { $('#arHead').innerHTML = ''; $('#arPanel').innerHTML = '<p>Escolha um treino na aba Treino.</p><a class="btn primary" href="#treino">Ir para o Treino</a>'; AR.setPosition('8/8/8/8/8/8/8/8 w - - 0 1', false); return; }
   if (!analyzedReady() && A.kind !== 'end' && A.kind !== 'clock') { $('#arPanel').innerHTML = CALC; warmPrep().then(() => { if (S.view === 'arena') renderArena(); }); return; }
   if (A.lobby) renderLobby(); else arDraw(false);
@@ -159,7 +160,7 @@ function renderLobby() {
       mine: ['Seus finais', 'Finais das suas partidas em que você errou. Recomece do lance anterior ao erro: se estava ganhando, converta; se estava equilibrado, segure.']
     }[k];
     arHead(head[0], items.length + ' posições');
-    h += '<p>' + esc(head[1]) + '</p>' + eloSeg();
+    h += '<p>' + esc(head[1]) + '</p>' + styleSeg() + (arHuman() ? '' : eloSeg());
     if (!items.length) h += '<p class="muted">Ainda não há posições assim nas suas partidas analisadas.</p>';
     else {
       A.sel = Math.min(A.sel, items.length - 1);
@@ -183,9 +184,16 @@ function renderLobby() {
     const TCS = [['60+0', '1+0'], ['180+0', '3+0'], ['180+2', '3+2'], ['300+0', '5+0'], ['600+0', '10+0']];
     h += '<p>O relógio corre de verdade e o motor também gasta tempo. A barra de ritmo mostra quanto do seu tempo você já usou em relação à meta: no máximo 20% até o lance 10, 60% até o 25 e 85% até o 40. No fim, o app confere seus lances e mostra quantos erros vieram com pouco tempo.</p>';
     h += '<div class="stack" style="gap:6px"><span class="label">Ritmo</span><div class="seg" role="group">' + TCS.map(([v, t]) => '<button type="button" data-ar="tc:' + v + '" aria-pressed="' + (su.tc === v) + '">' + t + '</button>').join('') + '</div></div>';
-    h += eloSeg() + '<div class="stack" style="gap:6px"><span class="label">Você joga de</span><div class="seg" role="group"><button type="button" data-ar="col:w" aria-pressed="' + (su.color === 'w') + '">Brancas</button><button type="button" data-ar="col:b" aria-pressed="' + (su.color === 'b') + '">Pretas</button></div></div>';
+    h += styleSeg() + (arHuman() ? '' : eloSeg()) + '<div class="stack" style="gap:6px"><span class="label">Você joga de</span><div class="seg" role="group"><button type="button" data-ar="col:w" aria-pressed="' + (su.color === 'w') + '">Brancas</button><button type="button" data-ar="col:b" aria-pressed="' + (su.color === 'b') + '">Pretas</button></div></div>';
     h += '<div class="vxacts"><button class="btn primary" type="button" data-ar="go">Começar a partida</button></div>' + clockHistHtml();
     lobbyPreview('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', su.color);
+  } else if (k === 'mates') {
+    arHead('Padrões de mate', MATES.filter(p => done()['mates:' + p.id] && done()['mates:' + p.id].ok).length + ' de ' + MATES.length + ' resolvidos');
+    h += matesLobbyHtml();
+  } else if (k === 'spot') {
+    arHead('Ache o erro', 'Trechos das suas partidas');
+    h += '<p>O app mostra um trecho de uma partida sua, lance a lance. Toque no lance seu que mudou a partida. Treina o olhar para o momento em que a coisa desanda, que costuma passar despercebido durante o jogo.</p><div class="vxacts"><button class="btn primary" type="button" data-ar="go">Começar (5 trechos)</button></div>';
+    lobbyPreview('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 'w');
   } else if (k === 'xray') {
     arHead('Raio-X da peça', 'Visão de tabuleiro contra o relógio');
     h += '<p>Em 60 segundos, toque em todas as <b>peças soltas</b> de cada posição: cavalos, bispos, torres e damas, das duas cores, que não têm nenhuma peça defendendo. Depois toque em Conferir. As que estiverem soltas <i>e</i> atacadas aparecem em vermelho: são as penduradas, o tipo de erro que custou ' + (buildTraining().tags.hang || 0) + ' dos seus erros graves.</p>';
@@ -199,13 +207,18 @@ function arLobbyAction(a) {
   if (a === 'lobby') { stopArenaTimers(); S.arena = { kind: A.kind === 'mine' ? 'mine' : A.kind, lobby: true, sel: A.sel || 0, su: A.su }; renderArena(); return; }
   if (a.startsWith('open:')) { S.arena = { kind: a.slice(5), lobby: true, sel: 0 }; renderArena(); return; }
   if (a.startsWith('elo:')) { store.set('arElo', +a.slice(4)); renderLobby(); return; }
+  if (a.startsWith('style:')) { store.set('arStyle', a.slice(6)); if (a.slice(6) === 'human' && MAIA.st === 'off' && store.get('maiaOk', false)) maiaLoad(); renderLobby(); return; }
+  if (a.startsWith('melo:')) { store.set('maiaElo', +a.slice(5)); renderLobby(); return; }
   if (a.startsWith('pick:')) { A.sel = +a.slice(5); renderLobby(); return; }
   if (a.startsWith('tc:')) { A.su.tc = a.slice(3); store.set('clkTc', A.su.tc); renderLobby(); return; }
   if (a.startsWith('col:')) { A.su.color = a.slice(4); renderLobby(); return; }
   if (a === 'go') {
     if (A.kind === 'end') return startLesson(ENDS[Math.min(A.sel, ENDS.length - 1)]);
-    if (A.kind === 'clock') return startClock(A.su);
+    if (A.kind === 'clock') { if (arHuman() && !maiaReady()) { toast(MAIA.st === 'loading' ? 'Espere o Maia terminar de baixar' : 'Baixe o Maia primeiro, ou escolha o adversário Motor'); return; } return startClock(A.su); }
     if (A.kind === 'xray') return startXray();
+    if (A.kind === 'spot') return startSpot();
+    if (A.kind === 'mates') return startMate(MATES[Math.min(A.sel, MATES.length - 1)]);
+    if (arHuman() && !maiaReady()) { toast(MAIA.st === 'loading' ? 'Espere o Maia terminar de baixar' : 'Baixe o Maia primeiro, ou escolha o adversário Motor'); return; }
     const Ls = lists(), items = A.kind === 'convert' ? Ls.conv : A.kind === 'defend' ? Ls.def : Ls.ends;
     if (items[A.sel]) startFromGame(A.kind, items[A.sel], A.sel);
   }
@@ -228,6 +241,7 @@ function startLesson(e) {
 }
 function arStart(o) {
   stopArenaTimers();
+  if (o.kind !== 'end' && o.kind !== 'mates' && arHuman() && maiaReady()) { o.human = maiaElo(); o.sub = (o.sub ? o.sub + ' · ' : '') + 'adversário humano ~' + o.human; }
   const A = S.arena = Object.assign({ lobby: false, fens: [o.fen], moves: [], status: 'play', msg: '', thinking: false, userMoves: 0, big: 0, hints: 0, undos: 0, hint: null, t0: Date.now() }, o);
   arBoard(); AR.setFlip(A.user === 'b'); AR.setPosition(A.fen, false);
   arDraw(false);
@@ -261,6 +275,7 @@ async function arUserMove(from, to) {
   arDraw(true);
   if (A.kind === 'clock') A.spent.push({ s: A.lastSpent, left: A.clock.t[A.user] / 1000 });
   if (arGameOver(A)) return;
+  if (A.limit && A.userMoves >= A.limit) return arFinish(false, 'Ainda não é mate. Este padrão fecha em ' + A.limit + ' lance' + (A.limit > 1 ? 's' : '') + ': desfaça e tente de novo.', true);
   if (A.kind === 'end' && A.tb && !A.tbOff) {
     A.thinking = true; arPanel();
     const r = await tbProbe(c.fen()); A.thinking = false; if (S.arena !== A) return;
@@ -284,6 +299,12 @@ async function arEngine(A) {
     if (A.tbMoves && A.tbMoves.length && A.tbMoves[0].uci) uci = A.tbMoves[0].uci;
   }
   A.tbMoves = null;
+  if (!uci && A.human && maiaReady()) {
+    const t0 = performance.now();
+    try { uci = await maiaMove(fen, A.human); } catch (e) { uci = null; }
+    if (A.kind === 'clock') { const want = Math.min(clockThink(A), 600 + Math.random() * 1400), el = performance.now() - t0; if (el < want) await sleep(want - el); }
+    else { const el = performance.now() - t0; if (el < 450) await sleep(450 - el); }
+  }
   if (!uci) {
     const ms = A.kind === 'clock' ? clockThink(A) : A.kind === 'end' ? 900 : 700;
     try { await Engine.init(); const r = await Engine.go(fen, ms, { elo: A.elo || 0 }); uci = r.best; }
@@ -365,11 +386,11 @@ function arPanel() {
   const A = S.arena; if (!A || A.lobby) return; if (A.kind === 'xray') return xrayPanel();
   const fen = curFen(A), c = new Chess(fen), m = A.moves.length ? A.moves[A.moves.length - 1] : null;
   let h = '';
-  const goal = A.kind === 'clock' ? 'Partida ' + A.clock.label + ' contra o motor (' + (A.elo ? 'força ~' + A.elo : 'força máxima') + '). Você joga de ' + SIDE[A.user] + '.'
+  const goal = A.kind === 'clock' ? 'Partida ' + A.clock.label + ' contra ' + (A.human ? 'um humano de ~' + A.human + ' (Maia)' : 'o motor (' + (A.elo ? 'força ~' + A.elo : 'força máxima') + ')') + '. Você joga de ' + SIDE[A.user] + '.'
     : A.goal === 'convert' ? 'Você está ganhando. Converta: chegue a uma vantagem decisiva (mais de +' + Math.round(A.winAbove / 100) + ') ou dê mate sem deixar a avaliação cair abaixo de +' + sp(A.failBelow / 100, 1) + '.'
       : A.goal === 'defend' ? 'Você está pior. Segure: iguale a partida, consiga um empate ou aguente ' + A.survive + ' lances sem a avaliação passar de ' + sp(A.surviveMin / 100, 1) + '.'
         : A.goal === 'hold' ? 'Posição equilibrada. Segure: aguente ' + A.survive + ' lances sem a avaliação passar de ' + sp(A.surviveMin / 100, 1) + ', ou consiga mais.'
-          : GOALTXT[A.goal] + (A.goal === 'draw' ? ' Aguente ' + A.need + ' lances com a defesa certa.' : '');
+          : GOALTXT[A.goal] + (A.goal === 'draw' ? ' Aguente ' + A.need + ' lances com a defesa certa.' : A.limit ? ' Mate em ' + A.limit + '.' : '');
   h += '<div class="blk"><h3>Objetivo</h3><p>' + esc(goal) + '</p></div>';
   if (A.lesson && A.status === 'play' && !A.moves.length) h += '<div class="blk"><h3>A ideia</h3><p>' + esc(A.lesson.idea) + '</p><ul class="facts">' + A.lesson.tips.map(t => '<li>' + esc(t) + '</li>').join('') + '</ul></div>';
   if (A.status !== 'play') h += '<div class="fb ' + (A.status === 'won' ? 'ok' : A.status === 'drawn' ? 'hint' : 'no') + '">' + esc(A.msg) + '</div>';
@@ -377,6 +398,7 @@ function arPanel() {
   else if (c.turn() === A.user) h += '<p class="muted">Sua vez.</p>';
   if (A.msg && A.status === 'play') h += '<div class="warn">' + esc(A.msg) + '</div>';
   if (A.kind === 'clock') h += clockPanel(A);
+  else if (A.kind === 'mates') { /* sem avaliação: o objetivo é o mate */ }
   else {
     if (A.kind !== 'end' || A.tbOff) { if (A.ev) h += '<p class="muted" style="font-size:13.5px">Avaliação do motor: <b class="mono" style="color:var(--ink)">' + esc(evSide(A.ev, A.user)) + '</b> (do seu ponto de vista)</p>'; }
     else if (A.tbCat) h += '<p class="muted" style="font-size:13.5px">Tabela de finais: ' + (TB_WIN[A.tbCat] ? 'você vence com jogo perfeito' : TB_LOSE[A.tbCat] ? 'o adversário vence com jogo perfeito' : 'empate com jogo perfeito') + '.</p>';
@@ -404,16 +426,19 @@ function arPanel() {
 function arAction(a) {
   const A = S.arena; if (!A) return;
   if (A.lobby || a === 'lobby' || a.startsWith('open:')) return arLobbyAction(a);
+  if (A.kind === 'spot' && a !== 'restart') return spotAction(a);
   if (a === 'hint') return arHint();
   if (a === 'undo') return arUndo();
   if (a === 'resign' && A.kind === 'clock') return clockEnd(A, 'L', 'Você desistiu.');
-  if (a === 'restart') { if (A.kind === 'clock') return startClock(A.su); if (A.kind === 'xray') return startXray(); if (A.lesson) return startLesson(A.lesson); const Ls = lists(), items = A.kind === 'convert' ? Ls.conv : A.kind === 'defend' ? Ls.def : Ls.ends; if (items[A.sel]) return startFromGame(A.kind, items[A.sel], A.sel); return; }
+  if (a === 'restart') { if (A.kind === 'clock') return startClock(A.su); if (A.kind === 'xray') return startXray(); if (A.kind === 'spot') return startSpot(); if (A.kind === 'mates') return startMate(MATES[A.sel]); if (A.lesson) return startLesson(A.lesson); const Ls = lists(), items = A.kind === 'convert' ? Ls.conv : A.kind === 'defend' ? Ls.def : Ls.ends; if (items[A.sel]) return startFromGame(A.kind, items[A.sel], A.sel); return; }
   if (a === 'next') {
+    if (A.kind === 'mates') return startMate(MATES[(A.sel + 1) % MATES.length]);
     if (A.lesson) { const i = ENDS.indexOf(A.lesson); return startLesson(ENDS[(i + 1) % ENDS.length]); }
     const Ls = lists(), items = A.kind === 'convert' ? Ls.conv : A.kind === 'defend' ? Ls.def : Ls.ends;
     if (items.length) { const n = (A.sel + 1) % items.length; return startFromGame(A.kind, items[n], n); }
   }
   if (a === 'xcheck') return xrayCheck();
+  if (A.kind === 'spot') return spotAction(a);
   if (a === 'xnext') return xrayNext();
 }
 
@@ -555,8 +580,10 @@ function xrayPanel() {
 }
 
 /* ---------- Puna o erro: posições logo depois de um erro seu ---------- */
+let PNQ = null, PNQK = '';
 function punishQueue() {
-  const out = [];
+  const k = acctKey() + ':' + analyzedGames().length; if (PNQ && PNQK === k) return PNQ;
+  const out = []; PNQ = out; PNQK = k;
   for (const g of analyzedGames()) {
     const P = prep(g); if (!P.cls) continue;
     P.cls.forEach((c, i) => {
@@ -694,7 +721,7 @@ function dossierStats(opp, games) {
   const rOld = mainTc ? (games.slice().reverse().find(g => g.tc === mainTc && g.mR) || {}).mR : null;
   const shortL = losses.filter(g => g.mv.split(' ').length <= 50).length;
   const avgLen = avg(games.map(g => Math.ceil(g.mv.split(' ').length / 2)));
-  return { opp, n: games.length, from: games.length ? games[games.length - 1].end : 0, to: games.length ? games[0].end : 0, score: scoreOf(games), sw: scoreOf(w), sb: scoreOf(b), nW: w.length, nB: b.length, losses: losses.length, wins: wins.length, lossHow, vsMy, myFirst: myFirst ? myFirst[0] : null, theirFirst: theirFirst.slice(0, 4).map(x => Object.assign(x, { mine: myReplyTo(x.k) })), opsW: opsW.slice(0, 5), opsB: opsB.slice(0, 5), h2h, mainTc, rNow, rOld, shortL, avgLen, recent: scoreOf(games.slice(0, 20)), t: Date.now() };
+  return { opp, n: games.length, from: games.length ? games[games.length - 1].end : 0, to: games.length ? games[0].end : 0, score: scoreOf(games), sw: scoreOf(w), sb: scoreOf(b), nW: w.length, nB: b.length, losses: losses.length, wins: wins.length, lossHow, vsMy, myFirst: myFirst ? myFirst[0] : null, theirFirst: theirFirst.slice(0, 4).map(x => Object.assign(x, { mine: myReplyTo(x.k) })), opsW: opsW.slice(0, 5), opsB: opsB.slice(0, 5), h2h, mainTc, rNow, rOld, shortL, avgLen, recent: scoreOf(games.slice(0, 20)), tree: oppTree(games), t: Date.now() };
 }
 function dossierTips(D) {
   const t = [], s = x => (x.W + x.D / 2) / Math.max(1, x.n) * 100;
@@ -741,8 +768,9 @@ function renderDossier(D) {
   if (D.opsW.length) h += '<div class="hgrp"><span class="label">Aberturas dele de brancas</span>' + D.opsW.map(x => row(x.k, x)).join('') + '</div>';
   if (D.opsB.length) h += '<div class="hgrp"><span class="label">Aberturas dele de pretas</span>' + D.opsB.map(x => row(x.k, x)).join('') + '</div>';
   if (lh) h += '<p style="font-size:14px">Como ele perde: ' + esc(lh) + '.</p>';
+  if (D.tree) h += '<div id="dosTree">' + dosTreeHtml(D) + '</div>';
   h += '<p class="muted" style="font-size:12.5px">Aproveitamento do ponto de vista dele. Atualizado a cada 6 horas.</p>';
-  $('#dosBody').innerHTML = h;
+  $('#dosBody').innerHTML = h; S.dos = D; dosTreeBoard();
 }
 
 /* ---------- plano semanal ---------- */
@@ -972,7 +1000,10 @@ function hubHtml() {
     tile('data-pz="punish"', 'Puna o erro', pn, 'posições logo depois de um erro seu') +
     tile('data-ar="open:end"', 'Curso de finais', endsOk + '/' + ENDS.length, 'lições · ' + Ls.ends.length + ' finais seus') +
     tile('data-ar="open:clock"', 'Treino de relógio', store.get('clockHist', []).length, 'partidas com relógio') +
-    tile('data-guess-last', 'Adivinhe o lance', Object.keys(store.get('guess', {})).length, 'partidas revisadas');
+    tile('data-guess-last', 'Adivinhe o lance', Object.keys(store.get('guess', {})).length, 'partidas revisadas') +
+    tile('data-ar="open:spot"', 'Ache o erro', 5, 'trechos por rodada') +
+    tile('data-ar="open:mates"', 'Padrões de mate', MATES.filter(p => d['mates:' + p.id] && d['mates:' + p.id].ok).length + '/' + MATES.length, 'padrões resolvidos') +
+    (Object.keys(CRIT).length ? tile('data-pz="crit"', 'Lance único', critQueue().length, 'momentos críticos seus') : tile('data-crit-bulk', 'Lance único', '—', 'calcular nas últimas 30 partidas'));
 }
 
 /* ---------- modo foco ---------- */

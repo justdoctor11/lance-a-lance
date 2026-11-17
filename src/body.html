@@ -10,6 +10,7 @@
       <a href="#partidas" data-v="partidas">Partidas</a>
       <a href="#analise" data-v="analise">Análise</a>
       <a href="#treino" data-v="treino">Treino</a>
+      <a href="#stats" data-v="stats">Estatísticas</a>
     </nav>
     <div class="top-r">
       <span class="acct" id="acct"></span>
@@ -93,6 +94,7 @@
           <p class="sub" id="gmSub"></p>
         </div>
         <div style="display:flex;gap:8px;flex-wrap:wrap">
+          <button class="btn" type="button" data-queue="list">Revisar em sequência</button>
           <button class="btn" type="button" data-analyze-batch>Analisar 10 recentes</button>
           <button class="btn primary" type="button" data-open-sync>Sincronizar</button>
         </div>
@@ -156,6 +158,8 @@
           </div>
           <p class="q" id="pzQ"></p>
           <div class="bwrap"><div id="pzBoard"></div></div>
+          <div class="blindtxt" id="pzBlindTxt" hidden></div>
+          <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap"><span class="label">Visão</span><div class="seg" role="group" id="pzBlind"></div></div>
           <div class="ctrls" style="padding-left:0;max-width:none">
             <button class="btn" type="button" id="pzHint">Dica</button>
             <button class="btn" type="button" id="pzSol">Ver solução</button>
@@ -202,6 +206,19 @@
       </section>
     </div>
   </section>
+  <!-- ESTATÍSTICAS -->
+  <section class="view" id="v-stats" aria-labelledby="h-stats">
+    <div class="stack">
+      <div class="stack" style="gap:4px"><h1 class="h-page" id="h-stats">Estatísticas</h1><p class="sub">O que nem o Chess.com nem o Lichess mostram</p></div>
+      <section class="card pad stack" style="gap:12px"><h2 class="h-card">Recordes</h2><div id="stRec"></div></section>
+      <section class="card pad stack" style="gap:12px"><div class="stack" style="gap:2px"><h2 class="h-card">Aberturas a fundo</h2><p class="sub">Resultado por linha, tendência dos últimos 90 dias e avaliação média no lance 10. Toque na estrela para acompanhar uma linha.</p></div><div id="stOpen"></div></section>
+      <div class="grid2">
+        <section class="card pad stack" style="gap:12px"><div class="stack" style="gap:2px"><h2 class="h-card">Trocas e finais</h2><p class="sub">Quem sai ganhando nas trocas e como você joga cada tipo de final</p></div><div id="stEnd"></div></section>
+        <section class="card pad stack" style="gap:12px"><div class="stack" style="gap:2px"><h2 class="h-card">Raio-X do relógio</h2><p class="sub">Erros pelo tempo que restava e quanto você pensou antes deles</p></div><div id="stClock"></div></section>
+      </div>
+    </div>
+  </section>
+
   <!-- ARENA: desafios contra o motor -->
   <section class="view" id="v-arena" aria-label="Treino contra o motor">
     <div class="an">
@@ -225,6 +242,7 @@
   <a href="#painel" data-v="painel"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="7" height="7" rx="1.5"></rect><rect x="12" y="3" width="7" height="7" rx="1.5"></rect><rect x="3" y="12" width="7" height="7" rx="1.5"></rect><rect x="12" y="12" width="7" height="7" rx="1.5"></rect></svg></span>Painel</a>
   <a href="#partidas" data-v="partidas"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 6h14M4 11h14M4 16h9"></path></svg></span>Partidas</a>
   <a href="#analise" data-v="analise"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="16" height="16" rx="2"></rect><path d="M3 11h16M11 3v16" stroke-opacity=".5"></path><rect x="3" y="3" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect><rect x="11" y="11" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect></svg></span>Análise</a>
+  <a href="#stats" data-v="stats"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 18V11M9 18V5M14 18v-9M19 18v-5"></path></svg></span>Números</a>
   <a href="#treino" data-v="treino"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><circle cx="11" cy="11" r="4"></circle><circle cx="11" cy="11" r="1" fill="currentColor"></circle></svg></span>Treino</a>
 </nav>
 
