@@ -1,7 +1,7 @@
 {
   "name": "lance-a-lance",
   "productName": "Lance a Lance",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "description": "Treinador de xadrez: análise lance a lance, teoria, armadilhas e treino a partir das suas partidas.",
   "main": "electron/main.js",
   "private": true,
@@ -9,7 +9,7 @@
     "build:web": "node scripts/build-web.mjs",
     "start": "npm run build:web && electron .",
     "dist:win": "npm run build:web && electron-builder --win --x64 --publish never",
-    "android:prepare": "npm run build:web && npx cap add android && npx capacitor-assets generate --android && npx cap sync android"
+    "android:prepare": "npm run build:web && npx cap add android && npx capacitor-assets generate --android && npx cap sync android && node scripts/android-native.mjs"
   },
   "build": {
     "appId": "app.lancealance.coach",

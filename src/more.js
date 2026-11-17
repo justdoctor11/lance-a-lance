@@ -104,12 +104,19 @@ function lists() {
 const ENDS = [
   { id: 'qmate', t: 'Mate com dama e rei', g: 'Mates básicos', fen: '8/8/3k4/8/8/8/8/4K2Q w - - 0 1', goal: 'mate', idea: 'A dama encurrala o rei adversário numa caixa cada vez menor; quando ele chega à borda, o seu rei se aproxima e ajuda no mate.', tips: ['Fique com a dama a um salto de cavalo do rei inimigo: isso o empurra para a borda sem dar afogamento.', 'A dama sozinha não dá mate: traga o seu rei.', 'Antes de cada lance, confira se o rei adversário ainda tem uma casa livre. Sem casa e sem xeque é afogamento, empate.'] },
   { id: 'rmate', t: 'Mate com torre e rei', g: 'Mates básicos', fen: '3k4/8/8/8/8/8/8/R3K3 w - - 0 1', goal: 'mate', idea: 'A torre funciona como uma parede que corta o rei adversário. O seu rei se aproxima e, quando os reis ficam frente a frente, a torre dá xeque e empurra o rei para trás.', tips: ['Corte o rei com a torre numa fileira ou coluna.', 'Quando os reis estiverem frente a frente (oposição), dê xeque com a torre.', 'Se o rei inimigo atacar a torre, mande-a para o outro lado do tabuleiro.'] },
+  { id: 'bb', t: 'Mate com dois bispos', g: 'Mates básicos', fen: '8/8/8/4k3/8/8/8/2B1KB2 w - - 0 1', goal: 'mate', minEv: 60, idea: 'Lado a lado, os dois bispos formam uma parede diagonal que o rei não atravessa. Aproxime o seu rei, empurre o adversário para um canto qualquer e dê mate com os bispos.', tips: ['Bispos em casas vizinhas cortam o rei como uma parede.', 'Traga o rei antes de apertar a caixa.', 'Perto do canto, cuidado com o afogamento.'] },
+  { id: 'kbn', t: 'Mate com bispo e cavalo', g: 'Mates básicos', fen: '8/8/8/4k3/8/8/8/2B1KN2 w - - 0 1', goal: 'mate', minEv: 60, idea: 'O mate básico mais difícil: só acontece no canto da cor do bispo. Primeiro leve o rei à borda; depois conduza-o até o canto certo, com o cavalo fazendo a manobra em W e o bispo fechando as diagonais.', tips: ['O bispo de c1 anda nas casas escuras: o mate é em a1 ou h8.', 'Se o rei fugir para o canto errado, empurre-o pela borda até o certo.', 'Com jogo perfeito leva cerca de 30 lances; você tem 50.'] },
   { id: 'square', t: 'A regra do quadrado', g: 'Finais de peões', fen: '8/8/8/5k2/1P6/8/8/7K b - - 0 1', goal: 'draw', need: 6, user: 'b', idea: 'Trace um quadrado da casa do peão até a fileira de promoção. Se o seu rei consegue entrar nesse quadrado, ele alcança o peão.', tips: ['O peão em b4 promove em b8: o quadrado vai de b4 a f8.', 'Seu rei em f5 já está dentro: vá na direção do peão.', 'Um passo para o lado errado e o peão escapa.'] },
+  { id: 'k6', t: 'Rei na 6ª fileira', g: 'Finais de peões', fen: '4k3/8/4K3/4P3/8/8/8/8 b - - 0 1', goal: 'promote', idea: 'Com o rei na 6ª fileira na frente do peão (que não seja de torre), a vitória é certa, não importa quem joga. O rei abre caminho; o peão só anda quando a casa da frente estiver garantida.', tips: ['Se o rei preto for para um lado, leve o seu rei para o outro, na 7ª fileira.', 'Avance o peão quando o seu rei controlar a casa da frente dele.', 'Com o peão na 7ª, confira se o rei adversário ainda tem lance: sem lance e sem xeque é afogamento.'] },
+  { id: 'oppd', t: 'Oposição para defender', g: 'Finais de peões', fen: '8/8/8/3k4/8/8/3PK3/8 b - - 0 1', goal: 'draw', need: 10, user: 'b', idea: 'Contra rei e peão, fique com o rei na frente do peão e, a cada passo do rei branco para a frente, tome a oposição: reis frente a frente, uma casa entre eles, e a vez é dele. Quando o peão avançar, recue em linha reta.', tips: ['Seu rei não deve ficar atrás nem muito ao lado do peão.', 'Quando o rei branco subir, coloque o seu na frente dele, a uma casa de distância.', 'Com o peão na 7ª e o seu rei na casa de promoção, o branco só tem afogamento ou a perda do peão.'] },
   { id: 'opp', t: 'Oposição para vencer', g: 'Finais de peões', fen: '8/8/4k3/8/8/4K3/4P3/8 w - - 0 1', goal: 'promote', idea: 'Com rei e peão contra rei, o rei vai na frente do peão. Ganhe a oposição (reis frente a frente com uma casa entre eles, e o adversário a jogar) para abrir caminho.', tips: ['Primeiro o rei, depois o peão.', 'O lance de peão serve para passar a vez e recuperar a oposição.', 'Rei na 6ª fileira na frente do peão ganha sempre (menos com peão de torre).'] },
+  { id: 'brk', t: 'Ruptura de peões', g: 'Finais de peões', fen: '7k/ppp5/8/PPP5/8/8/8/7K w - - 0 1', goal: 'promote', idea: 'Três peões contra três, frente a frente, com os reis longe: um sacrifício abre uma brecha e um dos seus peões passa. Conte antes: o rei preto precisa estar longe demais para alcançar.', tips: ['O peão do meio vai primeiro: b6!', 'Se o preto capturar com o peão c, empurre o peão a; se capturar com o peão a, empurre o c.', 'Depois da brecha, o peão que sobrar corre sem parar.'] },
   { id: 'rookpawn', t: 'Peão de torre: o canto salva', g: 'Finais de peões', fen: '8/8/8/5k2/8/8/6KP/8 b - - 0 1', goal: 'draw', need: 8, user: 'b', idea: 'Contra o peão de torre, se o seu rei chega ao canto de promoção (h8), é empate: o rei adversário não consegue tirá-lo de lá sem dar afogamento.', tips: ['Vá para h8 ou para as casas vizinhas.', 'Não precisa capturar o peão: basta ocupar o canto.', 'Ficar preso longe do canto perde.'] },
   { id: 'wrongb', t: 'Bispo da cor errada', g: 'Finais de peças menores', fen: '8/8/5k2/8/7P/3B4/6K1/8 b - - 0 1', goal: 'draw', need: 8, user: 'b', idea: 'Peão de torre com um bispo que não controla a casa de promoção: h8 é escura e o bispo anda nas claras. Se o seu rei chegar ao canto, é empate.', tips: ['Vá para g7 e h8 e fique por ali.', 'O bispo de casas claras nunca expulsa o rei de h8.', 'Aqui o afogamento é seu amigo.'] },
+  { id: 'ocb', t: 'Bispos de cores opostas', g: 'Finais de peças menores', fen: '8/8/4k3/8/4P3/2bB4/4K3/8 b - - 0 1', goal: 'draw', need: 10, user: 'b', idea: 'Com bispos de cores diferentes, um peão a mais quase nunca ganha: o seu rei bloqueia numa casa da cor do seu bispo, onde o bispo branco nunca o alcança, e o seu bispo vigia o resto.', tips: ['Leve o rei para e5 ou outra casa escura na frente do peão.', 'Não troque o bispo e não afaste o rei do peão.', 'Seu bispo pode ficar parado vigiando a diagonal: não há pressa.'] },
   { id: 'lucena', t: 'Posição de Lucena', g: 'Finais de torre', fen: '1K1k4/1P6/8/8/8/8/r7/2R5 w - - 0 1', goal: 'promote', idea: 'O final de torre mais importante para ganhar. Corte o rei adversário e "construa a ponte": a torre vai para a 4ª fileira para bloquear os xeques laterais.', tips: ['Primeiro um xeque para afastar o rei adversário: Td1+.', 'Depois a torre vai para a 4ª fileira: Td4.', 'Saia com o rei; quando vierem os xeques, interponha a torre.'] },
   { id: 'philidor', t: 'Defesa Philidor', g: 'Finais de torre', fen: '4k3/8/8/4PK2/8/8/7R/1r6 b - - 0 1', goal: 'draw', need: 10, user: 'b', idea: 'A defesa clássica do final de torre: a torre fica na 6ª fileira até o peão avançar; aí ela volta para a 1ª e dá xeques por trás.', tips: ['Torre para a 6ª fileira agora: Tb6.', 'Quando o peão chegar à 6ª, a torre vai para a 1ª fileira e dá xeques pelas costas.', 'O rei fica na frente do peão.'] },
+  { id: 'vancura', t: 'Defesa Vančura', g: 'Finais de torre', fen: 'R7/6k1/P4r2/8/8/8/8/6K1 w - - 0 1', goal: 'draw', need: 12, user: 'b', idea: 'Contra torre e peão de torre, com a torre branca na frente do peão, a sua torre ataca o peão pelo lado, da 6ª fileira. Assim a torre branca fica presa protegendo e o rei branco não consegue se aproximar sem levar xeques.', tips: ['Mantenha a torre na 6ª fileira, atacando o peão de lado.', 'Quando o rei branco vier ajudar o peão, dê xeques por trás, pela coluna.', 'O seu rei fica em g7 ou h7: não precisa ir para a frente do peão.'] },
   { id: 'qvp', t: 'Dama contra peão na 7ª', g: 'Finais de dama', fen: '8/8/8/8/8/8/3pk3/K6Q w - - 0 1', goal: 'win', idea: 'Contra peão central ou de cavalo na 7ª, a dama vence: com xeques e ataques ao peão, obrigue o rei adversário a ficar na frente do próprio peão e use cada um desses tempos para aproximar o seu rei.', tips: ['Xeques que ganham tempo: o rei inimigo precisa bloquear o peão.', 'Toda vez que ele ocupa a casa de promoção, o seu rei dá um passo.', 'Capture o peão quando o seu rei estiver perto.'] }
 ];
 const GOALTXT = { mate: 'Dê xeque-mate.', promote: 'Promova o peão (ou deixe o adversário só com o rei) sem perder a vitória.', win: 'Vença: deixe o adversário só com o rei ou dê mate.', draw: 'Segure o empate.' };
@@ -117,7 +124,7 @@ const GOALTXT = { mate: 'Dê xeque-mate.', promote: 'Promova o peão (ou deixe o
 /* ---------- arena: o tabuleiro dos desafios ---------- */
 let AR = null, ARTICK = 0;
 const AR_ELOS = [[1350, '1350'], [1600, '1600'], [1900, '1900'], [2200, '2200'], [0, 'Máximo']];
-const KIND_LAB = { convert: 'Converter a vitória', defend: 'Defenda a posição', end: 'Curso de finais', mine: 'Seus finais', clock: 'Treino de relógio', xray: 'Raio-X da peça', spot: 'Ache o erro', mates: 'Padrões de mate' };
+const KIND_LAB = { rep: 'Repertório', convert: 'Converter a vitória', defend: 'Defenda a posição', end: 'Curso de finais', mine: 'Seus finais', clock: 'Treino de relógio', xray: 'Raio-X da peça', spot: 'Ache o erro', mates: 'Padrões de mate' };
 function openArena(kind) {
   stopArenaTimers();
   S.arena = { kind, lobby: true, sel: 0 };
@@ -135,7 +142,8 @@ function renderArena() {
   arBoard(); const A = S.arena;
   if (arHuman() && MAIA.st === 'off' && store.get('maiaOk', false)) maiaLoad();
   if (!A) { $('#arHead').innerHTML = ''; $('#arPanel').innerHTML = '<p>Escolha um treino na aba Treino.</p><a class="btn primary" href="#treino">Ir para o Treino</a>'; AR.setPosition('8/8/8/8/8/8/8/8 w - - 0 1', false); return; }
-  if (!analyzedReady() && A.kind !== 'end' && A.kind !== 'clock') { $('#arPanel').innerHTML = CALC; warmPrep().then(() => { if (S.view === 'arena') renderArena(); }); return; }
+  if (A.kind === 'rep' && !A.lobby) { repDraw(); return; }
+  if (!analyzedReady() && A.kind !== 'end' && A.kind !== 'clock' && A.kind !== 'rep') { $('#arPanel').innerHTML = CALC; warmPrep().then(() => { if (S.view === 'arena') renderArena(); }); return; }
   if (A.lobby) renderLobby(); else arDraw(false);
 }
 function arHead(title, sub) {
@@ -152,6 +160,7 @@ function lobbyPreview(fen, color, last) {
 }
 function renderLobby() {
   const A = S.arena, k = A.kind; let h = '';
+  if (k === 'rep') return repLobby();
   if (k === 'convert' || k === 'defend' || k === 'mine') {
     const Ls = lists(), items = k === 'convert' ? Ls.conv : k === 'defend' ? Ls.def : Ls.ends;
     const head = {
@@ -172,8 +181,8 @@ function renderLobby() {
   } else if (k === 'end') {
     arHead('Curso de finais', ENDS.filter(e => done()['end:' + e.id] && done()['end:' + e.id].ok).length + ' de ' + ENDS.length + ' lições concluídas');
     const groups = []; for (const e of ENDS) if (!groups.includes(e.g)) groups.push(e.g);
-    h += '<p>Posições essenciais para jogar contra o motor. Com internet, o adversário usa a tabela de finais do Lichess, que joga perfeitamente e avisa no mesmo lance se você deixou escapar o resultado.</p>';
-    h += groups.map(gr => '<div class="stack" style="gap:6px"><span class="label">' + esc(gr) + '</span>' + ENDS.map((e, i) => e.g !== gr ? '' : '<button class="repmv arow" type="button" data-ar="pick:' + i + '"' + (A.sel === i ? ' aria-current="true"' : '') + '><span style="min-width:0"><b>' + esc(e.t) + '</b><span class="muted" style="display:block;font-size:12.5px">' + esc(GOALTXT[e.goal]) + ' Você joga de ' + SIDE[e.user || 'w'] + '.</span></span><span></span>' + (done()['end:' + e.id] && done()['end:' + e.id].ok ? '<span class="tag W" style="padding:3px 7px">feito</span>' : '<span></span>') + '</button>').join('') + '</div>').join('');
+    h += '<p>Posições essenciais para jogar contra o motor. Com internet, o adversário usa a tabela de finais do Lichess, que joga perfeitamente, avisa no mesmo lance se você deixou escapar o resultado e conta quantos lances seus foram perfeitos (o caminho mais curto). A etiqueta mostra a sua melhor marca.</p>';
+    h += groups.map(gr => '<div class="stack" style="gap:6px"><span class="label">' + esc(gr) + '</span>' + ENDS.map((e, i) => e.g !== gr ? '' : '<button class="repmv arow" type="button" data-ar="pick:' + i + '"' + (A.sel === i ? ' aria-current="true"' : '') + '><span style="min-width:0"><b>' + esc(e.t) + '</b><span class="muted" style="display:block;font-size:12.5px">' + esc(GOALTXT[e.goal]) + ' Você joga de ' + SIDE[e.user || 'w'] + '.</span></span><span></span>' + (done()['end:' + e.id] && done()['end:' + e.id].ok ? '<span class="tag W" style="padding:3px 7px">' + (endBest(e.id) ? endBest(e.id).p + '/' + endBest(e.id).n : 'feito') + '</span>' : '<span></span>') + '</button>').join('') + '</div>').join('');
     const e = ENDS[Math.min(A.sel, ENDS.length - 1)];
     lobbyPreview(e.fen, e.user || 'w');
     h += '<div class="blk"><h3>' + esc(e.t) + '</h3><p>' + esc(e.idea) + '</p></div><div class="vxacts"><button class="btn primary" type="button" data-ar="go">Começar a lição</button></div>';
@@ -210,9 +219,11 @@ function arLobbyAction(a) {
   if (a.startsWith('style:')) { store.set('arStyle', a.slice(6)); if (a.slice(6) === 'human' && MAIA.st === 'off' && store.get('maiaOk', false)) maiaLoad(); renderLobby(); return; }
   if (a.startsWith('melo:')) { store.set('maiaElo', +a.slice(5)); renderLobby(); return; }
   if (a.startsWith('pick:')) { A.sel = +a.slice(5); renderLobby(); return; }
+  if (A.kind === 'rep' && repLobbyAction(a)) return;
   if (a.startsWith('tc:')) { A.su.tc = a.slice(3); store.set('clkTc', A.su.tc); renderLobby(); return; }
   if (a.startsWith('col:')) { A.su.color = a.slice(4); renderLobby(); return; }
   if (a === 'go') {
+    if (A.kind === 'rep') return repStart('normal');
     if (A.kind === 'end') return startLesson(ENDS[Math.min(A.sel, ENDS.length - 1)]);
     if (A.kind === 'clock') { if (arHuman() && !maiaReady()) { toast(MAIA.st === 'loading' ? 'Espere o Maia terminar de baixar' : 'Baixe o Maia primeiro, ou escolha o adversário Motor'); return; } return startClock(A.su); }
     if (A.kind === 'xray') return startXray();
@@ -246,7 +257,7 @@ function arStart(o) {
   arBoard(); AR.setFlip(A.user === 'b'); AR.setPosition(A.fen, false);
   arDraw(false);
   if (A.kind !== 'clock' && !A.ev && A.kind !== 'end') evalPos(A.fen, 400).then(e => { if (S.arena === A && !A.ev) { A.ev = e; arPanel(); } }).catch(() => {});
-  if (curFen(A).split(' ')[1] !== A.user) arEngine(A);
+  if (curFen(A).split(' ')[1] !== A.user) arEngine(A); else tbPrefetch(A);
 }
 function arDraw(animate) {
   const A = S.arena; if (!A || A.lobby) return;
@@ -271,6 +282,7 @@ async function arUserMove(from, to) {
   const A = S.arena; if (!A || A.status !== 'play' || A.thinking) return;
   const c = new Chess(curFen(A)); let m; try { m = c.move({ from, to, promotion: 'q' }); } catch (e) { arArm(); return; }
   if (A.kind === 'clock' && !clockMove(A, A.user)) return;
+  if (A.kind === 'end' && A.tb && !A.tbOff) { const gr = tbGrade(A, m.from + m.to + (m.promotion || '')); if (gr) (A.grades = A.grades || []).push(gr); }
   A.hint = null; arPush(A, m, c.fen()); A.userMoves++; haptic(m.captured ? 'cap' : 'move');
   arDraw(true);
   if (A.kind === 'clock') A.spent.push({ s: A.lastSpent, left: A.clock.t[A.user] / 1000 });
@@ -319,6 +331,7 @@ async function arEngine(A) {
   arPush(A, m, c.fen()); arDraw(true);
   if (arGameOver(A)) return;
   if (A.kind === 'clock') return;
+  tbPrefetch(A);
   if (A.kind !== 'end' || A.tbOff || !A.tb) {
     try { A.ev = await evalPos(c.fen(), A.kind === 'end' ? 600 : 400); } catch (e) { A.ev = null; }
     if (S.arena !== A || A.status !== 'play') return;
@@ -350,7 +363,7 @@ function arCheckEval(A) {
   } else if (A.kind === 'end') {
     if (A.goal === 'draw') { if (v <= -400) return arFinish(false, 'A posição agora está perdida (' + evSide(e, A.user) + '). Desfaça e tente outro lance.', true); if (A.userMoves >= A.need) return arFinish(true, 'Empate seguro: você encontrou a defesa certa.'); }
     else {
-      if (v < 200) return arFinish(false, 'A vantagem escapou (' + evSide(e, A.user) + '). Desfaça e tente outro lance.', true);
+      if (v < (A.lesson && A.lesson.minEv != null ? A.lesson.minEv : 200)) return arFinish(false, 'A vantagem escapou (' + evSide(e, A.user) + '). Desfaça e tente outro lance.', true);
       const last = A.moves[A.moves.length - 2];
       if ((A.goal === 'promote' && ((last && last.promotion && last.color === A.user) || bareKing(fen, other(A.user)))) || (A.goal === 'win' && bareKing(fen, other(A.user)))) return arFinish(true, 'Objetivo cumprido, e a vitória está garantida.');
     }
@@ -361,6 +374,7 @@ function arFinish(ok, msg, canUndo) {
   A.status = ok ? 'won' : 'lost'; A.msg = msg; A.canUndo = !!canUndo; A.thinking = false;
   haptic(ok ? 'ok' : 'err');
   if (A.key && A.kind !== 'clock') markDone(A.key, ok && !A.hints);
+  if (A.kind === 'end') endSave(A);
   if (!A.counted) { A.counted = true; act(A.kind === 'mine' ? 'end' : A.kind); }
   arDraw(false); return true;
 }
@@ -369,8 +383,9 @@ function arUndo() {
   let popped = false;
   while (A.moves.length) { const m = A.moves.pop(); A.fens.pop(); if (m.color === A.user) { popped = true; break; } }
   if (!popped) return;
+  if (A.grades && A.grades.length) A.grades.pop(); A.tbU = null;
   A.status = 'play'; A.msg = ''; A.undos++; A.userMoves = Math.max(0, A.userMoves - 1); A.big = 0; A.hint = null; A.tbMoves = null;
-  arDraw(false);
+  arDraw(false); tbPrefetch(A);
   if (A.kind !== 'end' || A.tbOff) evalPos(curFen(A), 400).then(e => { if (S.arena === A) { A.ev = e; arPanel(); } }).catch(() => {});
 }
 async function arHint() {
@@ -401,6 +416,7 @@ function arPanel() {
   else if (A.kind === 'mates') { /* sem avaliação: o objetivo é o mate */ }
   else {
     if (A.kind !== 'end' || A.tbOff) { if (A.ev) h += '<p class="muted" style="font-size:13.5px">Avaliação do motor: <b class="mono" style="color:var(--ink)">' + esc(evSide(A.ev, A.user)) + '</b> (do seu ponto de vista)</p>'; }
+    else if (A.grades && A.grades.length) h += tbGradeHtml(A);
     else if (A.tbCat) h += '<p class="muted" style="font-size:13.5px">Tabela de finais: ' + (TB_WIN[A.tbCat] ? 'você vence com jogo perfeito' : TB_LOSE[A.tbCat] ? 'o adversário vence com jogo perfeito' : 'empate com jogo perfeito') + '.</p>';
     if (A.kind === 'end' && A.tbOff && A.tb) h += '<p class="muted" style="font-size:12.5px">Sem a tabela de finais agora (offline?): o adversário é o Stockfish.</p>';
     let i = A.moves.length - 1; while (i >= 0 && A.moves[i].color !== A.user) i--;
@@ -427,6 +443,7 @@ function arAction(a) {
   const A = S.arena; if (!A) return;
   if (A.lobby || a === 'lobby' || a.startsWith('open:')) return arLobbyAction(a);
   if (A.kind === 'spot' && a !== 'restart') return spotAction(a);
+  if (A.kind === 'rep') return repAction(a);
   if (a === 'hint') return arHint();
   if (a === 'undo') return arUndo();
   if (a === 'resign' && A.kind === 'clock') return clockEnd(A, 'L', 'Você desistiu.');
@@ -829,7 +846,7 @@ function renderPlan() {
   h += '<div class="stack" style="gap:8px"><span class="label">Hoje</span>' + tasks.map(k => { const T = PLAN_T[k], n = taskDone(today, k), ok = n >= T.n; return '<div class="ptask' + (ok ? ' ok' : '') + '"><span class="pchk">' + (ok ? '✓' : '') + '</span><span style="min-width:0"><b>' + esc(T.t) + '</b><span class="muted mono" style="display:block;font-size:12.5px">' + Math.min(n, T.n) + ' de ' + T.n + '</span></span><button class="btn small' + (ok ? '' : ' primary') + '" type="button" ' + T.go + '>' + (ok ? 'De novo' : 'Começar') + '</button></div>'; }).join('') + '</div>';
   if (p.why.length) h += '<details class="lesson"><summary>Por que este plano</summary><div class="body"><ul>' + p.why.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><p class="muted" style="font-size:13px">O plano é montado toda segunda-feira com as suas partidas mais recentes.</p></div></details>';
   const rh = store.get('remH', -1);
-  h += '<div class="stack" style="gap:6px"><span class="label">Lembrete diário' + (NATIVE && NATIVE.platform === 'android' ? '' : NATIVE ? ' (com o app aberto)' : '') + '</span><div class="seg" role="group">' + [[-1, 'Desligado'], [8, '8h'], [12, '12h'], [19, '19h'], [21, '21h']].map(([v, t]) => '<button type="button" data-rem="' + v + '" aria-pressed="' + (rh === v) + '">' + t + '</button>').join('') + '</div></div>';
+  h += '<div class="stack" style="gap:6px"><span class="label">Lembrete diário' + (NATIVE && NATIVE.platform === 'android' ? '' : NATIVE ? ' (com o app aberto)' : '') + '</span><div class="seg" role="group">' + [[-1, 'Desligado'], [7, '7h'], [8, '8h'], [12, '12h'], [18, '18h'], [19, '19h'], [20, '20h'], [21, '21h'], [22, '22h']].map(([v, t]) => '<button type="button" data-rem="' + v + '" aria-pressed="' + (rh === v) + '">' + t + '</button>').join('') + '</div></div>';
   return h;
 }
 async function setReminder(h) {
@@ -837,9 +854,8 @@ async function setReminder(h) {
   if (NATIVE && NATIVE.platform === 'android') {
     try {
       await capCall('LocalNotifications', 'requestPermissions');
-      await capCall('LocalNotifications', 'cancel', { notifications: [{ id: 7001 }] }).catch(() => {});
-      if (h >= 0) await capCall('LocalNotifications', 'schedule', { notifications: [{ id: 7001, title: 'Lance a Lance', body: 'Hora do treino: o seu plano de hoje leva uns 15 minutos.', schedule: { on: { hour: h, minute: 0 }, allowWhileIdle: true } }] });
-      toast(h >= 0 ? 'Lembrete marcado para as ' + h + 'h' : 'Lembrete desligado');
+      remSchedule();
+      toast(h >= 0 ? 'Lembrete às ' + h + 'h, com o que falta no dia. Se você já tiver cumprido a meta, ele não toca.' : 'Lembrete desligado');
     } catch (e) { toast('O lembrete precisa da versão 1.2 do aplicativo'); }
   } else if (h >= 0) {
     try { if (window.Notification && Notification.permission === 'default') await Notification.requestPermission(); } catch (e) { /* sem notificações */ }
@@ -994,7 +1010,9 @@ function hubHtml() {
   const Ls = lists(), pn = punishQueue().length, d = done();
   const endsOk = ENDS.filter(e => d['end:' + e.id] && d['end:' + e.id].ok).length;
   const tile = (go, t, big, sub) => '<button class="tile" type="button" ' + go + '><span class="label">' + t + '</span><b class="mono">' + big + '</b><span class="muted">' + sub + '</span></button>';
-  return tile('data-ar="open:convert"', 'Converter a vitória', Ls.conv.length, 'partidas ganhas que escaparam') +
+  const rd = repToday();
+  return tile('data-ar="open:rep"', 'Repertório', '<span id="repTile">' + (rd == null ? '…' : rd) + '</span>', 'posições das suas aberturas para treinar hoje') +
+    tile('data-ar="open:convert"', 'Converter a vitória', Ls.conv.length, 'partidas ganhas que escaparam') +
     tile('data-ar="open:defend"', 'Defenda a posição', Ls.def.length, 'posições perdidas para salvar') +
     tile('data-ar="open:xray"', 'Raio-X da peça', store.get('xbest', 0), 'recorde em 60 s') +
     tile('data-pz="punish"', 'Puna o erro', pn, 'posições logo depois de um erro seu') +

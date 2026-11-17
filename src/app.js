@@ -597,7 +597,7 @@ async function analyzeGame(g, onProg) {
       if (onProg) onProg((i + 1) / P.fens.length);
     }
     S.an[g.id] = evs;
-    MEM.an = MEM.an || {}; MEM.an[g.id] = evs; kv.set('an', MEM.an); setTimeout(cloudPushLocalAn, 0);
+    MEM.an = MEM.an || {}; MEM.an[g.id] = evs; kv.set('an', MEM.an); setTimeout(cloudPushLocalAn, 0); gsSchedule();
     attachAnalysis(P); TRAIN = null; return P;
   })();
   ANALYZING.set(g.id, job);
@@ -688,7 +688,7 @@ function viewKey(v) {
   if (v === 'painel') return b + ':' + today;
   if (v === 'partidas') return b + ':' + S.filter + ':' + (S.limit || 60) + ':' + ANALYZING.size;
   if (v === 'analise') return S.vx || S.guess || S.pendingGuess || S.shownGid !== S.gid || S.shownPly !== S.ply ? null : b + ':' + S.gid;
-  if (v === 'treino') return S.pendingReview || S.pendingWarm || S.pendingPz ? null : b + ':' + today + ':' + JSON.stringify(store.get('arena', {})).length + ':' + store.get('xbest', 0);
+  if (v === 'treino') return S.pendingReview || S.pendingWarm || S.pendingPz ? null : b + ':' + today + ':' + JSON.stringify(store.get('arena', {})).length + ':' + store.get('xbest', 0) + ':' + JSON.stringify(store.get('rep', {})).length + ':' + (repReady() ? 1 : 0);
   if (v === 'stats') return b;
   return null;
 }
@@ -704,6 +704,7 @@ function showView(v) {
   const first = !S.view;
   S.view = v;
   for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
+  if (S.swipeDir) swipeMark($('#v-' + v));
   const nv = v === 'arena' ? 'treino' : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
@@ -1142,9 +1143,10 @@ async function cloudInit() {
 function strHash(s) { let h = 2166136261; for (let i = 0; i < s.length; i++) { h ^= s.charCodeAt(i); h = Math.imul(h, 16777619); } return (h >>> 0).toString(36) + ':' + s.length; }
 let prefsTimer = 0;
 function cloudPrefsPush() {
+  progressChanged();
   if (!Cloud.on) return; clearTimeout(prefsTimer);
   prefsTimer = setTimeout(async () => {
-    try { await Cloud.db.doc(Cloud.base + '/prefs').set({ me: S.me, plat: S.plat, t: store.get('meT', Date.now()), solved: store.get('solved', {}), srs: store.get('srs', {}), daily: store.get('daily', {}), tbest: store.get('tbest', 0), act: store.get('act', {}), arena: store.get('arena', {}), xbest: store.get('xbest', 0), guess: store.get('guess', {}), clockHist: store.get('clockHist', []) }); } catch (e) { /* tenta na próxima mudança */ }
+    try { await Cloud.db.doc(Cloud.base + '/prefs').set(Object.assign({ me: S.me, plat: S.plat, t: store.get('meT', Date.now()) }, prefsSnapshot())); } catch (e) { /* tenta na próxima mudança */ }
   }, 1200);
 }
 async function cloudPullAccount() {
@@ -1262,15 +1264,7 @@ async function cloudStart() {
   try {
     const snap = await Cloud.db.doc(Cloud.base + '/prefs').get(); const p = snap.exists ? snap.data() : null;
     if (p) {
-      store.set('solved', Object.assign({}, p.solved || {}, store.get('solved', {})));
-      const ls = store.get('srs', {}), cs = p.srs || {}; for (const k in cs) if (!ls[k] || (cs[k].d || 0) > (ls[k].d || 0)) ls[k] = cs[k]; store.set('srs', ls);
-      const ld = store.get('daily', {}), cd = p.daily || {}; for (const k in cd) ld[k] = Math.max(ld[k] || 0, cd[k]); store.set('daily', ld);
-      store.set('tbest', Math.max(store.get('tbest', 0), p.tbest || 0));
-      store.set('xbest', Math.max(store.get('xbest', 0), p.xbest || 0));
-      const la = store.get('act', {}), ca = p.act || {}; for (const d in ca) { la[d] = la[d] || {}; for (const k in ca[d]) la[d][k] = Math.max(la[d][k] || 0, ca[d][k]); } store.set('act', la);
-      store.set('arena', Object.assign({}, p.arena || {}, store.get('arena', {})));
-      const lg = store.get('guess', {}), cg = p.guess || {}; for (const k in cg) lg[k] = Math.max(lg[k] || 0, cg[k]); store.set('guess', lg);
-      if (Array.isArray(p.clockHist) && p.clockHist.length > store.get('clockHist', []).length) store.set('clockHist', p.clockHist);
+      mergePrefs(p);
       if (p.me && (p.t || 0) > store.get('meT', 0) && (p.me.toLowerCase() !== S.me.toLowerCase() || (p.plat || 'chesscom') !== S.plat)) {
         S.me = p.me; S.plat = p.plat || 'chesscom'; store.set('me', S.me); store.set('plat', S.plat); store.set('meT', p.t);
         S.gid = null; S.ply = 0; S.vx = null; await hydrate();
@@ -1755,6 +1749,8 @@ function openPrefs() {
     '<div class="stack" style="gap:6px"><span class="label">Confirmar lance com toque duplo</span>' + seg('confirm', store.get('confirm', false) ? 'on' : 'off', [['off', 'Não'], ['on', 'Sim (evita soltar na casa errada)']]) + '</div>' +
     '<div class="stack" style="gap:6px"><span class="label">Sons de lance</span>' + seg('snd', store.get('snd', true) ? 'on' : 'off', [['on', 'Ligados'], ['off', 'Desligados']]) + '</div>' +
     (NATIVE && NATIVE.platform === 'android' || matchMedia('(pointer:coarse)').matches ? '<div class="stack" style="gap:6px"><span class="label">Vibração</span>' + seg('hap', store.get('hap', true) ? 'on' : 'off', [['on', 'Ligada'], ['off', 'Desligada']]) + '</div>' : '') +
+    (matchMedia('(pointer:coarse)').matches ? '<div class="stack" style="gap:6px"><span class="label">Deslizar o dedo para trocar de aba</span>' + seg('swipe', store.get('swipe', true) ? 'on' : 'off', [['on', 'Ligado'], ['off', 'Desligado']]) + '</div>' : '') +
+    syncPrefsHtml() +
     (window.__checkUpdate ? '<div class="stack" style="gap:8px"><span class="label">Versão</span><p class="muted" style="font-size:14px">App ' + esc(String(window.__APP_BUILD)) + ' · aplicativo ' + esc(window.__SHELL || '') + (NATIVE ? (NATIVE.platform === 'android' ? ' (Android)' : NATIVE.portable ? ' (Windows portátil)' : ' (Windows)') : '') + '. As atualizações do app chegam sozinhas.</p><div class="vxacts"><button class="btn small" type="button" data-upd="check">Procurar atualização</button></div></div>' : '');
   $('#prefs').hidden = false;
 }
@@ -1763,6 +1759,7 @@ function setPref(a) {
   if (k === 'snd') { store.set('snd', v === 'on'); if (v === 'on') sound('move'); }
   else if (k === 'hap') { store.set('hap', v === 'on'); if (v === 'on') haptic('ok'); }
   else if (k === 'confirm') store.set('confirm', v === 'on');
+  else if (k === 'swipe') store.set('swipe', v === 'on');
   else store.set(k, v);
   applyPrefs(); openPrefs();
 }
@@ -2248,6 +2245,7 @@ function closeSync() { $('#sync').hidden = true; }
 
 /*@MORE@*/
 /*@MORE2@*/
+/*@MORE3@*/
 
 /* ---------- eventos ---------- */
 function wire() {
@@ -2362,6 +2360,7 @@ loadData();
 $('#acct').textContent = acctLabel();
 wire();
 route();
-hydrate().then(() => { loadData(); TRAIN = null; showView(S.view || 'painel'); return cloudStart(); });
+v14Start();
+hydrate().then(() => { loadData(); TRAIN = null; showView(S.view || 'painel'); v14Data(); return cloudStart(); });
 try { if (window.__APP_BUILD != null) localStorage.setItem('lal.bootok', String(window.__APP_BUILD)); } catch (e) { /* sem armazenamento */ }
 })();

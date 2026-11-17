@@ -27,7 +27,7 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 
 - Cada aparelho busca as partidas direto no Chess.com (ou no Lichess), sem limite de tamanho.
 - Com o app aberto, ele confere partidas novas a cada 2 minutos e sempre que você volta para ele, e analisa as novas com o Stockfish.
-- Análises e progresso do treino ficam salvos em cada aparelho.
+- Análises e progresso do treino ficam salvos em cada aparelho. Para levar tudo de um aparelho para o outro, use **Ajustes → Sincronizar entre aparelhos** (veja a versão 1.4 abaixo).
 - O app já vem com as 2.080 partidas de justdoctor11, 325 análises e o relatório de teoria e armadilhas de 10/11/2026.
 
 ## Treinos (versão 1.2)
@@ -36,7 +36,7 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - **Defenda a posição**: partidas perdidas a partir do momento em que você ficou um pouco pior (entre −1,2 e −4). O objetivo é igualar, empatar ou aguentar 25 lances.
 - **Raio-X da peça**: 60 segundos para marcar as peças soltas de cada posição.
 - **Puna o erro**: a posição logo depois de um erro seu, jogando do lado do adversário.
-- **Curso de finais**: 9 posições essenciais, conferidas com o Stockfish. Com internet, o adversário usa a tabela de finais do Lichess.
+- **Curso de finais**: posições essenciais, conferidas com o Stockfish (16 desde a versão 1.4). Com internet, o adversário usa a tabela de finais do Lichess.
 - **Seus finais**: os finais das suas partidas em que você errou.
 - **Treino de relógio**: partida contra o motor com relógio de verdade e metas de ritmo. No fim, o app confere seus lances.
 - **Adivinhe o lance**: revisão ativa dos momentos decisivos de uma partida, com pontuação.
@@ -55,6 +55,18 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - **Novos treinos**: Ache o erro, Padrões de mate, quebra-cabeças às cegas.
 - **Conforto**: fila de revisão, confirmação de lance com toque duplo, árvore de aberturas do adversário no dossiê.
 - **Visual**: vidro, gradientes e transições entre telas. Nos Ajustes, "Simples" desliga os efeitos em aparelhos mais fracos.
+
+## Novidades da versão 1.4
+
+Chegam pela atualização automática, menos o widget, que precisa do aplicativo 1.3.0 (novo instalador e novo APK).
+
+- **Repertório com repetição espaçada**: o app monta o repertório com as suas 500 partidas mais recentes. Entram as posições dos 10 primeiros lances em que você esteve pelo menos 3 vezes, com o lance que você costuma jogar. Acertou, a posição volta em 1, 3, 7, 15, 30 e 60 dias; errou, volta na mesma rodada. São 8 posições novas por dia. Quando a análise mostra que o seu lance habitual perde pontos, o treino pede o lance do motor e explica por quê.
+- **Finais**: 7 lições novas (rei na 6ª, oposição para defender, ruptura de peões, bispos de cores opostas, defesa Vančura, mate com dois bispos, mate com bispo e cavalo). Com a tabela do Lichess, cada lance seu é conferido: perfeito, mais lento ou erro. O app guarda a sua melhor marca.
+- **Onde você perde pontos** (aba Números): fase a fase, a sua precisão e a chance de vitória entregue por partida, contra os seus adversários nas mesmas partidas. A diferença é convertida em pontos de rating, com margem de 95%, e dá para separar adversários mais fracos, parecidos e mais fortes.
+- **Deslizar entre as abas** no celular (pode desligar nos Ajustes).
+- **Sincronizar entre aparelhos**: treinos, repertório, análises e partidas vão para um Gist secreto da sua conta do GitHub. Crie um token *fine-grained* só com a permissão **Gists: Read and write** e cole o mesmo token no PC e no celular. O token fica só no aparelho.
+- **Lembrete do dia** (Android): diz quantos exercícios faltam, a sua sequência e quantas posições do repertório há para treinar. Não toca no dia em que a meta já foi cumprida.
+- **Widget** (Android, aplicativo 1.3.0): sequência de dias, meta de hoje, revisões do repertório e a última partida. Para pôr na tela inicial, toque e segure na tela inicial → Widgets → Lance a Lance.
 
 ## Compilar localmente (opcional)
 

@@ -1,0 +1,110 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:id="@+id/w_root"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:padding="14dp"
+    android:background="@drawable/lal_widget_bg">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Lance a Lance"
+            android:textColor="#D9A440"
+            android:textSize="12sp"
+            android:textStyle="bold"
+            android:letterSpacing="0.06" />
+        <TextView
+            android:id="@+id/w_rep"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="—"
+            android:textColor="#F2EFE6"
+            android:textSize="13sp"
+            android:textStyle="bold" />
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="4dp"
+            android:text="revisões"
+            android:textColor="#9AA59F"
+            android:textSize="12sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:orientation="horizontal"
+        android:gravity="bottom">
+        <TextView
+            android:id="@+id/w_streak"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0"
+            android:textColor="#F2EFE6"
+            android:textSize="34sp"
+            android:textStyle="bold"
+            android:includeFontPadding="false" />
+        <TextView
+            android:id="@+id/w_streak_label"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="6dp"
+            android:paddingBottom="4dp"
+            android:text="dias seguidos"
+            android:textColor="#9AA59F"
+            android:textSize="13sp" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="8dp"
+        android:orientation="horizontal"
+        android:gravity="center_vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Hoje "
+            android:textColor="#9AA59F"
+            android:textSize="12sp" />
+        <TextView
+            android:id="@+id/w_today"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="0 de 10"
+            android:textColor="#F2EFE6"
+            android:textSize="12sp"
+            android:textStyle="bold" />
+        <ProgressBar
+            android:id="@+id/w_bar"
+            style="@android:style/Widget.ProgressBar.Horizontal"
+            android:layout_width="0dp"
+            android:layout_height="6dp"
+            android:layout_weight="1"
+            android:layout_marginStart="8dp"
+            android:max="10"
+            android:progress="0"
+            android:progressTint="#D9A440"
+            android:progressBackgroundTint="#33FFFFFF" />
+    </LinearLayout>
+
+    <TextView
+        android:id="@+id/w_last"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="6dp"
+        android:ellipsize="end"
+        android:maxLines="1"
+        android:text="Abra o app para começar"
+        android:textColor="#9AA59F"
+        android:textSize="12sp" />
+</LinearLayout>

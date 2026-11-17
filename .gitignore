@@ -2,6 +2,6 @@ node_modules/
 www/
 update/
 release/
-android/
+/android/
 out/
 *.log

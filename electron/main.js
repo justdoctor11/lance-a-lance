@@ -44,6 +44,16 @@ app.whenReady().then(() => {
     if (!r.ok) return Promise.reject(new Error('http_' + r.status));
     return r.text();
   });
+  // sincronização entre aparelhos: só a API de Gists do GitHub, com o token que a pessoa colou no app
+  ipcMain.handle('gh', async (_e, o) => {
+    const u = new URL(o && o.url);
+    if (u.protocol !== 'https:' || u.hostname !== 'api.github.com' || !/^\/gists(\/|\?|$)/.test(u.pathname + (u.search ? '?' : ''))) throw new Error('host_blocked');
+    const method = ['GET', 'POST', 'PATCH'].includes(o.method) ? o.method : 'GET';
+    const headers = { 'User-Agent': 'LanceALance/1.0 (app pessoal de estudo)', Accept: 'application/vnd.github+json', 'X-GitHub-Api-Version': '2022-11-28', Authorization: 'Bearer ' + String(o.token || '') };
+    if (o.body) headers['Content-Type'] = 'application/json';
+    const r = await net.fetch(u.toString(), { method, headers, body: o.body || undefined });
+    return { status: r.status, text: await r.text() };
+  });
   const win = createWindow();
   setupShellUpdates(win);
   app.on('second-instance', () => { const w = BrowserWindow.getAllWindows()[0]; if (w) { if (w.isMinimized()) w.restore(); w.focus(); } });

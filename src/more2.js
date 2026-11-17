@@ -213,10 +213,10 @@ const STH = {};
 async function renderStats() {
   const ready = analyzedReady(), key0 = statsData().key;
   if (STH.rec && STH.rec[0] === key0) $('#stRec').innerHTML = STH.rec[1]; else { const h = recordsHtml(); STH.rec = [key0, h]; $('#stRec').innerHTML = h; }
-  for (const id of ['stOpen', 'stEnd', 'stClock']) if (!ready || !$('#' + id).dataset.k || $('#' + id).dataset.k !== statsData().key) $('#' + id).innerHTML = CALC;
+  for (const id of ['stPhase', 'stOpen', 'stEnd', 'stClock']) if (!ready || !$('#' + id).dataset.k || $('#' + id).dataset.k !== statsData().key) $('#' + id).innerHTML = CALC;
   if (!ready) { await warmPrep(); if (S.view !== 'stats') return; }
   const key = statsData().key;
-  for (const [id, fn] of [['stOpen', openingsDeep], ['stEnd', tradesEndsHtml], ['stClock', clockDeepHtml]]) {
+  for (const [id, fn] of [['stPhase', phaseCostHtml], ['stOpen', openingsDeep], ['stEnd', tradesEndsHtml], ['stClock', clockDeepHtml]]) {
     await new Promise(r => setTimeout(r, 0)); if (S.view !== 'stats') return;
     const el = $('#' + id); if (el.dataset.k === key && !el.innerHTML.includes('Calculando')) continue;
     if (!STH[id] || STH[id][0] !== key) STH[id] = [key, await fn()];
