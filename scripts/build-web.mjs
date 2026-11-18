@@ -88,7 +88,7 @@ const html = `<!doctype html>
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
 <meta name="theme-color" content="#0e1412" media="(prefers-color-scheme: dark)">
 <meta name="theme-color" content="#eef1ee" media="(prefers-color-scheme: light)">
-<link rel="icon" href="data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'><rect%20width='100'%20height='100'%20rx='22'%20fill='%230E1412'/><g%20transform='translate(50%2050)%20scale(.8)%20translate(-50%20-52)'><path%20fill='%23E9EEEA'%20fill-rule='evenodd'%20d='M33%2080%20L67%2080%20L69%2061%20L70%2046%20L66%2032%20L59%2023%20L57%2014%20L50%2021%20L40%2026%20L27%2041%20L23%2051%20L28%2057%20L40%2053%20L47%2050%20L36%2066%20Z%20M48.6%2036%20a2.6%202.6%200%201%200%20-5.2%200%20a2.6%202.6%200%201%200%205.2%200%20Z'/><path%20fill='%23D9A440'%20d='M28%2083%20H72%20V90%20H28%20Z'/></g></svg>">
+<link rel="icon" href="data:image/svg+xml,<svg%20xmlns='http://www.w3.org/2000/svg'%20viewBox='0%200%20100%20100'><rect%20width='100'%20height='100'%20rx='22'%20fill='%23000'/><g%20transform='translate(50%2050)%20scale(.8)%20translate(-50%20-51.5)'><path%20fill='%23fff'%20d='M50%2017%20a12%2012%200%201%201%200%2024%20a12%2012%200%201%201%200%20-24%20Z%20M39%2043.5%20h22%20a2.5%202.5%200%200%201%200%205%20h-22%20a2.5%202.5%200%200%201%200%20-5%20Z%20M44.5%2050%20h11%20C56%2061%2061%2068%2067%2074%20H33%20C39%2068%2044%2061%2044.5%2050%20Z%20M29%2077%20h42%20a3%203%200%200%201%203%203%20v3%20a3%203%200%200%201%20-3%203%20h-42%20a3%203%200%200%201%20-3%20-3%20v-3%20a3%203%200%200%201%203%20-3%20Z'/></g></svg>">
 <title>Lance a Lance</title>
 <style>
 ${fonts}
