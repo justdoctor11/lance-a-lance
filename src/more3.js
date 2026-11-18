@@ -367,7 +367,7 @@ function mergePrefs(p) {
 }
 
 /* ---------- sincronização entre aparelhos: um Gist secreto no GitHub ---------- */
-var GS_IDX = 'lal-indice.json', GS_DESC = 'Lance a Lance: progresso (sincronização entre aparelhos)', GS_CHUNK = 650000;
+var GS_IDX = 'lal-indice.json', GS_DESC = 'Peão Passado: progresso (sincronização entre aparelhos)', GS_CHUNK = 650000;
 var GS = { busy: false, again: false, timer: 0, msg: '', err: '' };
 var gsOn = () => !!(NATIVE && store.get('gsTok', ''));
 async function ghApi(method, path, body) {
@@ -527,7 +527,7 @@ function remSchedule() {
         const at = new Date(now.getFullYear(), now.getMonth(), now.getDate() + d, h, 0, 0, 0);
         if (at <= now || (d === 0 && todayDone())) continue;
         const first = d === 0;
-        list.push({ id: 7001 + d, title: 'Lance a Lance', body: remText(first), schedule: { at, allowWhileIdle: true } });
+        list.push({ id: 7001 + d, title: 'Peão Passado', body: remText(first), schedule: { at, allowWhileIdle: true } });
       }
       if (list.length) await capCall('LocalNotifications', 'schedule', { notifications: list });
     } catch (e) { /* aplicativo antigo sem notificações */ }

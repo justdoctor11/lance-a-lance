@@ -867,7 +867,7 @@ setInterval(() => {
   const h = store.get('remH', -1); if (h < 0 || (NATIVE && NATIVE.platform === 'android')) return;
   const now = new Date(); if (now.getHours() !== h) return; const k = dayKey(now); if (store.get('remSeen', '') === k) return;
   store.set('remSeen', k);
-  try { if (window.Notification && Notification.permission === 'granted') new Notification('Lance a Lance', { body: 'Hora do treino: o seu plano de hoje leva uns 15 minutos.' }); else toast('Hora do treino: o plano de hoje está na aba Treino'); } catch (e) { toast('Hora do treino: o plano de hoje está na aba Treino'); }
+  try { if (window.Notification && Notification.permission === 'granted') new Notification('Peão Passado', { body: 'Hora do treino: o seu plano de hoje leva uns 15 minutos.' }); else toast('Hora do treino: o plano de hoje está na aba Treino'); } catch (e) { toast('Hora do treino: o plano de hoje está na aba Treino'); }
 }, 60000);
 
 /* ---------- cartão da partida (imagem para salvar ou compartilhar) ---------- */
@@ -942,9 +942,9 @@ async function saveCard(share) {
   if (NATIVE && NATIVE.platform === 'android') {
     try {
       const b64 = await new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result).split(',')[1]); r.onerror = rej; r.readAsDataURL(blob); });
-      if (!share) { try { await capCall('Filesystem', 'writeFile', { path: 'Lance a Lance/' + name, data: b64, directory: 'DOCUMENTS', recursive: true }); toast('Imagem salva em Documentos/Lance a Lance'); return; } catch (e) { /* sem acesso a Documentos: usa o compartilhamento */ } }
+      if (!share) { try { await capCall('Filesystem', 'writeFile', { path: 'Peão Passado/' + name, data: b64, directory: 'DOCUMENTS', recursive: true }); toast('Imagem salva em Documentos/Peão Passado'); return; } catch (e) { /* sem acesso a Documentos: usa o compartilhamento */ } }
       const w = await capCall('Filesystem', 'writeFile', { path: name, data: b64, directory: 'CACHE', recursive: true });
-      await capCall('Share', 'share', { title: 'Minha partida no Lance a Lance', files: [w.uri] });
+      await capCall('Share', 'share', { title: 'Minha partida no Peão Passado', files: [w.uri] });
       return;
     } catch (e) { toast('Salvar e compartilhar precisam da versão 1.2 do aplicativo'); return; }
   }

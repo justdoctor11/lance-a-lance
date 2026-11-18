@@ -1,4 +1,4 @@
-// Acrescenta ao projeto Android gerado pelo Capacitor as partes nativas do Lance a Lance:
+// Acrescenta ao projeto Android gerado pelo Capacitor as partes nativas do Peão Passado:
 // o widget da tela inicial e a ponte que o app usa para atualizá-lo.
 // Roda depois de `npx cap add android` e `npx cap sync android`.
 import fs from 'node:fs';
@@ -51,7 +51,7 @@ let mf = fs.readFileSync(mfPath, 'utf8');
 if (!mf.includes('.LalWidget')) {
   must(mf.includes('</application>'), 'AndroidManifest sem </application>');
   mf = mf.replace('</application>', [
-    '    <receiver android:name=".LalWidget" android:exported="false" android:label="Lance a Lance">',
+    '    <receiver android:name=".LalWidget" android:exported="false" android:label="Peão Passado">',
     '        <intent-filter>',
     '            <action android:name="android.appwidget.action.APPWIDGET_UPDATE" />',
     '        </intent-filter>',

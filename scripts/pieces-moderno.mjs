@@ -1,4 +1,4 @@
-// Conjunto original "Moderno" do Lance a Lance: formas geométricas encorpadas com sombreado suave.
+// Conjunto original "Moderno" do Peão Passado: formas geométricas encorpadas com sombreado suave.
 import fs from 'fs'; import path from 'path'; import { fileURLToPath } from 'url';
 const R = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..');
 const OUT = path.join(R, 'vendor/pieces/moderno'); fs.mkdirSync(OUT, { recursive: true });

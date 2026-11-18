@@ -1,4 +1,4 @@
-# Lance a Lance
+# Peão Passado
 
 Treinador de xadrez pessoal: análise lance a lance das suas partidas, teoria e armadilhas do seu repertório, e treino feito a partir dos seus próprios erros. Versões para Windows (.exe) e Android (.apk), compiladas automaticamente pelo GitHub a cada mudança.
 
@@ -7,12 +7,12 @@ Treinador de xadrez pessoal: análise lance a lance das suas partidas, teoria e 
 Abra a aba **Releases** deste repositório e pegue a versão mais recente.
 
 **Windows**
-- `Lance-a-Lance-Setup-…exe`: instala no computador e cria atalho.
-- `Lance-a-Lance-Portatil-…exe`: abre direto, sem instalar.
+- `Peao-Passado-Setup-…exe`: instala no computador e cria atalho.
+- `Peao-Passado-Portatil-…exe`: abre direto, sem instalar.
 - O app não tem assinatura digital paga, então o Windows pode mostrar "O Windows protegeu o computador". Clique em **Mais informações → Executar assim mesmo**.
 
 **Android**
-- Baixe `Lance-a-Lance-….apk` no celular e toque para abrir.
+- Baixe `Peao-Passado-….apk` no celular e toque para abrir.
 - Na primeira vez, o Android pede para permitir a instalação de apps desta fonte (o navegador ou o gerenciador de arquivos). Permita e volte para instalar.
 
 ## Atualizações automáticas
@@ -66,7 +66,7 @@ Chegam pela atualização automática, menos o widget, que precisa do aplicativo
 - **Deslizar entre as abas** no celular (pode desligar nos Ajustes).
 - **Sincronizar entre aparelhos**: treinos, repertório, análises e partidas vão para um Gist secreto da sua conta do GitHub. Crie um token *fine-grained* só com a permissão **Gists: Read and write** e cole o mesmo token no PC e no celular. O token fica só no aparelho.
 - **Lembrete do dia** (Android): diz quantos exercícios faltam, a sua sequência e quantas posições do repertório há para treinar. Não toca no dia em que a meta já foi cumprida.
-- **Widget** (Android, aplicativo 1.3.0): sequência de dias, meta de hoje, revisões do repertório e a última partida. Para pôr na tela inicial, toque e segure na tela inicial → Widgets → Lance a Lance.
+- **Widget** (Android, aplicativo 1.3.0): sequência de dias, meta de hoje, revisões do repertório e a última partida. Para pôr na tela inicial, toque e segure na tela inicial → Widgets → Peão Passado.
 
 ## Desempenho (atualização 10)
 

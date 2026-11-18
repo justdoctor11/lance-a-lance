@@ -1,4 +1,4 @@
-// Lance a Lance para Windows (Electron)
+// Peão Passado para Windows (Electron)
 const { app, BrowserWindow, ipcMain, protocol, net, nativeTheme, shell, Menu } = require('electron');
 const path = require('path');
 const { pathToFileURL } = require('url');
@@ -15,7 +15,7 @@ function createWindow() {
   const win = new BrowserWindow({
     width: 1360, height: 900, minWidth: 380, minHeight: 600,
     backgroundColor: nativeTheme.shouldUseDarkColors ? '#0e1412' : '#eef1ee',
-    title: 'Lance a Lance', show: false, autoHideMenuBar: true,
+    title: 'Peão Passado', show: false, autoHideMenuBar: true,
     icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false, backgroundThrottling: false }
   });
@@ -25,6 +25,9 @@ function createWindow() {
   win.loadURL('app://local/index.html');
   return win;
 }
+
+// o app mudou de nome (Lance a Lance → Peão Passado); os dados continuam na pasta antiga
+app.setPath('userData', path.join(app.getPath('appData'), 'Lance a Lance'));
 
 app.whenReady().then(() => {
   Menu.setApplicationMenu(null);

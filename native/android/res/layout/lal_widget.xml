@@ -16,7 +16,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="Lance a Lance"
+            android:text="Peão Passado"
             android:textColor="#D9A440"
             android:textSize="12sp"
             android:textStyle="bold"

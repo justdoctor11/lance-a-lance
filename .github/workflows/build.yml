@@ -1,4 +1,4 @@
-name: Compilar Lance a Lance
+name: Compilar Peão Passado
 
 on:
   push:
@@ -54,7 +54,7 @@ jobs:
           ./gradlew assembleDebug --no-daemon
       - run: |
           mkdir -p out
-          cp android/app/build/outputs/apk/debug/app-debug.apk "out/Lance-a-Lance-$(node -p "require('./package.json').version").apk"
+          cp android/app/build/outputs/apk/debug/app-debug.apk "out/Peao-Passado-$(node -p "require('./package.json').version").apk"
       - uses: actions/upload-artifact@v4
         with:
           name: android
@@ -97,5 +97,5 @@ jobs:
           if gh release view "v$V" >/dev/null 2>&1; then
             echo "A versão v$V já existe; só o app foi atualizado pelo ramo updates."
           else
-            gh release create "v$V" dist/* --title "Lance a Lance $V" --notes "Windows: baixe o instalador (Setup), que se atualiza sozinho, ou a versão portátil. Android: baixe o .apk no celular e abra para instalar. Depois de instalado, o app recebe as atualizações sozinho."
+            gh release create "v$V" dist/* --title "Peão Passado $V" --notes "Windows: baixe o instalador (Setup), que se atualiza sozinho, ou a versão portátil. Android: baixe o .apk no celular e abra para instalar. Depois de instalado, o app recebe as atualizações sozinho."
           fi

@@ -1707,7 +1707,7 @@ function gamePgn(P) {
   const res = rk(g) === 'D' ? '1/2-1/2' : (rk(g) === 'W') === (g.c === 'w') ? '1-0' : '0-1';
   let s = '[Event "' + tcLabel(g) + '"]\n[Site "' + PLAT[S.plat] + '"]\n[Date "' + d.getFullYear() + '.' + String(d.getMonth() + 1).padStart(2, '0') + '.' + String(d.getDate()).padStart(2, '0') + '"]\n[White "' + W + '"]\n[Black "' + B + '"]\n[Result "' + res + '"]\n';
   if (g.eco) s += '[ECO "' + g.eco + '"]\n';
-  s += '[Annotator "Lance a Lance"]\n\n'; const out = [];
+  s += '[Annotator "Peão Passado"]\n\n'; const out = [];
   P.moves.forEach((m, i) => {
     let t = (i % 2 === 0 ? (i / 2 + 1) + '. ' : (i > 0 && out[out.length - 1].includes('}') ? (Math.floor(i / 2) + 1) + '... ' : '')) + m.san;
     const c = P.cls ? P.cls[i] : null;
@@ -2247,11 +2247,11 @@ async function syncAuto() {
   } catch (e) {
     await saveGames(); refreshAll();
     const code = e && e.code ? e.code : 'desconhecido';
-    st.textContent = (code === 'no_mcp' ? 'A sincronização automática só funciona com o Lance a Lance aberto no app Claude para computador. No celular ou na web, use “Colar PGN”.' :
+    st.textContent = (code === 'no_mcp' ? 'A sincronização automática só funciona com o Peão Passado aberto no app Claude para computador. No celular ou na web, use “Colar PGN”.' :
       code === 'nouser' ? 'Esse usuário não existe no ' + PLAT[S.plat] + '. Confira a grafia.' :
       code === 'nogames' ? 'Não encontrei partidas para ' + user + '.' :
       code === 'not_granted' || code === 'consent_required' || code === 'approval_required' ? 'O acesso ao navegador do app não foi liberado. Toque de novo e escolha Permitir, ou use “Colar PGN”.' :
-      code === 'server_not_connected' || code === 'server_unavailable' || code === 'server_not_found' ? 'O navegador do app Claude não está disponível agora. Abra o Lance a Lance no app para computador ou use “Colar PGN”.' :
+      code === 'server_not_connected' || code === 'server_unavailable' || code === 'server_not_found' ? 'O navegador do app Claude não está disponível agora. Abra o Peão Passado no app para computador ou use “Colar PGN”.' :
       'A leitura parou no meio.') + (total ? ' ' + total + ' partidas já foram salvas; sincronize de novo para continuar de onde parou.' : '') + ' (código: ' + code + ')';
   }
   $('#syncGo').disabled = false;
