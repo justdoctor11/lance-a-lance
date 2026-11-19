@@ -143,8 +143,9 @@ function renderArena() {
   if (arHuman() && MAIA.st === 'off' && store.get('maiaOk', false)) maiaLoad();
   if (!A) { $('#arHead').innerHTML = ''; $('#arPanel').innerHTML = '<p>Escolha um treino na aba Treino.</p><a class="btn primary" href="#treino">Ir para o Treino</a>'; AR.setPosition('8/8/8/8/8/8/8/8 w - - 0 1', false); return; }
   if (A.kind === 'rep' && !A.lobby) { repDraw(); return; }
+  if (A.kind === 'self' && S.pendingSelf && (analyzedReady() || PREP.get(S.pendingSelf))) { const gid = S.pendingSelf; S.pendingSelf = null; startSelf(gid); return; }
   if (!analyzedReady() && A.kind !== 'end' && A.kind !== 'clock' && A.kind !== 'rep') { $('#arPanel').innerHTML = CALC; warmPrep().then(() => { if (S.view === 'arena') renderArena(); }); return; }
-  if (A.lobby) renderLobby(); else arDraw(false);
+  if (A.lobby) renderLobby(); else if (A.kind === 'cand') candRedraw(); else if (A.kind === 'self') selfDraw(); else arDraw(false);
 }
 function arHead(title, sub) {
   $('#arHead').innerHTML = '<div class="stack" style="gap:3px;min-width:0"><span class="label">' + esc(KIND_LAB[S.arena.kind] || 'Treino') + '</span><span class="who">' + esc(title) + '</span>' + (sub ? '<span class="muted" style="font-size:13.5px">' + esc(sub) + '</span>' : '') + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + (S.arena.lobby ? '' : '<button class="btn small" type="button" data-ar="lobby">Outras posições</button>') + '<a class="btn small" href="#treino">Voltar ao treino</a></div>';
@@ -203,6 +204,10 @@ function renderLobby() {
     arHead('Ache o erro', 'Trechos das suas partidas');
     h += '<p>O app mostra um trecho de uma partida sua, lance a lance. Toque no lance seu que mudou a partida. Treina o olhar para o momento em que a coisa desanda, que costuma passar despercebido durante o jogo.</p><div class="vxacts"><button class="btn primary" type="button" data-ar="go">Começar (5 trechos)</button></div>';
     lobbyPreview('rnbqkbnr/pppppppp/8/8/8/8/PPPPPPPP/RNBQKBNR w KQkq - 0 1', 'w');
+  } else if (k === 'cand') {
+    h += candLobbyHtml();
+  } else if (k === 'self') {
+    h += selfLobbyHtml();
   } else if (k === 'xray') {
     arHead('Raio-X da peça', 'Visão de tabuleiro contra o relógio');
     h += '<p>Em 60 segundos, toque em todas as <b>peças soltas</b> de cada posição: cavalos, bispos, torres e damas, das duas cores, que não têm nenhuma peça defendendo. Depois toque em Conferir. As que estiverem soltas <i>e</i> atacadas aparecem em vermelho: são as penduradas, o tipo de erro que custou ' + (buildTraining().tags.hang || 0) + ' dos seus erros graves.</p>';
@@ -227,6 +232,8 @@ function arLobbyAction(a) {
     if (A.kind === 'end') return startLesson(ENDS[Math.min(A.sel, ENDS.length - 1)]);
     if (A.kind === 'clock') { if (arHuman() && !maiaReady()) { toast(MAIA.st === 'loading' ? 'Espere o Maia terminar de baixar' : 'Baixe o Maia primeiro, ou escolha o adversário Motor'); return; } return startClock(A.su); }
     if (A.kind === 'xray') return startXray();
+    if (A.kind === 'cand') return startCand();
+    if (A.kind === 'self') { const gs = selfGames(); if (gs[A.sel || 0]) startSelf(gs[A.sel || 0].id); return; }
     if (A.kind === 'spot') return startSpot();
     if (A.kind === 'mates') return startMate(MATES[Math.min(A.sel, MATES.length - 1)]);
     if (arHuman() && !maiaReady()) { toast(MAIA.st === 'loading' ? 'Espere o Maia terminar de baixar' : 'Baixe o Maia primeiro, ou escolha o adversário Motor'); return; }
@@ -443,6 +450,8 @@ function arAction(a) {
   const A = S.arena; if (!A) return;
   if (A.lobby || a === 'lobby' || a.startsWith('open:')) return arLobbyAction(a);
   if (A.kind === 'spot' && a !== 'restart') return spotAction(a);
+  if (A.kind === 'cand') return candAction(a);
+  if (A.kind === 'self') return selfAction(a);
   if (A.kind === 'rep') return repAction(a);
   if (a === 'hint') return arHint();
   if (a === 'undo') return arUndo();
@@ -1011,7 +1020,12 @@ function hubHtml() {
   const endsOk = ENDS.filter(e => d['end:' + e.id] && d['end:' + e.id].ok).length;
   const tile = (go, t, big, sub) => '<button class="tile" type="button" ' + go + '><span class="label">' + t + '</span><b class="mono">' + big + '</b><span class="muted">' + sub + '</span></button>';
   const rd = repToday();
-  return tile('data-ar="open:rep"', 'Repertório', '<span id="repTile">' + (rd == null ? '…' : rd) + '</span>', 'posições das suas aberturas para treinar hoje') +
+  const B = store.get('badges', {}), nb = Object.keys(B).filter(k => B[k].l).length, sv = Object.keys(store.get('self', {})).length;
+  return tile('data-pz="timed"', 'Corrida', store.get('rbest', 0), 'recorde · 3 min, 3 vidas') +
+    tile('data-ar="open:cand"', 'Lances candidatos', (store.get('cand', {}).best || 0) + '/20', 'melhor rodada · treina o cálculo') +
+    tile('data-ar="open:self"', 'Você primeiro', sv, 'partidas revisadas antes do motor') +
+    tile('href="#conquistas" data-go-cq', 'Conquistas', nb + '/' + BADGES.length, 'insígnias desbloqueadas') +
+    tile('data-ar="open:rep"', 'Repertório', '<span id="repTile">' + (rd == null ? '…' : rd) + '</span>', 'posições das suas aberturas para treinar hoje') +
     tile('data-ar="open:convert"', 'Converter a vitória', Ls.conv.length, 'partidas ganhas que escaparam') +
     tile('data-ar="open:defend"', 'Defenda a posição', Ls.def.length, 'posições perdidas para salvar') +
     tile('data-ar="open:xray"', 'Raio-X da peça', store.get('xbest', 0), 'recorde em 60 s') +

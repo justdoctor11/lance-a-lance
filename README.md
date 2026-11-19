@@ -56,6 +56,15 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - **Conforto**: fila de revisão, confirmação de lance com toque duplo, árvore de aberturas do adversário no dossiê.
 - **Visual**: vidro, gradientes e transições entre telas. Nos Ajustes, "Simples" desliga os efeitos em aparelhos mais fracos.
 
+## Novidades da versão 1.5
+
+Chegam pela atualização automática, sem reinstalar.
+
+- **Corrida**: 3 minutos e 3 vidas com os seus próprios erros, do mais fácil ao mais difícil. A cada 5 acertos seguidos você ganha 10 segundos. O relógio pausa quando você sai da aba.
+- **Lances candidatos**: em posições difíceis das suas partidas, você lista de 2 a 3 lances no tabuleiro, escolhe um e o motor revela as melhores linhas. Treina o hábito de comparar opções antes de jogar.
+- **Você primeiro**: antes de abrir o motor, você percorre a partida, marca onde acha que errou e escreve o que aprendeu. O app compara com o motor e dá uma nota à sua autocrítica.
+- **Conquistas**: 22 insígnias originais, cada uma com bronze, prata e ouro, ligadas ao treino, às suas partidas e ao hábito. Há uma comemoração a cada insígnia nova, o progresso aparece no Painel e as conquistas vão junto na sincronização entre aparelhos.
+
 ## Novidades da versão 1.4
 
 Chegam pela atualização automática, menos o widget, que precisa do aplicativo 1.3.0 (novo instalador e novo APK).

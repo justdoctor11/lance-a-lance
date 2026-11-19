@@ -89,7 +89,7 @@ async function switchAccount(user, plat) {
   loadData(); refreshAll(); return true;
 }
 function refreshAll() {
-  $('#acct').textContent = acctLabel(); updateLive();
+  $('#acct').textContent = acctLabel(); updateLive(); badgeSoon();
   showView(S.view || 'painel');
 }
 
@@ -673,7 +673,7 @@ const LESSONS = {
 };
 
 /* ---------- navegação ---------- */
-const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats'];
+const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats', 'conquistas'];
 function route() {
   const h = (location.hash || '').replace('#', '');
   const v = VIEWS.includes(h) ? h : 'painel';
@@ -699,13 +699,14 @@ function renderView(v) {
   if (v === 'treino') renderTreino();
   if (v === 'arena') renderArena();
   if (v === 'stats') renderStats();
+  if (v === 'conquistas') renderConquistas();
 }
 function showView(v) {
   const first = !S.view;
   S.view = v;
   for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
   if (S.swipeDir) swipeMark($('#v-' + v));
-  const nv = v === 'arena' ? 'treino' : v;
+  const nv = v === 'arena' ? 'treino' : v === 'conquistas' ? 'painel' : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
   window.scrollTo(0, 0);
@@ -788,6 +789,7 @@ function renderPainel() {
     $('#pnInsight').innerHTML = '<span class="label">Observação do treinador</span><p>Seu rating de ' + hi + ' está ' + Math.abs(rN - bN) + ' pontos acima do ' + lo + '. Uma diferença assim costuma vir de reconhecimento de padrões e de decisões com pouco tempo; táticas curtas e repetidas tendem a render mais que teoria de abertura.</p>';
   } else $('#pnInsight').hidden = true;
   $('#pnLast').innerHTML = lastGameCard();
+  $('#pnBadges').innerHTML = pnBadgesHtml();
   $('#prSub').textContent = T ? 'Baseado nos seus ' + T.errs + ' erros em ' + T.games + ' partidas analisadas' : 'Calculando a partir das suas partidas analisadas…';
   $('#pnPrio').innerHTML = !T ? CALC : T.prios.slice(0, 4).map(p => {
     const Ls = LESSONS[p.k];
@@ -1346,7 +1348,7 @@ function lastGameCard() {
       h += '<p style="line-height:1.5"><b>Lance decisivo: ' + esc(moveNum(mine[0]) + fig(P.moves[mine[0]].san)) + '.</b> ' + esc(lesson) + (C.best ? ' Melhor era ' + esc(fig(C.best.san)) + '.' : '') + '</p>';
       h += '<div class="moments">' + mine.slice(0, 3).map(i => '<button type="button" data-openply="' + g.id + ':' + (i + 1) + '"><span class="kb k-' + P.cls[i].k + '">' + esc(CLS[P.cls[i].k].s) + '</span><span class="mono">' + esc(moveNum(i) + fig(P.moves[i].san)) + '</span><span class="muted" style="margin-left:auto;font-size:13px">' + CLS[P.cls[i].k].t + '</span></button>').join('') + '</div>';
     } else h += '<p>Nenhum erro grave seu nesta partida.</p>';
-    h += '<div class="vxacts"><button class="btn primary small" type="button" data-openply="' + g.id + ':0">Abrir relatório completo</button>' + (mine.length ? '<button class="btn small accent" type="button" data-guess-game="' + g.id + '">Adivinhe o lance</button>' : '') + '<button class="btn small" type="button" data-card-game="' + g.id + '">Cartão</button><button class="btn small" type="button" data-dos="' + esc(g.opp) + '">Dossiê de ' + esc(g.opp) + '</button></div>';
+    h += '<div class="vxacts"><button class="btn primary small" type="button" data-openply="' + g.id + ':0">Abrir relatório completo</button>' + (store.get('self', {})[g.id] ? '' : '<button class="btn small accent" type="button" data-self-game="' + g.id + '">Você primeiro</button>') + (mine.length ? '<button class="btn small accent" type="button" data-guess-game="' + g.id + '">Adivinhe o lance</button>' : '') + '<button class="btn small" type="button" data-card-game="' + g.id + '">Cartão</button><button class="btn small" type="button" data-dos="' + esc(g.opp) + '">Dossiê de ' + esc(g.opp) + '</button></div>';
   } else h += '<div class="vxacts"><span class="muted" style="font-size:14px">Ainda sem análise do motor.</span><button class="btn primary small" type="button" data-analyze="' + g.id + '">Analisar agora</button><button class="btn small" type="button" data-dos="' + esc(g.opp) + '">Dossiê de ' + esc(g.opp) + '</button></div>';
   return h;
 }
@@ -1815,22 +1817,19 @@ function setPzMode(mode, arg) {
   else if (mode === 'warm') S.pzQueue = shuffle(T.puzzles.filter(p => p.k === 'blunder')).slice(0, 3);
   else if (mode === 'crit') { const q = critQueue(); S.pzQueue = q.filter(p => !solved[p.key]).concat(q.filter(p => solved[p.key])); }
   else if (mode === 'punish') { const q = punishQueue(); S.pzQueue = q.filter(p => !solved[p.key]).concat(q.filter(p => solved[p.key])); }
-  else if (mode === 'timed') { S.pzQueue = shuffle(T.puzzles); S.tm = { ok: 0, miss: 0, end: Date.now() + 180000, over: false }; startTimer(); }
+  else if (mode === 'timed') { S.pzQueue = rushQueue(T); S.tm = { ok: 0, miss: 0, lives: 3, combo: 0, top: 0, bonus: 0, end: Date.now() + 180000, over: false }; startTimer(); }
   else S.pzQueue = T.puzzles.filter(p => !solved[p.key]).concat(T.puzzles.filter(p => solved[p.key]));
   renderPzModes(); loadPuzzle();
 }
-function startTimer() { stopTimer(); TIMER = setInterval(() => { renderPzCount(); if (Date.now() >= S.tm.end) finishTimed(); }, 250); }
+function startTimer() { stopTimer(); TIMER = setInterval(rushTick, 250); }
 function stopTimer() { if (TIMER) clearInterval(TIMER); TIMER = null; }
-function finishTimed() {
+function finishTimed(why) {
   stopTimer(); if (!S.tm || S.tm.over) return; S.tm.over = true; if (PZ) PZ.done = true; PB.setLive(null);
-  const best = store.get('tbest', 0), sc = S.tm.ok; if (sc > best) store.set('tbest', sc);
-  const fb = $('#pzFb'); fb.className = 'fb ' + (sc > best ? 'ok' : 'hint');
-  fb.textContent = 'Tempo esgotado: ' + sc + ' acerto' + (sc === 1 ? '' : 's') + ' e ' + S.tm.miss + ' erro' + (S.tm.miss === 1 ? '' : 's') + ' em 3 minutos.' + (sc > best ? ' Novo recorde!' : ' Seu recorde: ' + best + '.');
-  renderPzCount();
+  rushEnd(why); renderPzCount();
 }
 function renderPzModes() {
   const due = dueList().length;
-  const modes = [['mine', 'Meus erros'], ['punish', 'Puna o erro'], ['due', 'Revisar hoje' + (due ? ' (' + due + ')' : '')], ['timed', 'Contra o relógio']];
+  const modes = [['mine', 'Meus erros'], ['punish', 'Puna o erro'], ['due', 'Revisar hoje' + (due ? ' (' + due + ')' : '')], ['timed', 'Corrida']];
   if (Object.keys(CRIT).length) modes.splice(2, 0, ['crit', 'Lance único']);
   if (REPORT && (REPORT.errors.length || REPORT.against.length)) modes.splice(2, 0, ['theory', 'Teoria']);
   if (S.pzMode === 'review') modes.push(['review', 'Revisão da partida']);
@@ -1840,14 +1839,15 @@ function renderPzModes() {
 }
 function renderPzCount() {
   const Q = S.pzQueue || [], el = $('#pzCount'); const solved = store.get('solved', {});
-  if (S.pzMode === 'timed' && S.tm) { const left = Math.max(0, Math.ceil((S.tm.end - Date.now()) / 1000)); el.innerHTML = '<b class="mono" style="color:var(--ink);font-size:15px">' + Math.floor(left / 60) + ':' + String(left % 60).padStart(2, '0') + '</b> · ' + S.tm.ok + ' acertos · ' + S.tm.miss + ' erros'; }
+  rushHud();
+  if (S.pzMode === 'timed' && S.tm) el.textContent = 'nível ' + rushLevel();
   else if (S.pzMode === 'review' || S.pzMode === 'warm') el.textContent = Math.min(S.puz + 1, Q.length) + ' de ' + Q.length;
   else if (S.pzMode === 'due') el.textContent = Q.length + ' para revisar';
   else el.textContent = Q.filter(p => solved[p.key]).length + ' de ' + Q.length + ' resolvidos';
 }
 function renderGoal() {
   const n = dailyCount(), st = streakDays(), f = Math.min(1, n / GOAL);
-  $('#trGoal').innerHTML = '<svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-2)" stroke-width="5"></circle><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (f * 113.1).toFixed(1) + ' 113.1" transform="rotate(-90 22 22)" style="transition:stroke-dasharray .5s var(--ease)"></circle></svg><div class="stack" style="gap:0"><b>' + Math.min(n, 999) + ' de ' + GOAL + ' hoje</b><span class="muted" style="font-size:13px">' + (st ? 'Sequência: ' + st + ' dia' + (st > 1 ? 's' : '') + ' batendo a meta' : 'Bata a meta de ' + GOAL + ' exercícios por dia') + (store.get('tbest', 0) ? ' · recorde no relógio: ' + store.get('tbest', 0) : '') + '</span></div>';
+  $('#trGoal').innerHTML = '<svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-2)" stroke-width="5"></circle><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (f * 113.1).toFixed(1) + ' 113.1" transform="rotate(-90 22 22)" style="transition:stroke-dasharray .5s var(--ease)"></circle></svg><div class="stack" style="gap:0"><b>' + Math.min(n, 999) + ' de ' + GOAL + ' hoje</b><span class="muted" style="font-size:13px">' + (st ? 'Sequência: ' + st + ' dia' + (st > 1 ? 's' : '') + ' batendo a meta' : 'Bata a meta de ' + GOAL + ' exercícios por dia') + (store.get('rbest', 0) ? ' · recorde na Corrida: ' + store.get('rbest', 0) : '') + '</span></div>';
 }
 let TRT = null;
 function renderTreino() {
@@ -1946,12 +1946,12 @@ async function tryPuzzleMove(from, to) {
     if (PZ.first) srsRecord(PZ.p.key, true); bumpDaily(); renderGoal(); haptic('ok');
     if (PZ.p.kind === 'punish') act('punish'); else if (PZ.p.fen) act('theory');
     fb.className = 'fb ok'; fb.textContent = (good === 'alt' ? fig(m.san) + ' também funciona: o motor avalia quase igual ao melhor lance. ' : 'Isso! ' + fig(m.san) + ' é o lance do motor. ') + explainBest() + (S.pzMode === 'review' ? ' ' + reviewNote() : '');
-    if (S.pzMode === 'timed') { S.tm.ok++; setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 450); }
+    if (S.pzMode === 'timed') { rushHit(); setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 450); }
     renderPzCount(); return;
   }
   if (PZ.first) srsRecord(PZ.p.key, false); PZ.first = false; haptic('err');
   PB.setMarks({ last: [m.from, m.to], bad: m.to });
-  if (S.pzMode === 'timed') { S.tm.miss++; PZ.done = true; blindReveal(); fb.className = 'fb no'; fb.textContent = fig(m.san) + ' não resolve. Melhor era ' + bestSan() + '.'; renderPzCount(); setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 900); return; }
+  if (S.pzMode === 'timed') { PZ.done = true; blindReveal(); fb.className = 'fb no'; fb.textContent = fig(m.san) + ' não resolve. Melhor era ' + bestSan() + '.'; PB.setArrows([{ from: PZ.p.best.slice(0, 2), to: PZ.p.best.slice(2, 4), cls: 'a-best' }]); rushMiss(); renderPzCount(); setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 1100); return; }
   fb.className = 'fb no'; fb.textContent = fig(m.san) + ' não resolve. ' + (cur.alt == null ? 'O lance procurado é outro.' : 'Sua chance cairia ' + Math.round(cur.alt) + ' pontos percentuais.') + ' Tente de novo.';
   setTimeout(() => { if (!PZ || PZ.done || PZ !== cur) return; PB.setPosition(PZ.fen, true); const prev = PZ.P && PZ.p.ply > 0 ? PZ.P.moves[PZ.p.ply - 1] : null; armPuzzle(PZ.fen, PZ.p.side, PZ.p.last ? { last: PZ.p.last } : prev ? { last: [prev.from, prev.to] } : {}); }, 900);
 }
@@ -1961,7 +1961,7 @@ function explainBest() {
   return (why ? cap(why) + '. ' : '') + 'Linha: ' + l.slice(0, 5).map(x => fig(x.san)).join(' ') + '.';
 }
 function puzzleHint() {
-  if (!PZ || PZ.done) return; PZ.hints++;
+  if (!PZ || PZ.done) return; PZ.hints++; if (S.pzMode === 'timed' && S.tm) { S.tm.combo = 0; renderPzCount(); }
   if (PZ.first) { srsRecord(PZ.p.key, false); PZ.first = false; }
   const b = PZ.p.best; const B = parseBoard(PZ.fen); const p = B[sqI(b.slice(0, 2))]; const fb = $('#pzFb'); fb.className = 'fb hint';
   if (PZ.hints === 1) fb.textContent = 'Dica: use ' + pz(p.t) + '.';
@@ -1970,7 +1970,7 @@ function puzzleHint() {
 async function puzzleSolution() {
   if (!PZ) return; if (PZ.first) { srsRecord(PZ.p.key, false); PZ.first = false; }
   PZ.done = true; blindReveal(); PB.setLive(null);
-  if (S.pzMode === 'timed' && S.tm && !S.tm.over) S.tm.miss++;
+  if (S.pzMode === 'timed' && S.tm && !S.tm.over) { rushMiss(); if (S.tm.over) return; }
   const eb = pzEv(); const l = lineSan(PZ.fen, eb.pv.length ? eb.pv : [eb.best], 6);
   const fb = $('#pzFb'); fb.className = 'fb hint'; fb.textContent = 'Solução: ' + explainBest() + (S.pzMode === 'review' ? ' ' + reviewNote() : '');
   PB.setPosition(PZ.fen, false); renderPzCount();
@@ -2282,6 +2282,7 @@ function closeSync() { $('#sync').hidden = true; }
 /*@MORE@*/
 /*@MORE2@*/
 /*@MORE3@*/
+/*@MORE4@*/
 /*@GP@*/
 
 /* ---------- eventos ---------- */
@@ -2310,7 +2311,7 @@ function wire() {
     const ln = e.target.closest('[data-line]');
     if (ln) { startLine(ln.dataset.line, ln.dataset.uci.split(' '), +ln.dataset.base); return; }
     const vxb = e.target.closest('[data-vx]'); if (vxb) { vxAction(vxb.dataset.vx); return; }
-    const pzb = e.target.closest('[data-pz]'); if (pzb) { const k = pzb.dataset.pz; if (S.view === 'treino') { setPzMode(k); if (k === 'theory') $('#puz').scrollIntoView({ behavior: 'smooth', block: 'start' }); } else { if (k === 'warm') S.pendingWarm = true; else S.pendingPz = k; location.hash = 'treino'; } return; }
+    const pzb = e.target.closest('[data-pz]'); if (pzb) { const k = pzb.dataset.pz; if (S.view === 'treino') { setPzMode(k); if (k === 'theory' || (k === 'timed' && pzb.classList.contains('tile'))) $('#puz').scrollIntoView({ behavior: 'smooth', block: 'start' }); } else { if (k === 'warm') S.pendingWarm = true; else S.pendingPz = k; location.hash = 'treino'; } return; }
     const tht = e.target.closest('[data-thtab]'); if (tht) { TH.tab = tht.dataset.thtab; renderTheory(); return; }
     const thc = e.target.closest('[data-thcol]'); if (thc) { TH.c = thc.dataset.thcol; renderTheory(); return; }
     const thr = e.target.closest('[data-thtree]'); if (thr) { const v = thr.dataset.thtree, i = v.indexOf('|'); REP.c = v.slice(0, i); const pth = v.slice(i + 1); REP.path = pth ? pth.split(' ') : []; renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
@@ -2338,6 +2339,7 @@ function wire() {
     const gg = e.target.closest('[data-guess-game]'); if (gg) { S.pendingGuess = gg.dataset.guessGame; openGame(gg.dataset.guessGame, 0); return; }
     if (e.target.closest('[data-guess-last]')) { const g = S.games.find(x => S.an[x.id] && prep(x).cls && guessList(prep(x)).length && !store.get('guess', {})[x.id]) || S.games.find(x => S.an[x.id]); if (g) { S.pendingGuess = g.id; openGame(g.id, 0); } else toast('Analise uma partida primeiro.'); return; }
     const ds = e.target.closest('[data-dos]'); if (ds) { openDossier(ds.dataset.dos); return; }
+    const sf = e.target.closest('[data-self-game]'); if (sf) { selfOpen(sf.dataset.selfGame); return; }
     if (e.target.closest('[data-card]')) { openCard(); return; }
     const cg = e.target.closest('[data-card-game]'); if (cg) { S.gid = cg.dataset.cardGame; openCard(); return; }
     const cs = e.target.closest('[data-cardsave]'); if (cs) { saveCard(cs.dataset.cardsave === 'share'); return; }
@@ -2366,7 +2368,7 @@ function wire() {
   window.addEventListener('pointerup', () => { gDown = false; });
   gb.addEventListener('keydown', e => { if (e.key === 'ArrowLeft' || e.key === 'ArrowRight') { e.stopPropagation(); } });
   $('#pzHint').onclick = puzzleHint; $('#pzSol').onclick = puzzleSolution;
-  $('#pzNext').onclick = () => { S.puz++; loadPuzzle(); };
+  $('#pzNext').onclick = () => { if (S.pzMode === 'timed' && S.tm && !S.tm.over && PZ && !PZ.done) { PZ.done = true; rushMiss(); if (S.tm.over) return; } S.puz++; loadPuzzle(); };
 }
 
 /* ---------- atualizações do app instalado ---------- */

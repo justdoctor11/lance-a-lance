@@ -44,6 +44,7 @@
       </section>
       <div class="stack" id="pnBody">
       <section class="card pad stack" id="pnLast" style="gap:12px"></section>
+      <section class="card pad stack" id="pnBadges" style="gap:12px"></section>
       <div class="kpis" id="pnKpis"></div>
       <div class="grid2">
         <div class="stack">
@@ -162,6 +163,7 @@
             <span class="label" id="pzFrom"></span>
             <span class="mono muted" style="font-size:12px" id="pzCount"></span>
           </div>
+          <div class="rush" id="pzRush" hidden aria-live="polite"></div>
           <p class="q" id="pzQ"></p>
           <div class="bwrap"><div id="pzBoard"></div></div>
           <div class="blindtxt" id="pzBlindTxt" hidden></div>
@@ -228,6 +230,18 @@
   </section>
 
   <!-- ARENA: desafios contra o motor -->
+  <section class="view" id="v-conquistas" aria-labelledby="h-cq">
+    <div class="stack" style="gap:18px">
+      <div class="stack" style="gap:8px">
+        <a class="btn small" href="#painel" style="align-self:flex-start">← Painel</a>
+        <h1 class="h-page" id="h-cq">Conquistas</h1>
+        <p class="sub" id="cqSub"></p>
+        <div class="bbar lg"><i id="cqBar"></i></div>
+      </div>
+      <div class="stack" style="gap:8px" id="cqNext"></div>
+      <div class="stack" style="gap:22px" id="cqGrid"></div>
+    </div>
+  </section>
   <section class="view" id="v-arena" aria-label="Treino contra o motor">
     <div class="an">
       <div class="an-main">
