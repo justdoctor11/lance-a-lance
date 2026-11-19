@@ -47,8 +47,8 @@ const ICONS = {
   montanha: '<path d="M2.5 20.5 9.5 8.5l4 6.2 2.5-4 5.5 9.8z"/>',
   ampulheta: '<path d="M6.5 3h11M6.5 21h11M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"/>',
   trofeu: '<path d="M8 3.5h8v6a4 4 0 0 1-8 0zM8 5.5H5a3 3 0 0 0 3 4.3M16 5.5h3a3 3 0 0 1-3 4.3M12 13.5v4M8.5 21h7M9.5 17.5h5"/>',
-  colecao: '<path d="M3.5 20.5h17"/><path d="M5 20.5v-2.5h4v2.5M6 18l.5-4h2l.5 4M7.5 14v-2.5"/><path d="M10.2 20.5v-2.5h4v2.5M11 18l.5-6h2l.5 6M12.2 12V9.5M11 9.5h2.5"/><path d="M15.4 20.5v-2.5h4v2.5M16.3 18l.4-5h2l.4 5M16.2 13l-.6-2.2h4l-.6 2.2"/>',
-  promo: '<path d="M12 21.5v-8M8.5 17 12 13.5l3.5 3.5"/><path d="m5.5 10 2.4-5.5 4.1 3.4 4.1-3.4L18.5 10z"/>',
+  colecao: '<path d="m12 3.5 8.5 4.8L12 13 3.5 8.3z"/><path d="m3.5 12.4 8.5 4.8 8.5-4.8M3.5 16.4l8.5 4.8 8.5-4.8"/>',
+  promo: '<path d="M12 21V8M6.8 13.2 12 8l5.2 5.2M5 3.8h14"/>',
   biblioteca: '<path d="M4 20V5h3v15M9 20V4h3v16M14.5 20.5l-1-15 3-.4 1.6 15z"/><path d="M3 20.5h18"/>',
   lua: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M16 4.5v3M14.5 6h3"/>',
   chama: '<path d="M12 3c.6 3.2 5 5.2 5 10.2a5 5 0 0 1-10 0c0-2.3 1.1-3.8 2.2-4.8.2 2 1.1 3.1 2.2 3.1 0-3.2-1.4-5.2.6-8.5z"/>',
@@ -135,110 +135,38 @@ function rankOf(xp) {
 const rankName = r => RANKS[r.i].n + (r.promo ? ' · Promoção ' + roman(r.promo) : '');
 function roman(n) { const v = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]; let s = ''; for (const [k, r] of v) while (n >= k) { s += r; n -= k; } return s; }
 
-/* ---------- desenho ---------- */
-const METAL = {
-  bronze: ['#ffd2a6', '#d08a4c', '#8a4b1e', '#5e3112', '#ffe1c2'],
-  silver: ['#ffffff', '#cfd7de', '#8c98a2', '#5d6872', '#f3f6f8'],
-  gold: ['#fff6c4', '#f4c23c', '#b67a05', '#7a4f00', '#fff0a8'],
-  plat: ['#ffffff', '#dfe1ea', '#9fa4ba', '#5f6479', '#f4f3fa'],
-  diam: ['#f2feff', '#8fe9ff', '#3b9bd6', '#1f5c97', '#e9fdff'],
-  royal: ['#fff1c9', '#e8b84a', '#9b4fd1', '#4b1f7a', '#ffeec0'],
-  rare: ['#ffe9ff', '#d39cff', '#8a46d4', '#4a1d86', '#fbe5ff'],
-  lock: ['#d3d9d6', '#a2aba7', '#6e7874', '#4d5653', '#c4cbc8']
-};
-const ENAMEL = { treino: ['#1f5a46', '#0e2c22'], partidas: ['#6a2234', '#2c0b15'], habito: ['#22406e', '#0d1a33'], raras: ['#4a2a78', '#1c0d36'], lock: ['#3a423f', '#1d2321'] };
-const INK = { bronze: '#ffe0c2', silver: '#f6f9fb', gold: '#ffeeb0', plat: '#f7f6ff', diam: '#eefcff', royal: '#fff0c8', rare: '#f9e8ff', lock: '#87918d' };
-const SHAPE = {
-  hex: 'M60 13 97.2 34.5v43L60 99 22.8 77.5v-43z',
-  shield: 'M60 12c13 6.5 25 9 37 9.5V55c0 22-15.5 36.5-37 45-21.5-8.5-37-23-37-45V21.5c12-.5 24-3 37-9.5z',
-  round: 'M60 13a43 43 0 1 1 0 86 43 43 0 0 1 0-86z',
-  oct: 'M43.5 14h33L99 36.5v33L76.5 92h-33L21 69.5v-33z'
-};
-const STUDS = {
-  hex: [[60, 18.6], [92.3, 37.3], [92.3, 74.7], [60, 93.4], [27.7, 74.7], [27.7, 37.3]],
-  shield: [[60, 17.6], [92, 26], [92, 55], [27.9, 55], [28, 26]],
-  round: [[60, 17.8], [88.4, 29.6], [100.2, 56], [88.4, 82.4], [60, 94.2], [31.6, 82.4], [19.8, 56], [31.6, 29.6]],
-  oct: [[60, 18.5], [91, 40], [91, 66], [60, 87.5], [29, 66], [29, 40]]
-};
-function ensureBadgeDefs() {
-  if ($('#bdgDefs')) return;
-  const d = document.createElement('div'); d.id = 'bdgDefs'; d.setAttribute('aria-hidden', 'true'); d.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
-  let h = '';
-  for (const k in METAL) {
-    const c = METAL[k];
-    h += '<linearGradient id="mt-' + k + '" x1="0" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="' + c[0] + '"/><stop offset=".32" stop-color="' + c[1] + '"/><stop offset=".55" stop-color="' + c[4] + '"/><stop offset=".78" stop-color="' + c[2] + '"/><stop offset="1" stop-color="' + c[3] + '"/></linearGradient>';
-    h += '<linearGradient id="mr-' + k + '" x1="1" y1="1" x2=".15" y2="0"><stop offset="0" stop-color="' + c[0] + '"/><stop offset=".5" stop-color="' + c[1] + '"/><stop offset="1" stop-color="' + c[3] + '"/></linearGradient>';
+/* ---------- desenho: disco chapado, um sinal e um anel que conta o nível ----------
+   As cores vêm de variáveis CSS por nível (.t0 a .t5 e .tr), então o mesmo desenho
+   funciona no tema claro e no escuro. Sem degradês nem filtros: é leve para desenhar 40 de uma vez. */
+function ensureBadgeDefs() { /* nada a preparar: o desenho não usa definições compartilhadas */ }
+function glyph(ic, x, y, s) {
+  if (ic.startsWith('p:')) return '<svg class="gl" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24"><path d="' + PIECE[ic.slice(2)] + '" fill="currentColor" fill-rule="evenodd"/></svg>';
+  return '<svg class="gl" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">' + ICONS[ic] + '</svg>';
+}
+// anel em n segmentos iguais, com intervalos iguais; os k primeiros acesos, a partir do topo
+function ring(n, k, r) {
+  const gap = n > 1 ? 11 : 0, step = 360 / n; let h = '';
+  for (let i = 0; i < n; i++) {
+    const a0 = (-90 + i * step + gap / 2) * Math.PI / 180, a1 = (-90 + (i + 1) * step - gap / 2) * Math.PI / 180;
+    const x0 = 32 + r * Math.cos(a0), y0 = 32 + r * Math.sin(a0), x1 = 32 + r * Math.cos(a1), y1 = 32 + r * Math.sin(a1);
+    h += n === 1 ? '<circle class="seg' + (k ? ' on' : '') + '" cx="32" cy="32" r="' + r + '"/>'
+      : '<path class="seg' + (i < k ? ' on' : '') + '" d="M' + x0.toFixed(2) + ' ' + y0.toFixed(2) + 'A' + r + ' ' + r + ' 0 0 1 ' + x1.toFixed(2) + ' ' + y1.toFixed(2) + '"/>';
   }
-  for (const k in ENAMEL) h += '<radialGradient id="en-' + k + '" cx=".5" cy=".38" r=".7"><stop offset="0" stop-color="' + ENAMEL[k][0] + '"/><stop offset="1" stop-color="' + ENAMEL[k][1] + '"/></radialGradient>';
-  // o fundo do esmalte é um tabuleiro bem discreto
-  h += '<pattern id="bd-chk" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#fff" opacity=".055"/><rect x="6" y="6" width="6" height="6" fill="#fff" opacity=".055"/></pattern>';
-  h += '<linearGradient id="bd-gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>';
-  for (const s in SHAPE) h += '<clipPath id="cp-' + s + '"><path d="' + SHAPE[s] + '" transform="' + scl(.8) + '"/></clipPath>';
-  d.innerHTML = '<svg width="0" height="0"><defs>' + h + '</defs></svg>';
-  document.body.appendChild(d);
+  return h;
 }
-function scl(k) { return 'translate(60 56) scale(' + k + ') translate(-60 -56)'; }
-function iconSvg(ic, x, y, s) {
-  if (ic.startsWith('p:')) return '<svg x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24"><path d="' + PIECE[ic.slice(2)] + '" fill="currentColor" fill-rule="evenodd"/></svg>';
-  return '<svg x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + ICONS[ic] + '</svg>';
-}
-// galhos de louro: um arco de cada lado, com folhas pontudas alternando dentro e fora
-const LEAF = 'M0 0C2.6-2.9 8-3.4 12.5-.2 8 3 2.6 2.6 0 0z';
-function laurel(metal) {
-  let h = '';
-  for (const side of [-1, 1]) {
-    const pt = a => [60 + side * Math.cos(a) * 47, 57 + Math.sin(a) * 46];
-    const a0 = Math.PI * .58, a1 = Math.PI * 1.1;
-    const [x0, y0] = pt(a0), [x1, y1] = pt(a0 + (a1 - a0) * .9);
-    h += '<path d="M' + x0.toFixed(1) + ' ' + y0.toFixed(1) + 'A47 46 0 0 ' + (side < 0 ? 1 : 0) + ' ' + x1.toFixed(1) + ' ' + y1.toFixed(1) + '" fill="none" stroke="url(#mr-' + metal + ')" stroke-width="2" stroke-linecap="round"/>';
-    for (let k = 0; k < 10; k++) {
-      const a = a0 + (a1 - a0) * (k + .4) / 10, [x, y] = pt(a);
-      // direção da tangente subindo pelo arco
-      const tx = side * -Math.sin(a), ty = Math.cos(a) * -1;
-      let deg = Math.atan2(-ty, tx) * 180 / Math.PI; deg = -deg;
-      const off = (k % 2 ? 1 : -1) * 38 * side;
-      h += '<path d="' + LEAF + '" transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (deg + off).toFixed(0) + ') scale(' + (1.45 - k * .06).toFixed(2) + ')" fill="url(#mt-' + metal + ')" stroke="rgba(0,0,0,.3)" stroke-width=".45"/>';
-    }
-  }
-  return '<g class="b-laurel">' + h + '</g>';
-}
-function star(n, ro, ri, cx, cy, rot) {
-  let p = ''; for (let i = 0; i < n * 2; i++) { const r = i % 2 ? ri : ro, a = (Math.PI / n) * i + (rot || 0) - Math.PI / 2; p += (i ? 'L' : 'M') + (cx + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r).toFixed(1); }
-  return p + 'Z';
-}
+const tierCls = (b, l) => !l ? 't0' : b.rare ? 'tr' : 't' + l;
 function badgeSvg(id, lvl, size, extra) {
-  const b = BADGES.find(x => x.id === id), cat = BCATS.find(c => c.id === b.cat), shp = cat.shape;
-  const lock = !lvl, m = lock ? 'lock' : b.rare ? 'rare' : TIERS[lvl - 1].m, tier = b.rare ? (lvl ? 5 : 0) : lvl;
-  let h = '';
-  if (!lock && tier >= 4) h += '<path class="b-halo" d="' + star(tier >= 5 ? 16 : 12, 60, 44, 60, 56) + '" fill="url(#mt-' + m + ')" opacity="' + (tier >= 5 ? .55 : .4) + '"/>';
-  if (!lock && tier >= 5) h += '<path class="b-halo2" d="' + star(8, 57, 30, 60, 56, Math.PI / 8) + '" fill="url(#mr-' + m + ')" opacity=".5"/>';
-  if (!lock && tier >= 3 && !b.rare) h += laurel(m);
-  h += '<path d="' + SHAPE[shp] + '" fill="url(#mt-' + m + ')" stroke="rgba(0,0,0,.35)" stroke-width="1"/>';
-  h += '<path d="' + SHAPE[shp] + '" transform="' + scl(.9) + '" fill="url(#mr-' + m + ')"/>';
-  h += '<path d="' + SHAPE[shp] + '" transform="' + scl(.8) + '" fill="url(#en-' + (lock ? 'lock' : b.cat) + ')" stroke="rgba(0,0,0,.45)" stroke-width="1.4"/>';
-  h += '<g clip-path="url(#cp-' + shp + ')"><rect x="10" y="6" width="100" height="100" fill="url(#bd-chk)"/><ellipse cx="60" cy="30" rx="44" ry="26" fill="url(#bd-gloss)" opacity="' + (lock ? .3 : .75) + '"/></g>';
-  if (!lock && tier >= 2) h += STUDS[shp].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="2.1" fill="url(#mt-' + m + ')" stroke="rgba(0,0,0,.35)" stroke-width=".5"/>').join('');
-  h += '<g style="color:#000" opacity=".4">' + iconSvg(b.ic, 39.5, 37, 42) + '</g><g style="color:' + INK[m] + '">' + iconSvg(b.ic, 39, 35.5, 42) + '</g>';
-  if (!lock && tier >= 5) h += '<path d="M60 3.5 66 10.5 60 17.5 54 10.5z" fill="url(#mt-' + (b.rare ? 'rare' : 'diam') + ')" stroke="rgba(0,0,0,.35)" stroke-width=".6"/><path d="M60 3.5 63 10.5 60 17.5" fill="#fff" opacity=".35"/>';
-  if (!lock) {
-    const lab = b.rare ? '★' : ROMAN[lvl - 1];
-    h += '<g class="b-ribbon"><path d="M31 92h9l-3 5 3 5h-11l2-5z" fill="url(#mr-' + m + ')" opacity=".9"/><path d="M89 92h-9l3 5-3 5h11l-2-5z" fill="url(#mr-' + m + ')" opacity=".9"/>' +
-      '<path d="M37 88.5h46c-1.2 3.2-1.2 7.1 0 10.3H37c1.2-3.2 1.2-7.1 0-10.3z" fill="url(#mt-' + m + ')" stroke="rgba(0,0,0,.4)" stroke-width=".7"/>' +
-      '<text x="60" y="96.6" text-anchor="middle" font-size="' + (b.rare ? 8.5 : 8) + '" font-weight="800" letter-spacing=".6" fill="' + METAL[m][3] + '" font-family="system-ui,sans-serif">' + lab + '</text></g>';
-  }
-  return '<svg class="bdg-svg' + (lock ? ' locked' : '') + (extra ? ' ' + extra : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 120 120" aria-hidden="true">' + h + '</svg>';
+  const b = BADGES.find(x => x.id === id), cls = tierCls(b, lvl);
+  const body = b.rare
+    ? '<path class="seg' + (lvl ? ' on' : '') + '" d="M32 3.6 60.4 32 32 60.4 3.6 32z" stroke-linejoin="round"/><path class="disk" d="M32 10.2 53.8 32 32 53.8 10.2 32z"/>' + glyph(b.ic, 21, 21, 22)
+    : ring(bMax(b), lvl, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + glyph(b.ic, 18.5, 18.5, 27);
+  return '<svg class="bd ' + cls + (extra ? ' ' + extra : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + body + '</svg>';
 }
+const RANK_T = ['t1', 't2', 't3', 't4', 't5', 'tr'];
 function rankSvg(r, size, dim) {
-  const R = RANKS[r.i], m = R.m;
-  let h = '';
-  if (!dim && r.i >= 3) h += '<path d="' + star(r.i >= 5 ? 20 : 14, 59, 47, 60, 56) + '" fill="url(#mt-' + m + ')" opacity=".45"/>';
-  if (!dim && r.i >= 2) h += laurel(m);
-  h += '<path d="' + SHAPE.round + '" fill="url(#mt-' + (dim ? 'lock' : m) + ')" stroke="rgba(0,0,0,.35)"/><path d="' + SHAPE.round + '" transform="' + scl(.9) + '" fill="url(#mr-' + (dim ? 'lock' : m) + ')"/>';
-  h += '<path d="' + SHAPE.round + '" transform="' + scl(.8) + '" fill="url(#en-' + (dim ? 'lock' : 'habito') + ')" stroke="rgba(0,0,0,.45)" stroke-width="1.4"/>';
-  h += '<g clip-path="url(#cp-round)"><rect x="10" y="6" width="100" height="100" fill="url(#bd-chk)"/><ellipse cx="60" cy="30" rx="44" ry="26" fill="url(#bd-gloss)" opacity=".7"/></g>';
-  h += '<g style="color:#000" opacity=".4">' + iconSvg('p:' + R.p, 33.5, 31.5, 54) + '</g><g style="color:' + INK[dim ? 'lock' : m] + '">' + iconSvg('p:' + R.p, 33, 30, 54) + '</g>';
-  if (r.promo) { const n = Math.min(r.promo, 5); for (let k = 0; k < n; k++) h += '<path d="' + star(5, 5.2, 2.2, 60 + (k - (n - 1) / 2) * 11, 104) + '" fill="url(#mt-gold)" stroke="rgba(0,0,0,.4)" stroke-width=".5"/>'; }
-  return '<svg class="bdg-svg rank' + (dim ? ' locked' : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 120 120" aria-hidden="true">' + h + '</svg>';
+  const R = RANKS[r.i];
+  return '<svg class="bd rk ' + (dim ? 't0' : RANK_T[r.i]) + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + ring(RANKS.length, dim ? 0 : r.i + 1, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + glyph('p:' + R.p, 18, 17.5, 28) +
+    (r.promo ? '<text class="pr" x="32" y="52.5" text-anchor="middle">' + roman(r.promo) + '</text>' : '') + '</svg>';
 }
 
 /* ---------- estatísticas ---------- */
@@ -362,15 +290,15 @@ function badgeShowNext() {
   if (it.rank) {
     const R = RANKS[it.rank.i];
     el.setAttribute('aria-label', 'Promovido a ' + rankName(it.rank));
-    body = '<span class="label">Promoção' + more + '</span><div class="bfx-badge">' + rankSvg(it.rank, 170) + '<i class="bfx-shine round"></i></div><h2>Promovido a ' + esc(rankName(it.rank)) + '</h2><p class="muted">' + esc(R.d) + '</p>';
+    body = '<span class="label">Promoção' + more + '</span><div class="bfx-badge">' + rankSvg(it.rank, 170) + '</div><h2>Promovido a ' + esc(rankName(it.rank)) + '</h2><p class="muted">' + esc(R.d) + '</p>';
   } else {
     const { b, l } = it;
     el.setAttribute('aria-label', 'Nova conquista: ' + b.t);
-    body = '<span class="label">' + (b.rare ? 'Insígnia rara' : l > 1 ? 'Subiu de nível' : 'Nova conquista') + more + '</span><div class="bfx-badge">' + badgeSvg(b.id, l, 170) + '<i class="bfx-shine ' + BCATS.find(c => c.id === b.cat).shape + '"></i></div><h2>' + esc(b.t) + '</h2><span class="tag tier-' + (b.rare ? 'r' : l) + '">' + bTierName(b, l) + (b.rare ? '' : ' · nível ' + ROMAN[l - 1]) + ' · +' + (bXp(b, l) - bXp(b, l - 1)) + ' XP</span><p class="muted">' + esc(b.d(bLv(b)[l - 1])) + '</p>';
+    body = '<span class="label">' + (b.rare ? 'Insígnia rara' : l > 1 ? 'Subiu de nível' : 'Nova conquista') + more + '</span><div class="bfx-badge">' + badgeSvg(b.id, l, 170) + '</div><h2>' + esc(b.t) + '</h2><span class="tag tier-' + (b.rare ? 'r' : l) + '">' + bTierName(b, l) + (b.rare ? '' : ' · nível ' + ROMAN[l - 1]) + ' · +' + (bXp(b, l) - bXp(b, l - 1)) + ' XP</span><p class="muted">' + esc(b.d(bLv(b)[l - 1])) + '</p>';
   }
-  el.innerHTML = '<div class="bfx-card' + (it.rank ? ' promo' : '') + '"><div class="bfx-rays" aria-hidden="true"></div>' + body + '<div class="vxacts" style="justify-content:center"><button class="btn primary" type="button" data-bfx="ok">' + (BQ.length ? 'Próxima' : 'Continuar') + '</button><a class="btn" href="#conquistas" data-bfx="all">Ver conquistas</a></div></div>';
+  el.innerHTML = '<div class="bfx-card' + (it.rank ? ' promo' : '') + '">' + body + '<div class="vxacts" style="justify-content:center"><button class="btn primary" type="button" data-bfx="ok">' + (BQ.length ? 'Próxima' : 'Continuar') + '</button><a class="btn" href="#conquistas" data-bfx="all">Ver conquistas</a></div></div>';
   document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
-  haptic('ok'); chime(!!it.rank); setTimeout(() => sparkle(el.querySelector('.bfx-card')), 250);
+  haptic('ok'); chime(!!it.rank);
   const btn = el.querySelector('[data-bfx="ok"]'); try { btn.focus({ preventScroll: true }); } catch (e) { /* sem foco */ }
 }
 function badgeClose(all) {
@@ -397,9 +325,12 @@ function pnBadgesHtml() {
     '<div class="pnb">' + (got.length ? got.slice(0, 6).map(b => '<a href="#conquistas" class="pnb-i" title="' + esc(b.t + ' · ' + bTierName(b, B[b.id].l)) + '">' + badgeSvg(b.id, B[b.id].l, 50) + '</a>').join('') : '') + '</div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted" style="font-size:13.5px">' + T.nb + ' de ' + BADGES.length + ' insígnias</span><a class="btn small" href="#conquistas">Ver conquistas</a></div>';
 }
-let CQF = 'all';
-function renderConquistas() {
-  ensureBadgeDefs(); store.set('bdgNew', false);
+let CQF = 'all', CQKEY = '';
+function renderConquistas(force) {
+  store.set('bdgNew', false);
+  const key = dataKey() + ':' + JSON.stringify(store.get('bdg', {})) + ':' + CQF + ':' + (GP.ready ? 1 : 0);
+  if (!force && key === CQKEY && $('#cqGrid').childElementCount) return;
+  CQKEY = key;
   const dot = document.querySelector('[data-v="conquistas"] .nb-dot'); if (dot) dot.hidden = true;
   const X = BSTAT = badgeStats(), B = store.get('bdg', {}), T = badgeTotals(B), R = RANKS[T.rank.i];
   const P = BADGES.map(b => ({ b, p: badgeProgress(b, X), got: Math.min(B[b.id] ? B[b.id].l : 0, bMax(b)) }));
@@ -434,7 +365,14 @@ document.addEventListener('click', e => {
   if (!e.target.closest) return;
   if (e.target.closest('[data-go-cq]')) { location.hash = 'conquistas'; return; }
   const f = e.target.closest('[data-cqf]'); if (f) { CQF = f.dataset.cqf; renderConquistas(); return; }
-  const g = e.target.closest('[data-cqgo]'); if (g) { CQF = 'all'; renderConquistas(); const c = $('#cq-' + g.dataset.cqgo); if (c) { c.scrollIntoView({ block: 'center', behavior: 'smooth' }); c.click(); } return; }
+  const g = e.target.closest('[data-cqgo]'); if (g) {
+    if (CQF !== 'all') { CQF = 'all'; renderConquistas(); }
+    const c = $('#cq-' + g.dataset.cqgo); if (!c) return;
+    $$('#cqGrid .cq.open').forEach(o => { if (o !== c) { o.classList.remove('open'); o.setAttribute('aria-expanded', 'false'); } });
+    c.classList.add('open', 'flash'); c.setAttribute('aria-expanded', 'true');
+    c.scrollIntoView({ block: 'center', behavior: matchMedia('(prefers-reduced-motion: reduce)').matches ? 'auto' : 'smooth' });
+    setTimeout(() => c.classList.remove('flash'), 1200); return;
+  }
   const c = e.target.closest('[data-cq]'); if (!c) return;
   const on = c.getAttribute('aria-expanded') !== 'true'; c.setAttribute('aria-expanded', String(on)); c.classList.toggle('open', on);
 });
