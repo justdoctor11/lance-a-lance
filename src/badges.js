@@ -1,0 +1,440 @@
+/* ---------- Conquistas: insígnias em cinco níveis, raridades e prestígio ----------
+   Tudo é calculado a partir dos dados do app (partidas, treinos, revisões), então
+   as insígnias aparecem iguais em todos os aparelhos depois da sincronização. */
+
+const TIERS = [
+  { n: 'Bronze', m: 'bronze', xp: 10 }, { n: 'Prata', m: 'silver', xp: 25 }, { n: 'Ouro', m: 'gold', xp: 50 },
+  { n: 'Platina', m: 'plat', xp: 100 }, { n: 'Diamante', m: 'diam', xp: 200 }
+];
+const RARE_XP = 120, ROMAN = ['I', 'II', 'III', 'IV', 'V'];
+const pl = (n, a, b) => n === 1 ? a : b;
+// formato e esmalte de cada categoria
+const BCATS = [
+  { id: 'treino', n: 'Treino', d: 'Modos de treino do app', shape: 'hex' },
+  { id: 'partidas', n: 'Nas suas partidas', d: 'O que você faz no tabuleiro de verdade', shape: 'shield' },
+  { id: 'habito', n: 'Hábito', d: 'Constância é o que faz o rating subir', shape: 'round' },
+  { id: 'raras', n: 'Raridades', d: 'Momentos raros do xadrez. Cada uma tem um nível só', shape: 'oct' }
+];
+
+/* ícones: traço em grade de 24; as peças são silhuetas cheias */
+const PIECE = {
+  pawn: 'M12 3.2a3 3 0 1 1 0 6 3 3 0 0 1 0-6zM9.3 9.9h5.4a.9.9 0 0 1 0 1.8H9.3a.9.9 0 0 1 0-1.8zM10.3 12.4h3.4c.2 2.6 1.4 4.3 3 5.5H7.3c1.6-1.2 2.8-2.9 3-5.5zM6.4 18.7h11.2c.6 0 1 .4 1 1v.6c0 .6-.4 1-1 1H6.4c-.6 0-1-.4-1-1v-.6c0-.6.4-1 1-1z',
+  knight: 'M7.2 21.3h11.1v-1.6c0-.8-.3-1.5-.9-2 .6-3.6-.3-7.3-2.6-9.8-1.3-1.4-2.9-2.3-4.6-2.6l-.5 1.6c-1 .4-1.9 1.1-2.5 2L5.3 11.4c-.3.5-.2 1.1.3 1.4l.9.6c.5.3 1.1.3 1.5-.1l1.5-1.3c.7 0 1.3-.2 1.8-.6-.4 2.3-1.8 4-3.1 5.4-.7.7-1 1.6-1 2.6zM10.4 8.6a.8.8 0 1 0 0 1.6.8.8 0 0 0 0-1.6z',
+  bishop: 'M12 2.6a1.6 1.6 0 1 1 0 3.2 1.6 1.6 0 0 1 0-3.2zM12 6.4c2.8 1.8 4.1 4 4.1 6.2 0 1.9-1.1 3.2-2.5 3.8l.4 1.5h-4l.4-1.5c-1.4-.6-2.5-1.9-2.5-3.8 0-2.2 1.3-4.4 4.1-6.2zM6.5 18.7h11c.6 0 1 .4 1 1v.6c0 .6-.4 1-1 1h-11c-.6 0-1-.4-1-1v-.6c0-.6.4-1 1-1z',
+  rook: 'M6.3 3.6h2.4v2.1h1.9V3.6h2.8v2.1h1.9V3.6h2.4v4.6l-1.7 1.4v6.3l1.7 1.7v.8H6.3v-.8L8 15.9V9.6L6.3 8.2zM5.6 18.8h12.8c.6 0 1 .4 1 1v.5c0 .6-.4 1-1 1H5.6c-.6 0-1-.4-1-1v-.5c0-.6.4-1 1-1z',
+  queen: 'M4.3 7.2a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM8.4 4.8a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM12 3.8a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM15.6 4.8a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM19.7 7.2a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM4.9 10.4l3.9 2.6.2-4.6 3 4.2 3-4.2.2 4.6 3.9-2.6-2.2 6.6H7.1zM6.6 17.9h10.8l.4 1H6.2zM5.6 19.4h12.8c.6 0 1 .3 1 .8s-.4.9-1 .9H5.6c-.6 0-1-.4-1-.9s.4-.8 1-.8z',
+  king: 'M11.1 2h1.8v1.9h1.9v1.8h-1.9v1.9h-1.8V5.7H9.2V3.9h1.9zM12 8.3c3.6 0 6.2 1.7 6.2 4.1 0 1.6-1 2.9-2.3 3.9l.5 1.5H7.6l.5-1.5c-1.3-1-2.3-2.3-2.3-3.9 0-2.4 2.6-4.1 6.2-4.1zM6.5 18.7h11c.6 0 1 .4 1 1v.6c0 .6-.4 1-1 1h-11c-.6 0-1-.4-1-1v-.6c0-.6.4-1 1-1z'
+};
+const ICONS = {
+  alvo: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
+  raio: '<path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11.5h-6.5z"/>',
+  garfo: '<path d="M5 20.5V10a4 4 0 0 1 4-4h10M15.5 2.5 19 6l-3.5 3.5M5 14.5h10M12 11l3.5 3.5L12 18"/>',
+  olho: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
+  grade: '<path d="M9 3.5 7.5 20.5M16.5 3.5 15 20.5M4 9h16.5M3.5 15H20"/>',
+  livro: '<path d="M4.5 5.5a2 2 0 0 1 2-2h13v15h-13a2 2 0 0 0-2 2zM4.5 20.5v-15M8.5 7.5h7M8.5 11h5"/>',
+  bandeira: '<path d="M5.5 21V3.5M5.5 4h12.5l-2.5 4.2 2.5 4.3H5.5"/>',
+  scan: '<path d="M4 8.5V4h4.5M15.5 4H20v4.5M20 15.5V20h-4.5M8.5 20H4v-4.5M7.5 12h9"/>',
+  relogio: '<circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 2M9.5 2.5h5"/>',
+  martelo: '<path d="m13.2 3.2 7.6 7.6-3 3-7.6-7.6z"/><path d="M11.8 9.2 3.8 17.2l3 3 8-8"/>',
+  onda: '<circle cx="12" cy="12" r="2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6"/>',
+  detetive: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M8.8 8.7a1.8 1.8 0 1 1 2.6 1.6c-.6.3-.9.7-.9 1.3M10.5 13.7v.1"/>',
+  ciclo: '<path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18.5 2.5v4.2h-4.2M5.5 21.5v-4.2h4.2"/>',
+  chapeu: '<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2V11M21.5 9v5"/>',
+  estrela: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
+  mira: '<circle cx="12" cy="12" r="7"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/>',
+  escudook: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9.2C7.5 20 4 17 4 12V6z"/><path d="m8.5 12 2.5 2.5 4.5-4.5"/>',
+  subida: '<path d="M3 17.5 9 11.5l4 4 8-8.5M15 7h6v6"/>',
+  montanha: '<path d="M2.5 20.5 9.5 8.5l4 6.2 2.5-4 5.5 9.8z"/>',
+  ampulheta: '<path d="M6.5 3h11M6.5 21h11M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"/>',
+  trofeu: '<path d="M8 3.5h8v6a4 4 0 0 1-8 0zM8 5.5H5a3 3 0 0 0 3 4.3M16 5.5h3a3 3 0 0 1-3 4.3M12 13.5v4M8.5 21h7M9.5 17.5h5"/>',
+  colecao: '<path d="M3.5 20.5h17"/><path d="M5 20.5v-2.5h4v2.5M6 18l.5-4h2l.5 4M7.5 14v-2.5"/><path d="M10.2 20.5v-2.5h4v2.5M11 18l.5-6h2l.5 6M12.2 12V9.5M11 9.5h2.5"/><path d="M15.4 20.5v-2.5h4v2.5M16.3 18l.4-5h2l.4 5M16.2 13l-.6-2.2h4l-.6 2.2"/>',
+  promo: '<path d="M12 21.5v-8M8.5 17 12 13.5l3.5 3.5"/><path d="m5.5 10 2.4-5.5 4.1 3.4 4.1-3.4L18.5 10z"/>',
+  biblioteca: '<path d="M4 20V5h3v15M9 20V4h3v16M14.5 20.5l-1-15 3-.4 1.6 15z"/><path d="M3 20.5h18"/>',
+  lua: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M16 4.5v3M14.5 6h3"/>',
+  chama: '<path d="M12 3c.6 3.2 5 5.2 5 10.2a5 5 0 0 1-10 0c0-2.3 1.1-3.8 2.2-4.8.2 2 1.1 3.1 2.2 3.1 0-3.2-1.4-5.2.6-8.5z"/>',
+  lupa: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5M8 10.5h5M10.5 8v5"/>',
+  calendario: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 14.8 2 2 4-4"/>',
+  meta: '<circle cx="12" cy="12" r="8.5"/><path d="m8 12.3 2.7 2.7 5.6-5.7"/>',
+  ep: '<path d="M6 18.5 17.5 7M11 7h6.5v6.5"/><path d="M5 11v.01M5 7.5v.01M8.5 4v.01"/>',
+  onda2: '<path d="M2.5 15.5c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 1.5-1 3-1.5M2.5 20c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 1.5-1 3-1.5"/><circle cx="12" cy="7.5" r="3.2"/>',
+  roque: '<path d="M3.5 12h17M7.5 7.5 3.5 12l4 4.5M16.5 7.5l4 4.5-4 4.5"/>',
+  cem: '<text x="12" y="15.6" text-anchor="middle" font-size="10.5" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,sans-serif" letter-spacing="-.4">100</text><path d="M4 19.5h16M4 4.5h16"/>',
+  gema: '<path d="M6.5 4h11l3.5 5-9 11L3 9z"/><path d="M3 9h18M9.5 4 8 9l4 11 4-11-1.5-5"/>'
+};
+
+/* as insígnias. v(X): valor atual; lv: metas dos cinco níveis; rare: um nível só */
+const BADGES = [
+  // treino
+  { id: 'tatico', cat: 'treino', t: 'Tático', ic: 'alvo', lv: [25, 100, 300, 750, 1500], d: n => 'Resolva ' + n + ' exercícios tirados das suas partidas', v: X => X.solved },
+  { id: 'relampago', cat: 'treino', t: 'Relâmpago', ic: 'raio', lv: [8, 15, 22, 30, 40], d: n => 'Faça ' + n + ' acertos numa só Corrida', v: X => X.rbest },
+  { id: 'kotov', cat: 'treino', t: 'Árvore de Kotov', ic: 'garfo', lv: [5, 20, 50, 120, 250], d: n => 'Tenha o melhor lance entre os seus candidatos ' + n + ' vezes', v: X => X.candFound },
+  { id: 'autopsia', cat: 'treino', t: 'Autópsia', ic: 'olho', lv: [1, 5, 15, 40, 100], d: n => 'Tire 70% ou mais de autocrítica em ' + n + ' ' + pl(n, 'partida', 'partidas') + ' no Você primeiro', v: X => X.self70 },
+  { id: 'oposicao', cat: 'treino', t: 'Oposição', ic: 'p:king', lv: () => [2, 5, 9, 13, ENDS.length], d: n => 'Conclua ' + n + ' lições do curso de finais', v: X => X.ends },
+  { id: 'rede', cat: 'treino', t: 'Rede de mate', ic: 'grade', lv: () => [5, 10, 15, 20, MATES.length], d: n => 'Resolva ' + n + ' padrões de mate', v: X => X.mates },
+  { id: 'livro', cat: 'treino', t: 'Livro aberto', ic: 'livro', lv: [10, 40, 100, 200, 400], d: n => 'Fixe ' + n + ' posições do seu repertório', v: X => X.rep },
+  { id: 'tecnica', cat: 'treino', t: 'Técnica', ic: 'bandeira', lv: [1, 3, 8, 15, 30], d: n => 'Converta ' + n + ' ' + pl(n, 'vitória que tinha escapado', 'vitórias que tinham escapado'), v: X => X.conv },
+  { id: 'fortaleza', cat: 'treino', t: 'Fortaleza', ic: 'p:rook', lv: [1, 3, 8, 15, 30], d: n => 'Salve ' + n + ' ' + pl(n, 'posição difícil', 'posições difíceis'), v: X => X.def },
+  { id: 'raiox', cat: 'treino', t: 'Raio-X', ic: 'scan', lv: [4, 7, 10, 13, 16], d: n => 'Acerte ' + n + ' posições numa rodada do Raio-X', v: X => X.xbest },
+  { id: 'zeitnot', cat: 'treino', t: 'Zeitnot', ic: 'relogio', lv: [1, 3, 8, 15, 30], d: n => 'Vença ' + n + ' ' + pl(n, 'partida', 'partidas') + ' no treino de relógio', v: X => X.clockW },
+  { id: 'castigo', cat: 'treino', t: 'Castigo', ic: 'martelo', lv: [5, 25, 75, 150, 300], d: n => 'Puna ' + n + ' erros no modo Puna o erro', v: X => X.punish },
+  { id: 'teorico', cat: 'treino', t: 'Teórico', ic: 'chapeu', lv: [10, 40, 100, 250, 500], d: n => 'Resolva ' + n + ' posições no modo Teoria', v: X => X.theory },
+  { id: 'telepata', cat: 'treino', t: 'Telepata', ic: 'onda', lv: [1, 5, 15, 40, 100], d: n => 'Jogue ' + n + ' ' + pl(n, 'rodada', 'rodadas') + ' de Adivinhe o lance', v: X => X.guess },
+  { id: 'detetive', cat: 'treino', t: 'Detetive', ic: 'detetive', lv: [1, 5, 15, 40, 100], d: n => 'Complete ' + n + ' ' + pl(n, 'rodada', 'rodadas') + ' de Ache o erro', v: X => X.spot },
+  { id: 'memoria', cat: 'treino', t: 'Memória de elefante', ic: 'ciclo', lv: [10, 40, 100, 250, 500], d: n => 'Leve ' + n + ' exercícios à revisão de 3 semanas ou mais', v: X => X.srsLong },
+  // partidas
+  { id: 'brilhante', cat: 'partidas', t: 'Lance brilhante', ic: 'estrela', lv: [3, 10, 25, 50, 100], d: n => 'Jogue ' + n + ' ' + pl(n, 'lance brilhante', 'lances brilhantes'), v: X => X.brill },
+  { id: 'maquina', cat: 'partidas', t: 'Precisão de máquina', ic: 'mira', lv: [10, 40, 100, 250, 500], d: n => 'Termine ' + n + ' partidas com 90% ou mais de precisão', v: X => X.acc90 },
+  { id: 'semcapivara', cat: 'partidas', t: 'Sem capivara', ic: 'escudook', lv: [10, 40, 100, 250, 500], d: n => 'Jogue ' + n + ' partidas de 30+ lances sem nenhuma capivarada', v: X => X.clean },
+  { id: 'ressurreicao', cat: 'partidas', t: 'Ressurreição', ic: 'subida', lv: [3, 10, 25, 50, 100], d: n => 'Vença ' + n + ' ' + pl(n, 'partida', 'partidas') + ' depois de estar com 20% ou menos de chance', v: X => X.comeback },
+  { id: 'golias', cat: 'partidas', t: 'Davi e Golias', ic: 'montanha', lv: [1, 5, 15, 30, 60], d: n => 'Vença ' + n + ' ' + pl(n, 'adversário', 'adversários') + ' com 200 pontos ou mais acima de você', v: X => X.giant },
+  { id: 'carrasco', cat: 'partidas', t: 'Carrasco', ic: 'p:king', lv: [50, 200, 500, 1000, 2500], d: n => 'Vença ' + n + ' partidas por xeque-mate', v: X => X.mateW },
+  { id: 'miniatura', cat: 'partidas', t: 'Miniatura', ic: 'ampulheta', lv: [5, 25, 75, 200, 500], d: n => 'Dê mate em até 25 lances ' + n + ' ' + pl(n, 'vez', 'vezes'), v: X => X.mini },
+  { id: 'invicto', cat: 'partidas', t: 'Invicto', ic: 'trofeu', lv: [5, 8, 11, 14, 18], d: n => 'Vença ' + n + ' partidas seguidas', v: X => X.winRow },
+  { id: 'colecao', cat: 'partidas', t: 'Coleção de mates', ic: 'colecao', lv: [1, 2, 3, 4, 5], d: n => n === 1 ? 'Dê xeque-mate' : 'Dê mate com ' + n + ' peças diferentes (peão, cavalo, bispo, torre, dama)', v: X => X.mateTypes },
+  { id: 'peaopassado', cat: 'partidas', t: 'Peão passado', ic: 'promo', lv: [5, 25, 100, 300, 750], d: n => 'Promova ' + n + ' ' + pl(n, 'peão', 'peões') + ' nas suas partidas', v: X => X.promos },
+  { id: 'enciclopedia', cat: 'partidas', t: 'Enciclopédia', ic: 'biblioteca', lv: [25, 75, 150, 300, 500], d: n => 'Jogue ' + n + ' aberturas diferentes', v: X => X.openings },
+  { id: 'coruja', cat: 'partidas', t: 'Coruja', ic: 'lua', lv: [10, 50, 150, 400, 1000], d: n => 'Vença ' + n + ' partidas entre meia-noite e 5 da manhã', v: X => X.nightW },
+  { id: 'maratonista', cat: 'partidas', t: 'Maratonista', ic: 'p:pawn', lv: [500, 2000, 5000, 10000, 20000], d: n => 'Jogue ' + n.toLocaleString('pt-BR') + ' partidas', v: X => X.games },
+  // hábito
+  { id: 'disciplina', cat: 'habito', t: 'Disciplina de ferro', ic: 'chama', lv: [3, 7, 21, 60, 180], d: n => 'Bata a meta diária ' + n + ' dias seguidos', v: X => X.streak },
+  { id: 'analista', cat: 'habito', t: 'Analista', ic: 'lupa', lv: [25, 100, 300, 750, 1500], d: n => 'Analise ' + n + ' partidas com o motor', v: X => X.analyzed },
+  { id: 'clube', cat: 'habito', t: 'Sócio do clube', ic: 'calendario', lv: [5, 20, 60, 150, 365], d: n => 'Treine em ' + n + ' dias diferentes', v: X => X.daysActive },
+  { id: 'meta', cat: 'habito', t: 'Meta batida', ic: 'meta', lv: [3, 15, 50, 120, 300], d: n => 'Bata a meta diária em ' + n + ' dias', v: X => X.goalDays },
+  // raridades
+  { id: 'enpassant', cat: 'raras', rare: true, t: 'En passant', ic: 'ep', d: () => 'Capture en passant numa partida analisada', v: X => X.ep },
+  { id: 'subpromocao', cat: 'raras', rare: true, t: 'Subpromoção', ic: 'p:knight', d: () => 'Promova um peão a cavalo, bispo ou torre', v: X => X.underpromo },
+  { id: 'afogamento', cat: 'raras', rare: true, t: 'Afogamento', ic: 'onda2', d: () => 'Termine uma partida empatada por afogamento', v: X => X.stalemate },
+  { id: 'matedepeao', cat: 'raras', rare: true, t: 'Mate de peão', ic: 'p:pawn', d: () => 'Dê xeque-mate com um peão', v: X => X.pawnMate },
+  { id: 'roquefatal', cat: 'raras', rare: true, t: 'Roque fatal', ic: 'roque', d: () => 'Dê xeque-mate roqueando', v: X => X.castleMate },
+  { id: 'centenaria', cat: 'raras', rare: true, t: 'Centenária', ic: 'cem', d: () => 'Jogue uma partida de 100 lances ou mais', v: X => X.long100 },
+  { id: 'perfeita', cat: 'raras', rare: true, t: 'Partida perfeita', ic: 'gema', d: () => 'Termine uma partida de 25+ lances sem imprecisão, erro ou capivarada', v: X => X.perfect }
+];
+const bLv = b => b.rare ? [1] : typeof b.lv === 'function' ? b.lv() : b.lv;
+const bMax = b => bLv(b).length;
+function bLevel(b, v) { let l = 0; for (const t of bLv(b)) if (v >= t) l++; return l; }
+function bXp(b, l) { if (!l) return 0; if (b.rare) return RARE_XP; let s = 0; for (let i = 0; i < l; i++) s += TIERS[i].xp; return s; }
+const bTierName = (b, l) => b.rare ? 'Rara' : TIERS[l - 1].n;
+
+/* prestígio: a escada das peças. Depois do Rei, cada 2.500 XP é uma promoção */
+const RANKS = [
+  { n: 'Peão', p: 'pawn', xp: 0, m: 'bronze', d: 'Todo grande jogador começou aqui. Cada passo à frente conta.' },
+  { n: 'Cavalo', p: 'knight', xp: 300, m: 'silver', d: 'Você já salta por cima dos obstáculos.' },
+  { n: 'Bispo', p: 'bishop', xp: 900, m: 'gold', d: 'Você enxerga longe, pelas diagonais.' },
+  { n: 'Torre', p: 'rook', xp: 2000, m: 'plat', d: 'Força nas colunas abertas.' },
+  { n: 'Dama', p: 'queen', xp: 3500, m: 'diam', d: 'A peça mais poderosa do tabuleiro.' },
+  { n: 'Rei', p: 'king', xp: 5500, m: 'royal', d: 'O centro de tudo. Daqui em diante, cada 2.500 XP é uma promoção.' }
+];
+const PROMO_XP = 2500;
+function rankOf(xp) {
+  let i = 0; while (i + 1 < RANKS.length && xp >= RANKS[i + 1].xp) i++;
+  const promo = i === RANKS.length - 1 ? Math.floor((xp - RANKS[i].xp) / PROMO_XP) : 0;
+  const base = i === RANKS.length - 1 ? RANKS[i].xp + promo * PROMO_XP : RANKS[i].xp;
+  const next = i === RANKS.length - 1 ? base + PROMO_XP : RANKS[i + 1].xp;
+  return { i, promo, base, next, f: Math.max(0, Math.min(1, (xp - base) / (next - base))), step: i + promo };
+}
+const rankName = r => RANKS[r.i].n + (r.promo ? ' · Promoção ' + roman(r.promo) : '');
+function roman(n) { const v = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I']]; let s = ''; for (const [k, r] of v) while (n >= k) { s += r; n -= k; } return s; }
+
+/* ---------- desenho ---------- */
+const METAL = {
+  bronze: ['#ffd2a6', '#d08a4c', '#8a4b1e', '#5e3112', '#ffe1c2'],
+  silver: ['#ffffff', '#cfd7de', '#8c98a2', '#5d6872', '#f3f6f8'],
+  gold: ['#fff6c4', '#f4c23c', '#b67a05', '#7a4f00', '#fff0a8'],
+  plat: ['#ffffff', '#dfe1ea', '#9fa4ba', '#5f6479', '#f4f3fa'],
+  diam: ['#f2feff', '#8fe9ff', '#3b9bd6', '#1f5c97', '#e9fdff'],
+  royal: ['#fff1c9', '#e8b84a', '#9b4fd1', '#4b1f7a', '#ffeec0'],
+  rare: ['#ffe9ff', '#d39cff', '#8a46d4', '#4a1d86', '#fbe5ff'],
+  lock: ['#d3d9d6', '#a2aba7', '#6e7874', '#4d5653', '#c4cbc8']
+};
+const ENAMEL = { treino: ['#1f5a46', '#0e2c22'], partidas: ['#6a2234', '#2c0b15'], habito: ['#22406e', '#0d1a33'], raras: ['#4a2a78', '#1c0d36'], lock: ['#3a423f', '#1d2321'] };
+const INK = { bronze: '#ffe0c2', silver: '#f6f9fb', gold: '#ffeeb0', plat: '#f7f6ff', diam: '#eefcff', royal: '#fff0c8', rare: '#f9e8ff', lock: '#87918d' };
+const SHAPE = {
+  hex: 'M60 13 97.2 34.5v43L60 99 22.8 77.5v-43z',
+  shield: 'M60 12c13 6.5 25 9 37 9.5V55c0 22-15.5 36.5-37 45-21.5-8.5-37-23-37-45V21.5c12-.5 24-3 37-9.5z',
+  round: 'M60 13a43 43 0 1 1 0 86 43 43 0 0 1 0-86z',
+  oct: 'M43.5 14h33L99 36.5v33L76.5 92h-33L21 69.5v-33z'
+};
+const STUDS = {
+  hex: [[60, 18.6], [92.3, 37.3], [92.3, 74.7], [60, 93.4], [27.7, 74.7], [27.7, 37.3]],
+  shield: [[60, 17.6], [92, 26], [92, 55], [27.9, 55], [28, 26]],
+  round: [[60, 17.8], [88.4, 29.6], [100.2, 56], [88.4, 82.4], [60, 94.2], [31.6, 82.4], [19.8, 56], [31.6, 29.6]],
+  oct: [[60, 18.5], [91, 40], [91, 66], [60, 87.5], [29, 66], [29, 40]]
+};
+function ensureBadgeDefs() {
+  if ($('#bdgDefs')) return;
+  const d = document.createElement('div'); d.id = 'bdgDefs'; d.setAttribute('aria-hidden', 'true'); d.style.cssText = 'position:absolute;width:0;height:0;overflow:hidden';
+  let h = '';
+  for (const k in METAL) {
+    const c = METAL[k];
+    h += '<linearGradient id="mt-' + k + '" x1="0" y1="0" x2=".85" y2="1"><stop offset="0" stop-color="' + c[0] + '"/><stop offset=".32" stop-color="' + c[1] + '"/><stop offset=".55" stop-color="' + c[4] + '"/><stop offset=".78" stop-color="' + c[2] + '"/><stop offset="1" stop-color="' + c[3] + '"/></linearGradient>';
+    h += '<linearGradient id="mr-' + k + '" x1="1" y1="1" x2=".15" y2="0"><stop offset="0" stop-color="' + c[0] + '"/><stop offset=".5" stop-color="' + c[1] + '"/><stop offset="1" stop-color="' + c[3] + '"/></linearGradient>';
+  }
+  for (const k in ENAMEL) h += '<radialGradient id="en-' + k + '" cx=".5" cy=".38" r=".7"><stop offset="0" stop-color="' + ENAMEL[k][0] + '"/><stop offset="1" stop-color="' + ENAMEL[k][1] + '"/></radialGradient>';
+  // o fundo do esmalte é um tabuleiro bem discreto
+  h += '<pattern id="bd-chk" width="12" height="12" patternUnits="userSpaceOnUse"><rect width="6" height="6" fill="#fff" opacity=".055"/><rect x="6" y="6" width="6" height="6" fill="#fff" opacity=".055"/></pattern>';
+  h += '<linearGradient id="bd-gloss" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#fff" stop-opacity=".34"/><stop offset="1" stop-color="#fff" stop-opacity="0"/></linearGradient>';
+  for (const s in SHAPE) h += '<clipPath id="cp-' + s + '"><path d="' + SHAPE[s] + '" transform="' + scl(.8) + '"/></clipPath>';
+  d.innerHTML = '<svg width="0" height="0"><defs>' + h + '</defs></svg>';
+  document.body.appendChild(d);
+}
+function scl(k) { return 'translate(60 56) scale(' + k + ') translate(-60 -56)'; }
+function iconSvg(ic, x, y, s) {
+  if (ic.startsWith('p:')) return '<svg x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24"><path d="' + PIECE[ic.slice(2)] + '" fill="currentColor" fill-rule="evenodd"/></svg>';
+  return '<svg x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round">' + ICONS[ic] + '</svg>';
+}
+// galhos de louro: um arco de cada lado, com folhas pontudas alternando dentro e fora
+const LEAF = 'M0 0C2.6-2.9 8-3.4 12.5-.2 8 3 2.6 2.6 0 0z';
+function laurel(metal) {
+  let h = '';
+  for (const side of [-1, 1]) {
+    const pt = a => [60 + side * Math.cos(a) * 47, 57 + Math.sin(a) * 46];
+    const a0 = Math.PI * .58, a1 = Math.PI * 1.1;
+    const [x0, y0] = pt(a0), [x1, y1] = pt(a0 + (a1 - a0) * .9);
+    h += '<path d="M' + x0.toFixed(1) + ' ' + y0.toFixed(1) + 'A47 46 0 0 ' + (side < 0 ? 1 : 0) + ' ' + x1.toFixed(1) + ' ' + y1.toFixed(1) + '" fill="none" stroke="url(#mr-' + metal + ')" stroke-width="2" stroke-linecap="round"/>';
+    for (let k = 0; k < 10; k++) {
+      const a = a0 + (a1 - a0) * (k + .4) / 10, [x, y] = pt(a);
+      // direção da tangente subindo pelo arco
+      const tx = side * -Math.sin(a), ty = Math.cos(a) * -1;
+      let deg = Math.atan2(-ty, tx) * 180 / Math.PI; deg = -deg;
+      const off = (k % 2 ? 1 : -1) * 38 * side;
+      h += '<path d="' + LEAF + '" transform="translate(' + x.toFixed(1) + ' ' + y.toFixed(1) + ') rotate(' + (deg + off).toFixed(0) + ') scale(' + (1.45 - k * .06).toFixed(2) + ')" fill="url(#mt-' + metal + ')" stroke="rgba(0,0,0,.3)" stroke-width=".45"/>';
+    }
+  }
+  return '<g class="b-laurel">' + h + '</g>';
+}
+function star(n, ro, ri, cx, cy, rot) {
+  let p = ''; for (let i = 0; i < n * 2; i++) { const r = i % 2 ? ri : ro, a = (Math.PI / n) * i + (rot || 0) - Math.PI / 2; p += (i ? 'L' : 'M') + (cx + Math.cos(a) * r).toFixed(1) + ' ' + (cy + Math.sin(a) * r).toFixed(1); }
+  return p + 'Z';
+}
+function badgeSvg(id, lvl, size, extra) {
+  const b = BADGES.find(x => x.id === id), cat = BCATS.find(c => c.id === b.cat), shp = cat.shape;
+  const lock = !lvl, m = lock ? 'lock' : b.rare ? 'rare' : TIERS[lvl - 1].m, tier = b.rare ? (lvl ? 5 : 0) : lvl;
+  let h = '';
+  if (!lock && tier >= 4) h += '<path class="b-halo" d="' + star(tier >= 5 ? 16 : 12, 60, 44, 60, 56) + '" fill="url(#mt-' + m + ')" opacity="' + (tier >= 5 ? .55 : .4) + '"/>';
+  if (!lock && tier >= 5) h += '<path class="b-halo2" d="' + star(8, 57, 30, 60, 56, Math.PI / 8) + '" fill="url(#mr-' + m + ')" opacity=".5"/>';
+  if (!lock && tier >= 3 && !b.rare) h += laurel(m);
+  h += '<path d="' + SHAPE[shp] + '" fill="url(#mt-' + m + ')" stroke="rgba(0,0,0,.35)" stroke-width="1"/>';
+  h += '<path d="' + SHAPE[shp] + '" transform="' + scl(.9) + '" fill="url(#mr-' + m + ')"/>';
+  h += '<path d="' + SHAPE[shp] + '" transform="' + scl(.8) + '" fill="url(#en-' + (lock ? 'lock' : b.cat) + ')" stroke="rgba(0,0,0,.45)" stroke-width="1.4"/>';
+  h += '<g clip-path="url(#cp-' + shp + ')"><rect x="10" y="6" width="100" height="100" fill="url(#bd-chk)"/><ellipse cx="60" cy="30" rx="44" ry="26" fill="url(#bd-gloss)" opacity="' + (lock ? .3 : .75) + '"/></g>';
+  if (!lock && tier >= 2) h += STUDS[shp].map(([x, y]) => '<circle cx="' + x + '" cy="' + y + '" r="2.1" fill="url(#mt-' + m + ')" stroke="rgba(0,0,0,.35)" stroke-width=".5"/>').join('');
+  h += '<g style="color:#000" opacity=".4">' + iconSvg(b.ic, 39.5, 37, 42) + '</g><g style="color:' + INK[m] + '">' + iconSvg(b.ic, 39, 35.5, 42) + '</g>';
+  if (!lock && tier >= 5) h += '<path d="M60 3.5 66 10.5 60 17.5 54 10.5z" fill="url(#mt-' + (b.rare ? 'rare' : 'diam') + ')" stroke="rgba(0,0,0,.35)" stroke-width=".6"/><path d="M60 3.5 63 10.5 60 17.5" fill="#fff" opacity=".35"/>';
+  if (!lock) {
+    const lab = b.rare ? '★' : ROMAN[lvl - 1];
+    h += '<g class="b-ribbon"><path d="M31 92h9l-3 5 3 5h-11l2-5z" fill="url(#mr-' + m + ')" opacity=".9"/><path d="M89 92h-9l3 5-3 5h11l-2-5z" fill="url(#mr-' + m + ')" opacity=".9"/>' +
+      '<path d="M37 88.5h46c-1.2 3.2-1.2 7.1 0 10.3H37c1.2-3.2 1.2-7.1 0-10.3z" fill="url(#mt-' + m + ')" stroke="rgba(0,0,0,.4)" stroke-width=".7"/>' +
+      '<text x="60" y="96.6" text-anchor="middle" font-size="' + (b.rare ? 8.5 : 8) + '" font-weight="800" letter-spacing=".6" fill="' + METAL[m][3] + '" font-family="system-ui,sans-serif">' + lab + '</text></g>';
+  }
+  return '<svg class="bdg-svg' + (lock ? ' locked' : '') + (extra ? ' ' + extra : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 120 120" aria-hidden="true">' + h + '</svg>';
+}
+function rankSvg(r, size, dim) {
+  const R = RANKS[r.i], m = R.m;
+  let h = '';
+  if (!dim && r.i >= 3) h += '<path d="' + star(r.i >= 5 ? 20 : 14, 59, 47, 60, 56) + '" fill="url(#mt-' + m + ')" opacity=".45"/>';
+  if (!dim && r.i >= 2) h += laurel(m);
+  h += '<path d="' + SHAPE.round + '" fill="url(#mt-' + (dim ? 'lock' : m) + ')" stroke="rgba(0,0,0,.35)"/><path d="' + SHAPE.round + '" transform="' + scl(.9) + '" fill="url(#mr-' + (dim ? 'lock' : m) + ')"/>';
+  h += '<path d="' + SHAPE.round + '" transform="' + scl(.8) + '" fill="url(#en-' + (dim ? 'lock' : 'habito') + ')" stroke="rgba(0,0,0,.45)" stroke-width="1.4"/>';
+  h += '<g clip-path="url(#cp-round)"><rect x="10" y="6" width="100" height="100" fill="url(#bd-chk)"/><ellipse cx="60" cy="30" rx="44" ry="26" fill="url(#bd-gloss)" opacity=".7"/></g>';
+  h += '<g style="color:#000" opacity=".4">' + iconSvg('p:' + R.p, 33.5, 31.5, 54) + '</g><g style="color:' + INK[dim ? 'lock' : m] + '">' + iconSvg('p:' + R.p, 33, 30, 54) + '</g>';
+  if (r.promo) { const n = Math.min(r.promo, 5); for (let k = 0; k < n; k++) h += '<path d="' + star(5, 5.2, 2.2, 60 + (k - (n - 1) / 2) * 11, 104) + '" fill="url(#mt-gold)" stroke="rgba(0,0,0,.4)" stroke-width=".5"/>'; }
+  return '<svg class="bdg-svg rank' + (dim ? ' locked' : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 120 120" aria-hidden="true">' + h + '</svg>';
+}
+
+/* ---------- estatísticas ---------- */
+let BGAME = null, BGKEY = '';
+function myPly(g, i) { return (i % 2 === 0) === (g.c === 'w'); }
+function badgeGameStats() {
+  const key = dataKey() + ':' + (GP.ready ? 1 : 0);
+  if (BGAME && BGKEY === key) return BGAME;
+  const X = { games: S.games.length, mateW: 0, giant: 0, mini: 0, winRow: 0, analyzed: 0, brill: 0, acc90: 0, clean: 0, comeback: 0, promos: 0, underpromo: 0, openings: 0, nightW: 0, mateTypes: 0, pawnMate: 0, castleMate: 0, stalemate: 0, long100: 0, ep: 0, perfect: 0 };
+  const ops = new Set(), mt = new Set(); let row = 0;
+  for (const g of S.games.slice().sort((a, b) => a.end - b.end)) {
+    const r = rk(g), mv = g.mv ? g.mv.split(' ') : [];
+    ops.add(opName(g));
+    if (mv.length >= 200) X.long100 = 1;
+    if (g.res === 'stalemate') X.stalemate = 1;
+    for (let i = 0; i < mv.length; i++) if (myPly(g, i) && mv[i].includes('=')) { X.promos++; if (/=[NBR]/.test(mv[i])) X.underpromo = 1; }
+    if (r === 'W') {
+      row++; X.winRow = Math.max(X.winRow, row);
+      if (g.oR && g.mR && g.oR - g.mR >= 200) X.giant++;
+      const h = new Date(g.end * 1000).getHours(); if (h < 5) X.nightW++;
+      const last = mv[mv.length - 1] || '';
+      if (g.oRes === 'checkmated' && last.endsWith('#') && myPly(g, mv.length - 1)) {
+        X.mateW++; if (mv.length <= 50) X.mini++;
+        const pc = /^[NBRQK]/.test(last) ? last[0] : /^O-O/.test(last) ? 'K' : 'P';
+        if (pc !== 'K') mt.add(pc); if (pc === 'P') X.pawnMate = 1; if (/^O-O/.test(last)) X.castleMate = 1;
+      } else if (g.oRes === 'checkmated') X.mateW++;
+    } else if (r === 'L') row = 0;
+  }
+  X.openings = ops.size; X.mateTypes = mt.size;
+  for (const g of analyzedGames()) {
+    X.analyzed++; const P = prepIf(g); if (!P || !P.cls) continue;
+    let blunder = false, sloppy = false, mine = 0, low = false;
+    P.cls.forEach((c, i) => {
+      const m = P.moves[i]; if (m.color !== g.c) return; mine++;
+      if (c.k === 'brill') X.brill++; if (c.k === 'blunder') blunder = true;
+      if (c.k === 'inacc' || c.k === 'mistake' || c.k === 'blunder' || c.k === 'miss') sloppy = true;
+      if (m.flags && m.flags.includes('e')) X.ep = 1;
+      if (i >= 10 && P.evs[i] && sideWp(P.evs[i], g.c) <= 20) low = true;
+    });
+    if (P.acc && P.acc[g.c] >= 90 && mine >= 15) X.acc90++;
+    if (!blunder && mine >= 30) X.clean++;
+    if (!sloppy && mine >= 25) X.perfect = 1;
+    if (low && rk(g) === 'W') X.comeback++;
+  }
+  BGAME = X; BGKEY = key; return X;
+}
+function maxStreak() {
+  const d = store.get('daily', {}), days = Object.keys(d).filter(k => d[k] >= GOAL).sort(); let best = 0, run = 0, prev = null;
+  for (const k of days) { const t = new Date(k + 'T12:00:00').getTime(); run = prev != null && Math.round((t - prev) / 864e5) === 1 ? run + 1 : 1; best = Math.max(best, run); prev = t; }
+  return Math.max(best, streakDays());
+}
+function badgeStats() {
+  const X = Object.assign({}, badgeGameStats()), ar = store.get('arena', {}), cnt = p => Object.keys(ar).filter(k => k.startsWith(p) && ar[k].ok).length;
+  const act = store.get('act', {}), daily = store.get('daily', {}), tot = k => Object.values(act).reduce((s, d) => s + (d[k] || 0), 0);
+  X.solved = Object.keys(store.get('solved', {})).length;
+  X.rbest = store.get('rbest', 0); X.candFound = store.get('cand', {}).found || 0;
+  X.self70 = Object.values(store.get('self', {})).filter(x => x.s >= 70).length;
+  X.ends = cnt('end:'); X.mates = cnt('mates:'); X.conv = cnt('convert:'); X.def = cnt('defend:') + cnt('mine:');
+  X.rep = Object.values(store.get('rep', {})).filter(x => x.b >= 2).length;
+  X.xbest = store.get('xbest', 0); X.clockW = store.get('clockHist', []).filter(x => x.res === 'W').length;
+  X.punish = tot('punish'); X.theory = tot('theory'); X.guess = tot('guess'); X.spot = tot('spot');
+  X.srsLong = Object.values(store.get('srs', {})).filter(e => e.b >= 4).length;
+  const days = new Set(Object.keys(daily).filter(k => daily[k] > 0)); for (const k in act) if (Object.values(act[k]).some(v => v > 0)) days.add(k);
+  X.daysActive = days.size; X.goalDays = Object.keys(daily).filter(k => daily[k] >= GOAL).length;
+  X.streak = maxStreak();
+  return X;
+}
+function badgeTotals(B) {
+  let xp = 0, lv = 0, nb = 0, rare = 0;
+  for (const b of BADGES) { const l = B[b.id] ? B[b.id].l : 0; if (!l) continue; nb++; lv += l; xp += bXp(b, l); if (b.rare) rare++; }
+  const maxLv = BADGES.reduce((s, b) => s + bMax(b), 0);
+  return { xp, lv, nb, rare, maxLv, rank: rankOf(xp) };
+}
+
+/* ---------- verificação e comemoração ---------- */
+let BSTAT = null;
+function badgeCheck() {
+  if (!S.games.length && !Object.keys(store.get('solved', {})).length) return;
+  let X; try { X = BSTAT = badgeStats(); } catch (e) { return; }
+  const B = store.get('bdg', {}), first = !store.get('bdgInit', false), fresh = [];
+  const before = badgeTotals(B).rank;
+  for (const b of BADGES) {
+    const l = Math.min(bLevel(b, b.v(X) || 0), bMax(b)), cur = B[b.id] ? B[b.id].l : 0;
+    if (l > cur) { B[b.id] = { l, t: Date.now() }; fresh.push({ b, l }); }
+  }
+  if (!fresh.length) { if (first) store.set('bdgInit', true); return; }
+  store.set('bdg', B); store.set('bdgInit', true);
+  const after = badgeTotals(B).rank; store.set('prestige', Math.max(store.get('prestige', 0), after.step)); cloudPrefsPush();
+  if (first) { toast('Você já tem ' + fresh.length + ' insígnia' + (fresh.length > 1 ? 's' : '') + ' e o prestígio de ' + rankName(after) + '. Veja em Conquistas.'); refreshBadgeSpots(); return; }
+  for (const f of fresh) BQ.push(f);
+  if (after.step > before.step) BQ.push({ rank: after });
+  badgeShowNext(); refreshBadgeSpots();
+}
+let BCHK = 0;
+function badgeSoon() { clearTimeout(BCHK); BCHK = setTimeout(() => { (window.requestIdleCallback || (f => setTimeout(f, 0)))(() => badgeCheck(), { timeout: 2500 }); }, 1500); }
+function refreshBadgeSpots() {
+  const p = $('#pnBadges'); if (p && S.view === 'painel') p.innerHTML = pnBadgesHtml();
+  if (S.view === 'conquistas') renderConquistas();
+  const tb = document.querySelector('[data-v="conquistas"] .nb-dot'); if (tb) tb.hidden = !store.get('bdgNew', false);
+}
+const BQ = [];
+function chime(big) {
+  if (!store.get('snd', true)) return;
+  try {
+    AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume();
+    const t0 = AC.currentTime, notes = big ? [392, 523.25, 659.25, 783.99, 1046.5, 1318.5] : [523.25, 659.25, 783.99, 1046.5];
+    notes.forEach((f, i) => {
+      const o = AC.createOscillator(), g = AC.createGain(); o.type = 'triangle'; o.frequency.value = f;
+      const t = t0 + i * (big ? .11 : .09); g.gain.setValueAtTime(0, t); g.gain.linearRampToValueAtTime(.15, t + .02); g.gain.exponentialRampToValueAtTime(.001, t + (big ? .9 : .55));
+      o.connect(g).connect(AC.destination); o.start(t); o.stop(t + 1);
+    });
+  } catch (e) { /* sem áudio */ }
+}
+function badgeShowNext() {
+  if (!BQ.length || $('#bfx')) return;
+  if (document.hidden) { document.addEventListener('visibilitychange', badgeShowNext, { once: true }); return; }
+  ensureBadgeDefs(); store.set('bdgNew', true);
+  const it = BQ.shift(), more = BQ.length ? ' · mais ' + BQ.length : '';
+  const el = document.createElement('div'); el.id = 'bfx'; el.className = 'bfx'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
+  let body;
+  if (it.rank) {
+    const R = RANKS[it.rank.i];
+    el.setAttribute('aria-label', 'Promovido a ' + rankName(it.rank));
+    body = '<span class="label">Promoção' + more + '</span><div class="bfx-badge">' + rankSvg(it.rank, 170) + '<i class="bfx-shine round"></i></div><h2>Promovido a ' + esc(rankName(it.rank)) + '</h2><p class="muted">' + esc(R.d) + '</p>';
+  } else {
+    const { b, l } = it;
+    el.setAttribute('aria-label', 'Nova conquista: ' + b.t);
+    body = '<span class="label">' + (b.rare ? 'Insígnia rara' : l > 1 ? 'Subiu de nível' : 'Nova conquista') + more + '</span><div class="bfx-badge">' + badgeSvg(b.id, l, 170) + '<i class="bfx-shine ' + BCATS.find(c => c.id === b.cat).shape + '"></i></div><h2>' + esc(b.t) + '</h2><span class="tag tier-' + (b.rare ? 'r' : l) + '">' + bTierName(b, l) + (b.rare ? '' : ' · nível ' + ROMAN[l - 1]) + ' · +' + (bXp(b, l) - bXp(b, l - 1)) + ' XP</span><p class="muted">' + esc(b.d(bLv(b)[l - 1])) + '</p>';
+  }
+  el.innerHTML = '<div class="bfx-card' + (it.rank ? ' promo' : '') + '"><div class="bfx-rays" aria-hidden="true"></div>' + body + '<div class="vxacts" style="justify-content:center"><button class="btn primary" type="button" data-bfx="ok">' + (BQ.length ? 'Próxima' : 'Continuar') + '</button><a class="btn" href="#conquistas" data-bfx="all">Ver conquistas</a></div></div>';
+  document.body.appendChild(el); requestAnimationFrame(() => el.classList.add('on'));
+  haptic('ok'); chime(!!it.rank); setTimeout(() => sparkle(el.querySelector('.bfx-card')), 250);
+  const btn = el.querySelector('[data-bfx="ok"]'); try { btn.focus({ preventScroll: true }); } catch (e) { /* sem foco */ }
+}
+function badgeClose(all) {
+  const el = $('#bfx'); if (!el) return; el.classList.remove('on');
+  if (all) BQ.length = 0;
+  setTimeout(() => { el.remove(); badgeShowNext(); }, 220);
+}
+document.addEventListener('click', e => {
+  const t = e.target.closest && e.target.closest('[data-bfx],#bfx'); if (!t) return;
+  if (t.dataset.bfx === 'ok') badgeClose(false); else if (t.dataset.bfx === 'all') badgeClose(true); else if (t.id === 'bfx' && e.target.id === 'bfx') badgeClose(false);
+});
+document.addEventListener('keydown', e => { if (e.key === 'Escape' && $('#bfx')) badgeClose(false); });
+
+/* ---------- aba Conquistas e cartão no Painel ---------- */
+function badgeProgress(b, X) {
+  const lv = bLv(b), v = b.v(X) || 0, l = Math.min(bLevel(b, v), lv.length), next = lv[Math.min(l, lv.length - 1)], prev = l ? lv[l - 1] : 0;
+  return { v, l, next, f: l >= lv.length ? 1 : Math.max(0, Math.min(1, (v - prev) / Math.max(1, next - prev))) };
+}
+const fmtXp = n => n.toLocaleString('pt-BR');
+function pnBadgesHtml() {
+  ensureBadgeDefs();
+  const B = store.get('bdg', {}), T = badgeTotals(B), got = BADGES.filter(b => B[b.id] && B[b.id].l).sort((a, b) => B[b.id].t - B[a.id].t);
+  return '<div class="pnb-head"><a href="#conquistas" class="pnb-rank">' + rankSvg(T.rank, 64) + '</a><div class="stack" style="gap:4px;min-width:0;flex:1"><span class="label">Prestígio</span><b style="font-size:18px">' + esc(rankName(T.rank)) + '</b><div class="bbar sm"><i style="transform:scaleX(' + T.rank.f.toFixed(3) + ')"></i></div><span class="muted mono" style="font-size:12px">' + fmtXp(T.xp) + ' / ' + fmtXp(T.rank.next) + ' XP</span></div></div>' +
+    '<div class="pnb">' + (got.length ? got.slice(0, 6).map(b => '<a href="#conquistas" class="pnb-i" title="' + esc(b.t + ' · ' + bTierName(b, B[b.id].l)) + '">' + badgeSvg(b.id, B[b.id].l, 50) + '</a>').join('') : '') + '</div>' +
+    '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted" style="font-size:13.5px">' + T.nb + ' de ' + BADGES.length + ' insígnias</span><a class="btn small" href="#conquistas">Ver conquistas</a></div>';
+}
+let CQF = 'all';
+function renderConquistas() {
+  ensureBadgeDefs(); store.set('bdgNew', false);
+  const dot = document.querySelector('[data-v="conquistas"] .nb-dot'); if (dot) dot.hidden = true;
+  const X = BSTAT = badgeStats(), B = store.get('bdg', {}), T = badgeTotals(B), R = RANKS[T.rank.i];
+  const P = BADGES.map(b => ({ b, p: badgeProgress(b, X), got: Math.min(B[b.id] ? B[b.id].l : 0, bMax(b)) }));
+  // prestígio
+  const nextName = T.rank.i < RANKS.length - 1 ? RANKS[T.rank.i + 1].n : 'Promoção ' + roman(T.rank.promo + 1);
+  $('#cqHero').innerHTML = '<div class="cq-hero-in"><div class="cq-emb">' + rankSvg(T.rank, 132) + '</div><div class="stack" style="gap:6px;min-width:0;flex:1"><span class="label">Prestígio</span><h2 class="cq-rank">' + esc(rankName(T.rank)) + '</h2><p class="muted" style="font-size:14px">' + esc(R.d) + '</p>' +
+    '<div class="bbar lg"><i style="transform:scaleX(' + T.rank.f.toFixed(3) + ')"></i></div><span class="mono muted" style="font-size:12.5px">' + fmtXp(T.xp) + ' XP · faltam ' + fmtXp(Math.max(0, T.rank.next - T.xp)) + ' para ' + esc(nextName) + '</span></div></div>' +
+    '<div class="cq-ladder" role="list" aria-label="Escada de prestígio">' + RANKS.map((r, i) => '<div class="cq-step' + (i < T.rank.i ? ' done' : i === T.rank.i ? ' cur' : '') + '" role="listitem">' + rankSvg({ i, promo: 0 }, 46, i > T.rank.i) + '<span>' + r.n + '</span><span class="mono">' + fmtXp(r.xp) + '</span></div>').join('') + '</div>' +
+    '<div class="cq-stats"><div><b>' + T.nb + '<small>/' + BADGES.length + '</small></b><span>insígnias</span></div><div><b>' + T.lv + '<small>/' + T.maxLv + '</small></b><span>níveis</span></div><div><b>' + T.rare + '<small>/' + BADGES.filter(b => b.rare).length + '</small></b><span>raras</span></div><div><b>' + fmtXp(T.xp) + '</b><span>XP</span></div></div>';
+  // quase lá
+  const near = P.filter(x => x.p.l < bMax(x.b) && x.p.f > 0 && !x.b.rare).sort((a, b) => b.p.f - a.p.f).slice(0, 4);
+  $('#cqNext').innerHTML = near.length ? '<h2 class="h-card">Quase lá</h2><div class="cq-near">' + near.map(x => '<button type="button" class="cq-n" data-cqgo="' + x.b.id + '">' + badgeSvg(x.b.id, x.p.l + 1, 52, 'ghost') + '<div class="stack" style="gap:3px;min-width:0;flex:1;text-align:left"><b>' + esc(x.b.t) + ' · ' + TIERS[x.p.l].n + '</b><div class="bbar sm"><i style="transform:scaleX(' + x.p.f.toFixed(3) + ')"></i></div><span class="muted mono" style="font-size:12px">' + fmtXp(Math.round(x.p.v)) + ' / ' + fmtXp(x.p.next) + ' · +' + TIERS[x.p.l].xp + ' XP</span></div></button>').join('') + '</div>' : '';
+  // filtro e grade
+  $$('#cqFilter button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.cqf === CQF)));
+  const keep = x => CQF === 'all' || (CQF === 'got' ? x.got > 0 : x.got < bMax(x.b));
+  $('#cqGrid').innerHTML = BCATS.map(cat => {
+    const items = P.filter(x => x.b.cat === cat.id && keep(x)); if (!items.length) return '';
+    const n = P.filter(x => x.b.cat === cat.id && x.got).length, all = P.filter(x => x.b.cat === cat.id).length;
+    return '<section class="stack" style="gap:10px"><div class="cq-cat"><h2 class="h-card">' + cat.n + '</h2><span class="muted">' + n + ' de ' + all + ' · ' + esc(cat.d) + '</span></div><div class="cq-grid">' + items.map(x => cqCard(x, B)).join('') + '</div></section>';
+  }).join('') || '<p class="muted">Nada aqui ainda.</p>';
+}
+function cqCard(x, B) {
+  const { b, p, got } = x, max = bMax(b), lv = bLv(b);
+  const tiers = b.rare ? '<span class="' + (got ? 'ok' : '') + '">' + (got ? '✓ ' : '') + esc(b.d()) + ' · +' + RARE_XP + ' XP' + (got && B[b.id] ? ' · ' + dateLabel(Math.floor(B[b.id].t / 1000)) : '') + '</span>'
+    : lv.map((t, i) => '<span class="' + (got > i ? 'ok' : '') + '"><b>' + TIERS[i].n + '</b> ' + esc(b.d(t)) + ' · +' + TIERS[i].xp + ' XP</span>').join('');
+  return '<button type="button" class="cq' + (got ? ' got' : '') + (b.rare ? ' rare' : '') + (got >= max ? ' max' : '') + '" data-cq="' + b.id + '" id="cq-' + b.id + '" aria-expanded="false">' + badgeSvg(b.id, got, 88) +
+    '<b>' + esc(b.t) + '</b><span class="cq-t">' + (got ? bTierName(b, got) + (b.rare ? '' : ' · ' + ROMAN[got - 1]) : 'Bloqueada') + '</span>' +
+    (got < max ? '<div class="bbar sm"><i style="transform:scaleX(' + p.f.toFixed(3) + ')"></i></div><span class="muted cq-d">' + esc(b.rare ? b.d() : b.d(p.next)) + (b.rare ? '' : ' · <span class="mono">' + fmtXp(Math.min(Math.round(p.v), p.next)) + '/' + fmtXp(p.next) + '</span>') + '</span>' : '<span class="muted cq-d">' + (b.rare ? esc(b.d()) : 'Todos os níveis conquistados') + '</span>') +
+    '<span class="cq-more">' + tiers + '</span></button>';
+}
+document.addEventListener('click', e => {
+  if (!e.target.closest) return;
+  if (e.target.closest('[data-go-cq]')) { location.hash = 'conquistas'; return; }
+  const f = e.target.closest('[data-cqf]'); if (f) { CQF = f.dataset.cqf; renderConquistas(); return; }
+  const g = e.target.closest('[data-cqgo]'); if (g) { CQF = 'all'; renderConquistas(); const c = $('#cq-' + g.dataset.cqgo); if (c) { c.scrollIntoView({ block: 'center', behavior: 'smooth' }); c.click(); } return; }
+  const c = e.target.closest('[data-cq]'); if (!c) return;
+  const on = c.getAttribute('aria-expanded') !== 'true'; c.setAttribute('aria-expanded', String(on)); c.classList.toggle('open', on);
+});

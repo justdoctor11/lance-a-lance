@@ -1020,7 +1020,7 @@ function hubHtml() {
   const endsOk = ENDS.filter(e => d['end:' + e.id] && d['end:' + e.id].ok).length;
   const tile = (go, t, big, sub) => '<button class="tile" type="button" ' + go + '><span class="label">' + t + '</span><b class="mono">' + big + '</b><span class="muted">' + sub + '</span></button>';
   const rd = repToday();
-  const B = store.get('badges', {}), nb = Object.keys(B).filter(k => B[k].l).length, sv = Object.keys(store.get('self', {})).length;
+  const B = store.get('bdg', {}), nb = Object.keys(B).filter(k => B[k].l).length, sv = Object.keys(store.get('self', {})).length;
   return tile('data-pz="timed"', 'Corrida', store.get('rbest', 0), 'recorde · 3 min, 3 vidas') +
     tile('data-ar="open:cand"', 'Lances candidatos', (store.get('cand', {}).best || 0) + '/20', 'melhor rodada · treina o cálculo') +
     tile('data-ar="open:self"', 'Você primeiro', sv, 'partidas revisadas antes do motor') +

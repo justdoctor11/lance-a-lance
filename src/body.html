@@ -11,6 +11,7 @@
       <a href="#analise" data-v="analise">Análise</a>
       <a href="#treino" data-v="treino">Treino</a>
       <a href="#stats" data-v="stats">Estatísticas</a>
+      <a href="#conquistas" data-v="conquistas">Conquistas</a>
     </nav>
     <div class="top-r">
       <span class="acct" id="acct"></span>
@@ -231,15 +232,15 @@
 
   <!-- ARENA: desafios contra o motor -->
   <section class="view" id="v-conquistas" aria-labelledby="h-cq">
-    <div class="stack" style="gap:18px">
-      <div class="stack" style="gap:8px">
-        <a class="btn small" href="#painel" style="align-self:flex-start">← Painel</a>
+    <div class="stack" style="gap:20px">
+      <div class="stack" style="gap:4px">
         <h1 class="h-page" id="h-cq">Conquistas</h1>
-        <p class="sub" id="cqSub"></p>
-        <div class="bbar lg"><i id="cqBar"></i></div>
+        <p class="sub">Insígnias pelo que você treina e joga. Cada nível dá XP, e o XP sobe o seu prestígio pela escada das peças.</p>
       </div>
-      <div class="stack" style="gap:8px" id="cqNext"></div>
-      <div class="stack" style="gap:22px" id="cqGrid"></div>
+      <section class="card pad cq-hero" id="cqHero"></section>
+      <div class="stack" style="gap:10px" id="cqNext"></div>
+      <div class="seg" role="group" aria-label="Mostrar" id="cqFilter"><button type="button" data-cqf="all" aria-pressed="true">Todas</button><button type="button" data-cqf="got" aria-pressed="false">Conquistadas</button><button type="button" data-cqf="todo" aria-pressed="false">A conquistar</button></div>
+      <div class="stack" style="gap:26px" id="cqGrid"></div>
     </div>
   </section>
   <section class="view" id="v-arena" aria-label="Treino contra o motor">
@@ -266,6 +267,7 @@
   <a href="#analise" data-v="analise"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="16" height="16" rx="2"></rect><path d="M3 11h16M11 3v16" stroke-opacity=".5"></path><rect x="3" y="3" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect><rect x="11" y="11" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect></svg></span>Análise</a>
   <a href="#stats" data-v="stats"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 18V11M9 18V5M14 18v-9M19 18v-5"></path></svg></span>Números</a>
   <a href="#treino" data-v="treino"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><circle cx="11" cy="11" r="4"></circle><circle cx="11" cy="11" r="1" fill="currentColor"></circle></svg></span>Treino</a>
+  <a href="#conquistas" data-v="conquistas"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h8v5.5a4 4 0 0 1-8 0zM7 5H4.2a2.8 2.8 0 0 0 2.9 4M15 5h2.8a2.8 2.8 0 0 1-2.9 4M11 12.5v3.5M7.5 19h7M8.5 16h5"></path></svg><i class="nb-dot" hidden></i></span>Conquistas</a>
 </nav>
 
 <div class="modal" id="sync" hidden role="dialog" aria-modal="true" aria-labelledby="syncTitle">

@@ -712,7 +712,7 @@ function showView(v) {
   S.view = v;
   for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
   if (S.swipeDir) swipeMark($('#v-' + v));
-  const nv = v === 'arena' ? 'treino' : v === 'conquistas' ? 'painel' : v;
+  const nv = v === 'arena' ? 'treino' : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
   window.scrollTo(0, 0);

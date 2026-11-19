@@ -296,7 +296,7 @@ function phaseCostHtml() {
 }
 
 /* ---------- deslizar entre as abas (celular) ---------- */
-var SWIPE_ORDER = ['painel', 'partidas', 'analise', 'stats', 'treino'];
+var SWIPE_ORDER = ['painel', 'partidas', 'analise', 'stats', 'treino', 'conquistas'];
 function swipeInit() {
   const main = $('main.wrap'); if (!main) return;
   const mq = matchMedia('(max-width: 899px)');
@@ -347,7 +347,7 @@ function swipeMark(el) {
 
 /* ---------- progresso: o que vai para a nuvem e como juntar dois aparelhos ---------- */
 function prefsSnapshot() {
-  return { solved: store.get('solved', {}), srs: store.get('srs', {}), daily: store.get('daily', {}), tbest: store.get('tbest', 0), rbest: store.get('rbest', 0), rush: store.get('rush', {}), cand: store.get('cand', {}), self: store.get('self', {}), badges: store.get('badges', {}), act: store.get('act', {}), arena: store.get('arena', {}), xbest: store.get('xbest', 0), guess: store.get('guess', {}), clockHist: store.get('clockHist', []), rep: store.get('rep', {}), repNew: store.get('repNew', {}), endg: store.get('endg', {}), pinLines: store.get('pinLines', []) };
+  return { solved: store.get('solved', {}), srs: store.get('srs', {}), daily: store.get('daily', {}), tbest: store.get('tbest', 0), rbest: store.get('rbest', 0), rush: store.get('rush', {}), cand: store.get('cand', {}), self: store.get('self', {}), bdg: store.get('bdg', {}), prestige: store.get('prestige', 0), act: store.get('act', {}), arena: store.get('arena', {}), xbest: store.get('xbest', 0), guess: store.get('guess', {}), clockHist: store.get('clockHist', []), rep: store.get('rep', {}), repNew: store.get('repNew', {}), endg: store.get('endg', {}), pinLines: store.get('pinLines', []) };
 }
 function mergePrefs(p) {
   if (!p) return;
@@ -360,7 +360,8 @@ function mergePrefs(p) {
   const lu = store.get('rush', {}), cu = p.rush || {}; store.set('rush', { n: Math.max(lu.n || 0, cu.n || 0), top: Math.max(lu.top || 0, cu.top || 0), sum: Math.max(lu.sum || 0, cu.sum || 0) });
   const lc = store.get('cand', {}), cc = p.cand || {}; store.set('cand', { n: Math.max(lc.n || 0, cc.n || 0), found: Math.max(lc.found || 0, cc.found || 0), pos: Math.max(lc.pos || 0, cc.pos || 0), best: Math.max(lc.best || 0, cc.best || 0) });
   const lf = store.get('self', {}), cf = p.self || {}; for (const k in cf) if (!lf[k] || (cf[k].t || 0) > (lf[k].t || 0)) lf[k] = cf[k]; store.set('self', lf);
-  const lb = store.get('badges', {}), cb = p.badges || {}; for (const k in cb) if (!lb[k] || (cb[k].l || 0) > (lb[k].l || 0)) lb[k] = cb[k]; store.set('badges', lb);
+  const lb = store.get('bdg', {}), cb = p.bdg || {}; for (const k in cb) if (!lb[k] || (cb[k].l || 0) > (lb[k].l || 0)) lb[k] = cb[k]; store.set('bdg', lb);
+  store.set('prestige', Math.max(store.get('prestige', 0), p.prestige || 0));
   const la = store.get('act', {}), ca = p.act || {}; for (const d in ca) { la[d] = la[d] || {}; for (const k in ca[d]) la[d][k] = Math.max(la[d][k] || 0, ca[d][k]); } store.set('act', la);
   const lr = store.get('arena', {}), cr = p.arena || {}; for (const k in cr) { const a = lr[k], b = cr[k]; if (!a) lr[k] = b; else lr[k] = { n: Math.max(a.n || 0, b.n || 0), ok: (a.ok || b.ok) ? 1 : 0, t: Math.max(a.t || 0, b.t || 0) }; } store.set('arena', lr);
   const lg = store.get('guess', {}), cg = p.guess || {}; for (const k in cg) lg[k] = Math.max(lg[k] || 0, cg[k]); store.set('guess', lg);
