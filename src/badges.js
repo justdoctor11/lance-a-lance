@@ -317,8 +317,8 @@ function badgeStats() {
 function badgeTotals(B) {
   let xp = 0, lv = 0, nb = 0, rare = 0;
   for (const b of BADGES) { const l = B[b.id] ? B[b.id].l : 0; if (!l) continue; nb++; lv += l; xp += bXp(b, l); if (b.rare) rare++; }
-  const maxLv = BADGES.reduce((s, b) => s + bMax(b), 0);
-  return { xp, lv, nb, rare, maxLv, rank: rankOf(xp) };
+  const maxLv = BADGES.reduce((s, b) => s + bMax(b), 0), wx = wkXp(); xp += wx;
+  return { xp, lv, nb, rare, maxLv, wx, rank: rankOf(xp) };
 }
 
 /* ---------- verificação e comemoração ---------- */
@@ -332,12 +332,15 @@ function badgeCheck() {
     const l = Math.min(bLevel(b, b.v(X) || 0), bMax(b)), cur = B[b.id] ? B[b.id].l : 0;
     if (l > cur) { B[b.id] = { l, t: Date.now() }; fresh.push({ b, l }); }
   }
-  if (!fresh.length) { if (first) store.set('bdgInit', true); return; }
+  const wkFresh = first ? (wkCheck(), []) : wkCheck();
+  if (!fresh.length && !wkFresh.length) { if (first) store.set('bdgInit', true); refreshWeekly(); return; }
   store.set('bdg', B); store.set('bdgInit', true);
   const after = badgeTotals(B).rank; store.set('prestige', Math.max(store.get('prestige', 0), after.step)); cloudPrefsPush();
   if (first) { toast('Você já tem ' + fresh.length + ' insígnia' + (fresh.length > 1 ? 's' : '') + ' e o prestígio de ' + rankName(after) + '. Veja em Conquistas.'); refreshBadgeSpots(); return; }
+  for (const f of wkFresh) BQ.push(f);
   for (const f of fresh) BQ.push(f);
   if (after.step > before.step) BQ.push({ rank: after });
+  refreshWeekly();
   badgeShowNext(); refreshBadgeSpots();
 }
 let BCHK = 0;
@@ -367,7 +370,10 @@ function badgeShowNext() {
   const it = BQ.shift(), more = BQ.length ? ' · mais ' + BQ.length : '';
   const el = document.createElement('div'); el.id = 'bfx'; el.className = 'bfx'; el.setAttribute('role', 'dialog'); el.setAttribute('aria-modal', 'true');
   let body;
-  if (it.rank) {
+  if (it.wk) {
+    el.setAttribute('aria-label', 'Desafio concluído: ' + it.wk.t);
+    body = '<span class="label">Desafio da semana' + more + '</span><div class="bfx-badge"><svg class="bd bt3" viewBox="0 0 64 64" width="150" height="150" aria-hidden="true">' + ring(3, 3, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + glyph(it.wk.ic, 17, 17, 30, true) + '</svg></div><h2>Desafio concluído</h2><span class="tag tier-3">+' + (WK_XP + (it.all ? WK_BONUS : 0)) + ' XP' + (it.all ? ' · os três da semana!' : '') + '</span><p class="muted">' + esc(it.wk.t) + '</p>';
+  } else if (it.rank) {
     const R = RANKS[it.rank.i];
     el.setAttribute('aria-label', 'Promovido a ' + rankName(it.rank));
     body = '<span class="label">Promoção' + more + '</span><div class="bfx-badge">' + rankSvg(it.rank, 170) + '</div><h2>Promovido a ' + esc(rankName(it.rank)) + '</h2><p class="muted">' + esc(R.d) + '</p>';
@@ -470,3 +476,78 @@ document.addEventListener('pointermove', e => {
   c.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); c.style.setProperty('--my', (y * 100).toFixed(1) + '%');
   c.classList.add('tilt'); CQTILT = c;
 }, { passive: true });
+
+/* ---------- Desafios da semana ----------
+   Três missões por semana (segunda a domingo), sorteadas com uma semente fixa da semana,
+   uma de partidas, uma de treino e uma de hábito. O progresso é calculado dos dados;
+   cada desafio vale 60 XP e completar os três dá mais 60. */
+const WK_XP = 60, WK_BONUS = 60;
+function weekStart(d) { const x = new Date(d || Date.now()); x.setHours(0, 0, 0, 0); x.setDate(x.getDate() - ((x.getDay() + 6) % 7)); return x; }
+const weekKey = d => dayKey(weekStart(d));
+function wkDays(ws) { const out = []; for (let i = 0; i < 7; i++) { const d = new Date(ws); d.setDate(d.getDate() + i); out.push(dayKey(d)); } return out; }
+function seeded(str) { let h = 2166136261; for (const ch of str) { h ^= ch.charCodeAt(0); h = Math.imul(h, 16777619); } return () => { h ^= h << 13; h ^= h >>> 17; h ^= h << 5; return ((h >>> 0) % 100000) / 100000; }; }
+// contexto da semana: o que aconteceu desde segunda
+function wkCtx(ws) {
+  const t0 = ws.getTime() / 1000, days = wkDays(ws), act = store.get('act', {}), daily = store.get('daily', {});
+  const G = S.games.filter(g => g.end >= t0), tot = k => days.reduce((s, d) => s + ((act[d] || {})[k] || 0), 0);
+  const top = AGG && AGG.openings && AGG.openings[0];
+  const C = {
+    G, wins: G.filter(g => rk(g) === 'W'),
+    solved: days.reduce((s, d) => s + (daily[d] || 0), 0), goalDays: days.filter(d => (daily[d] || 0) >= GOAL).length,
+    rush: Math.max(0, ...(store.get('rushLog', []).filter(x => x.t >= t0 * 1000).map(x => x.ok))),
+    cand: tot('cand'), rep: tot('rep'), punish: tot('punish'), spot: tot('spot'),
+    self: Object.values(store.get('self', {})).filter(x => x.t >= t0 * 1000).length,
+    top
+  };
+  C.analyzed = G.filter(g => S.an[g.id]).length;
+  return C;
+}
+// cada modelo: categoria, meta (pode depender do histórico), texto, progresso, ícone, onde fazer
+const WK_POOL = [
+  { id: 'vitorias', cat: 'jogo', ic: 'trofeu', goal: () => { const t = Date.now() / 1000 - 56 * 86400, w = S.games.filter(g => g.end >= t && rk(g) === 'W').length / 8; return Math.max(3, Math.min(15, Math.round(w * .6))); }, t: n => 'Vença ' + n + ' partidas', v: C => C.wins.length },
+  { id: 'abertura', cat: 'jogo', ic: 'chave', when: C => !!C.top, goal: () => 2, t: (n, C) => 'Vença ' + n + ' com ' + opName({ op: C.top.name }) + ' (' + (C.top.color === 'w' ? 'brancas' : 'pretas') + ')', v: C => C.wins.filter(g => g.c === C.top.color && opName(g) === opName({ op: C.top.name })).length },
+  { id: 'pretas', cat: 'jogo', ic: 'yin', goal: () => 3, t: n => 'Vença ' + n + ' partidas de pretas', v: C => C.wins.filter(g => g.c === 'b').length },
+  { id: 'mate', cat: 'jogo', ic: 'p:king', goal: () => 1, t: () => 'Vença uma partida por xeque-mate', v: C => C.wins.filter(g => g.oRes === 'checkmated').length },
+  { id: 'limpa', cat: 'jogo', ic: 'escudook', goal: () => 2, t: n => 'Jogue ' + n + ' partidas analisadas sem capivarada', v: C => C.G.filter(g => { const P = S.an[g.id] && prepIf(g); return P && P.cls && !P.cls.some((c, i) => P.moves[i].color === g.c && c.k === 'blunder'); }).length },
+  { id: 'precisao', cat: 'jogo', ic: 'mira', goal: () => 1, t: () => 'Termine uma partida analisada com 85% de precisão', v: C => C.G.filter(g => { const P = S.an[g.id] && prepIf(g); return P && P.acc && P.acc[g.c] >= 85; }).length },
+  { id: 'exercicios', cat: 'treino', ic: 'alvo', goal: () => 30, t: n => 'Resolva ' + n + ' exercícios', v: C => C.solved, go: 'data-pz="mine"' },
+  { id: 'corrida', cat: 'treino', ic: 'raio', goal: () => Math.max(8, Math.min(25, (store.get('rbest', 0) || 6) + 2)), t: n => 'Faça ' + n + ' acertos numa Corrida', v: C => C.rush, go: 'data-pz="timed"' },
+  { id: 'candidatos', cat: 'treino', ic: 'garfo', goal: () => 2, t: n => 'Complete ' + n + ' rodadas de Lances candidatos', v: C => C.cand, go: 'data-ar="open:cand"' },
+  { id: 'castigo', cat: 'treino', ic: 'martelo', goal: () => 8, t: n => 'Puna ' + n + ' erros no modo Puna o erro', v: C => C.punish, go: 'data-pz="punish"' },
+  { id: 'detetive', cat: 'treino', ic: 'detetive', goal: () => 2, t: n => 'Complete ' + n + ' rodadas de Ache o erro', v: C => C.spot, go: 'data-ar="open:spot"' },
+  { id: 'repertorio', cat: 'treino', ic: 'livro', goal: () => 20, t: n => 'Revise ' + n + ' posições do repertório', v: C => C.rep, go: 'data-ar="open:rep"' },
+  { id: 'meta', cat: 'habito', ic: 'calendario', goal: () => 4, t: n => 'Bata a meta diária em ' + n + ' dias', v: C => C.goalDays, go: 'data-pz="mine"' },
+  { id: 'voceprimeiro', cat: 'habito', ic: 'olho', goal: () => 2, t: n => 'Faça o Você primeiro em ' + n + ' partidas', v: C => C.self, go: 'data-ar="open:self"' },
+  { id: 'analise', cat: 'habito', ic: 'lupa', goal: () => 3, t: n => 'Analise ' + n + ' partidas desta semana', v: C => C.analyzed, go: 'href="#partidas"' }
+];
+let WKC = null;
+function weekChallenges() {
+  const ws = weekStart(), key = dayKey(ws) + ':' + (S.me || ''), C = wkCtx(ws);
+  if (!WKC || WKC.key !== key) {
+    const rnd = seeded(key), pick = [];
+    for (const cat of ['jogo', 'treino', 'habito']) {
+      const opts = WK_POOL.filter(x => x.cat === cat && (!x.when || x.when(C)));
+      const it = opts[Math.floor(rnd() * opts.length)]; if (it) pick.push({ m: it, n: it.goal() });
+    }
+    WKC = { key, ws, pick };
+  }
+  return { ws, C, list: WKC.pick.map(({ m, n }) => { const v = Math.min(n, m.v(C) || 0); return { id: m.id, ic: m.ic, t: m.t(n, C), n, v, done: v >= n, go: m.go }; }) };
+}
+// XP vindo dos desafios: guardado por semana, para não perder o que já foi feito
+function wkXp() { const H = store.get('wkHist', {}); let x = 0; for (const k in H) { const d = H[k] || 0; x += d * WK_XP + (d >= 3 ? WK_BONUS : 0); } return x; }
+function wkCheck() {
+  let W; try { W = weekChallenges(); } catch (e) { return []; }
+  const H = store.get('wkHist', {}), k = dayKey(W.ws), done = W.list.filter(x => x.done).length, prev = H[k] || 0, fresh = [];
+  if (done > prev) { H[k] = done; store.set('wkHist', H); W.list.filter(x => x.done).slice(prev).forEach(x => fresh.push({ wk: x, all: done >= 3 && prev < 3 })); }
+  return fresh;
+}
+function weeklyHtml() {
+  const W = weekChallenges(), done = W.list.filter(x => x.done).length;
+  const end = new Date(W.ws); end.setDate(end.getDate() + 7); const left = Math.max(1, Math.ceil((end - Date.now()) / 864e5));
+  return '<div class="wk-head"><div class="stack" style="gap:2px"><h2 class="h-card">Desafios da semana</h2><span class="muted" style="font-size:13px">' + done + ' de 3 · termina em ' + left + ' dia' + (left > 1 ? 's' : '') + ' · ' + WK_XP + ' XP cada, +' + WK_BONUS + ' pelos três</span></div><div class="wk-dots" aria-hidden="true">' + [0, 1, 2].map(i => '<i class="' + (i < done ? 'on' : '') + '"></i>').join('') + '</div></div>' +
+    '<div class="wk-list">' + W.list.map(x => '<div class="wk-it' + (x.done ? ' done' : '') + '"><span class="wk-ic bd ' + (x.done ? 'bt3' : 'bt0') + '"><svg viewBox="0 0 64 64" width="44" height="44" aria-hidden="true"><circle class="disk" cx="32" cy="32" r="30"/>' + glyph(x.ic, 14, 14, 36) + '</svg></span>' +
+      '<div class="stack" style="gap:5px;min-width:0;flex:1"><b>' + esc(x.t) + '</b><div class="bbar sm"><i style="transform:scaleX(' + (x.v / x.n).toFixed(3) + ')"></i></div><span class="muted mono" style="font-size:12px">' + x.v + ' / ' + x.n + (x.done ? ' · feito' : '') + '</span></div>' +
+      (x.done ? '<span class="wk-ok" aria-label="Feito">✓</span>' : x.go ? (x.go.startsWith('href') ? '<a class="btn small" ' + x.go + '>Ir</a>' : '<button class="btn small" type="button" ' + x.go + '>Ir</button>') : '') + '</div>').join('') + '</div>';
+}
+
+function refreshWeekly() { const w = $('#pnWeekly'); if (w && S.view === 'painel') w.innerHTML = weeklyHtml(); }

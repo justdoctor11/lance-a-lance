@@ -61,6 +61,7 @@ function rushEnd(why) {
   const T = S.tm, best = store.get('rbest', 0); T.why = why; T.rec = T.ok > best; T.prev = best;
   if (T.rec) store.set('rbest', T.ok);
   const r = store.get('rush', {}); store.set('rush', { n: (r.n || 0) + 1, top: Math.max(r.top || 0, T.top), sum: (r.sum || 0) + T.ok });
+  const lg = store.get('rushLog', []); lg.push({ t: Date.now(), ok: T.ok }); store.set('rushLog', lg.slice(-60));
   act('rush'); cloudPrefsPush(); haptic(T.rec ? 'ok' : 'err');
   $('#pzQ').innerHTML = '<b>Corrida encerrada.</b> ' + (T.why === 'lives' ? 'As três vidas acabaram.' : 'O tempo acabou.');
   if (T.rec && T.ok >= 3) sparkle($('#pzRush'));

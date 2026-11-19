@@ -766,16 +766,46 @@ function renderPainel() {
   const empty = !S.games.length;
   $('#pnEmpty').hidden = !empty; $('#pnBody').hidden = empty;
   if (empty) {
-    $('#pnSub').textContent = 'Conta: ' + acctLabel();
     $('#pnEmptyMsg').textContent = 'Ainda não há partidas de ' + S.me + ' no ' + PLAT[S.plat] + ' aqui. Sincronize pelo app Claude para computador ou cole o PGN das suas partidas.';
     return;
   }
   const r = AGG.rating, rapid = r.rapid || [], blitz = r.blitz || [];
-  const first = rapid.concat(blitz).reduce((m, x) => Math.min(m, x[0]), Infinity);
-  const last = rapid.concat(blitz).reduce((m, x) => Math.max(m, x[0]), 0);
   const ends = S.games.map(g => g.end);
-  const f0 = isSeed() && isFinite(first) ? first : Math.min.apply(null, ends), l0 = isSeed() && last ? last : Math.max.apply(null, ends);
-  $('#pnSub').textContent = AGG.total + ' partidas de ' + S.me + ' no ' + PLAT[S.plat] + (isSeed() ? '' : ' (sincronizadas)') + ' · ' + dateLabel(f0, true) + ' a ' + dateLabel(l0, true) + ' · ' + analyzedGames().length + ' analisadas pelo motor';
+  $('#pnSub').textContent = AGG.total + ' partidas de ' + S.me + ' no ' + PLAT[S.plat] + ' · ' + dateLabel(Math.min.apply(null, ends), true) + ' a ' + dateLabel(Math.max.apply(null, ends), true) + ' · ' + analyzedGames().length + ' analisadas pelo motor';
+  $('#pnWeekly').innerHTML = weeklyHtml();
+  $('#pnLast').innerHTML = lastGameCard();
+  $('#pnBadges').innerHTML = pnBadgesHtml();
+  $('#pnRating').innerHTML = ratingMiniHtml(rapid, blitz);
+  const rN = rapid.length ? rapid[rapid.length - 1][1] : 0, bN = blitz.length ? blitz[blitz.length - 1][1] : 0;
+  if (rN && bN && Math.abs(rN - bN) >= 250) {
+    const hi = rN > bN ? 'rápida' : 'blitz', lo = rN > bN ? 'blitz' : 'rápida';
+    $('#pnInsight').hidden = false;
+    $('#pnInsight').innerHTML = '<span class="label">Observação do treinador</span><p>Seu rating de ' + hi + ' está ' + Math.abs(rN - bN) + ' pontos acima do ' + lo + '. Uma diferença assim costuma vir de reconhecimento de padrões e de decisões com pouco tempo; táticas curtas e repetidas tendem a render mais que teoria de abertura.</p>';
+  } else $('#pnInsight').hidden = true;
+  $('#prSub').textContent = T ? 'Os 3 temas que mais te custam pontos, nos ' + T.errs + ' erros de ' + T.games + ' partidas analisadas' : 'Calculando a partir das suas partidas analisadas…';
+  $('#pnPrio').innerHTML = !T ? CALC : T.prios.slice(0, 3).map(p => {
+    const Ls = LESSONS[p.k];
+    return '<a class="prio" href="#treino"><span class="row"><b>' + esc(Ls.t) + '</b><span class="mono muted" style="font-size:13px">' + p.n + ' de ' + T.errs + '</span></span><span class="bar"><i style="width:' + Math.round(p.n / Math.max(1, T.errs) * 100) + '%"></i></span><span class="muted" style="font-size:13px;line-height:1.4">' + esc(p.extra || Ls.d) + '</span></a>';
+  }).join('') || '<p class="muted">Analise algumas partidas para gerar prioridades.</p>';
+}
+// rating em um cartão só: valor atual, variação em 30 dias e um minigráfico por ritmo
+function ratingMiniHtml(rapid, blitz) {
+  const mon = Date.now() / 1000 - 30 * 86400;
+  const row = (lab, ser, col) => {
+    if (ser.length < 2) return '';
+    const now = ser[ser.length - 1][1], base = (ser.filter(x => x[0] < mon).pop() || ser[0])[1], d = now - base;
+    const pts = ser.slice(-80), lo = Math.min(...pts.map(x => x[1])), hi = Math.max(...pts.map(x => x[1])), t0 = pts[0][0], t1 = pts[pts.length - 1][0];
+    const P = pts.map((x, i) => ((x[0] - t0) / Math.max(1, t1 - t0) * 120).toFixed(1) + ' ' + (32 - (x[1] - lo) / Math.max(1, hi - lo) * 28 - 2).toFixed(1)).join(' L');
+    return '<div class="rmini"><div class="stack" style="gap:1px;min-width:0"><span class="label">' + lab + '</span><b class="mono">' + now + '</b><span class="' + (d >= 0 ? 'up' : 'down') + ' mono">' + (d >= 0 ? '+' : '−') + Math.abs(d) + ' <span class="muted">em 30 dias</span></span></div><svg viewBox="0 0 120 32" preserveAspectRatio="none" aria-hidden="true"><path d="M' + P + '" fill="none" stroke="' + col + '" stroke-width="2" stroke-linejoin="round" stroke-linecap="round" vector-effect="non-scaling-stroke"/></svg></div>';
+  };
+  const body = row('Rápida', rapid, 'var(--accent)') + row('Blitz', blitz, 'var(--series-2)');
+  return '<div style="display:flex;justify-content:space-between;align-items:baseline;gap:10px"><h2 class="h-card">Rating</h2><a class="btn small" href="#stats">Evolução completa</a></div>' + (body || '<p class="muted">Jogue algumas partidas de rápida ou blitz para ver o rating aqui.</p>');
+}
+// blocos de estatística que vivem na aba Números
+function renderStatsBlocks() {
+  if (!S.games.length) return;
+  const ready = analyzedReady(), T = ready ? buildTraining() : null;
+  const r = AGG.rating, rapid = r.rapid || [], blitz = r.blitz || [];
   const kp = (lab, ser) => {
     if (!ser.length) return '';
     const now = ser[ser.length - 1][1], d = now - ser[0][1], peak = Math.max.apply(null, ser.map(x => x[1]));
@@ -786,21 +816,8 @@ function renderPainel() {
   const R = AGG.byTc[mainTc] || { W: 0, D: 0, L: 0 }; const nR = R.W + R.D + R.L;
   $('#pnKpis').innerHTML = kp('Rápida', rapid) + kp('Blitz', blitz) +
     '<div class="card kpi"><span class="label">Aproveitamento ' + (TC[mainTc] || '').toLowerCase() + '</span><span class="v">' + pct((R.W + R.D / 2) / Math.max(1, nR) * 100) + '</span><span class="d">' + R.W + ' V · ' + R.D + ' E · ' + R.L + ' D</span></div>' +
-    '<div class="card kpi"><span class="label">Precisão estimada</span><span class="v">' + (T && T.acc != null ? pct(T.acc) : '—') + '</span><span class="d">' + (T ? 'média nas ' + T.games + ' partidas analisadas' : 'calculando…') + '</span></div>';
+    '<div class="card kpi"><span class="label">Precisão média</span><span class="v">' + (T && T.acc != null ? pct(T.acc) : '—') + '</span><span class="d">' + (T ? 'nas ' + T.games + ' partidas analisadas' : 'calculando…') + '</span></div>';
   drawRatingChart(rapid, blitz);
-  const rN = rapid.length ? rapid[rapid.length - 1][1] : 0, bN = blitz.length ? blitz[blitz.length - 1][1] : 0;
-  if (rN && bN && Math.abs(rN - bN) >= 250) {
-    const hi = rN > bN ? 'rápida' : 'blitz', lo = rN > bN ? 'blitz' : 'rápida';
-    $('#pnInsight').hidden = false;
-    $('#pnInsight').innerHTML = '<span class="label">Observação do treinador</span><p>Seu rating de ' + hi + ' está ' + Math.abs(rN - bN) + ' pontos acima do ' + lo + '. Uma diferença assim costuma vir de reconhecimento de padrões e de decisões com pouco tempo; táticas curtas e repetidas tendem a render mais que teoria de abertura.</p>';
-  } else $('#pnInsight').hidden = true;
-  $('#pnLast').innerHTML = lastGameCard();
-  $('#pnBadges').innerHTML = pnBadgesHtml();
-  $('#prSub').textContent = T ? 'Baseado nos seus ' + T.errs + ' erros em ' + T.games + ' partidas analisadas' : 'Calculando a partir das suas partidas analisadas…';
-  $('#pnPrio').innerHTML = !T ? CALC : T.prios.slice(0, 4).map(p => {
-    const Ls = LESSONS[p.k];
-    return '<a class="prio" href="#treino"><span class="row"><b>' + esc(Ls.t) + '</b><span class="mono muted" style="font-size:13px">' + p.n + ' de ' + T.errs + '</span></span><span class="bar"><i style="width:' + Math.round(p.n / Math.max(1, T.errs) * 100) + '%"></i></span><span class="muted" style="font-size:13px;line-height:1.4">' + esc(p.extra || Ls.d) + '</span></a>';
-  }).join('') || '<p class="muted">Analise algumas partidas para gerar prioridades.</p>';
   const LH = AGG.lossHow; const parts = [['resigned', 'Desistência', 'var(--series-2)'], ['checkmated', 'Mate', 'var(--blunder)'], ['timeout', 'Tempo', 'var(--mistake)'], ['abandoned', 'Abandono', 'var(--draw)']];
   $('#pnLossBar').innerHTML = parts.map(([k, , c]) => LH[k] ? '<div style="flex:' + LH[k] + ';background:' + c + '"></div>' : '').join('');
   $('#pnLossLeg').innerHTML = parts.map(([k, n, c]) => '<span><i style="background:' + c + '"></i>' + n + '<b>' + (LH[k] || 0) + '</b></span>').join('');
@@ -2405,7 +2422,7 @@ document.addEventListener('click', e => {
 
 /* ---------- início ---------- */
 applyPrefs();
-for (const id of ['pnKpis', 'pnPrio', 'pnLossBar', 'pnLossLeg', 'pnColor', 'pnOps', 'pnSession', 'pnHabits', 'pnShort', 'pnClock', 'pnCmp', 'pnWeeks', 'pnLast', 'pnRadar', 'pnInsight', 'pnToday', 'pnQuick', 'trHub', 'trPlan', 'trPrio', 'trLessons', 'thList', 'thTabs', 'thCol', 'stRec', 'stPhase', 'stOpen', 'stEnd', 'stClock', 'gmChips']) dedupeHtml(document.getElementById(id));
+for (const id of ['pnPlan', 'pnWeekly', 'pnRating', 'pnKpis', 'pnPrio', 'pnLossBar', 'pnLossLeg', 'pnColor', 'pnOps', 'pnSession', 'pnHabits', 'pnShort', 'pnClock', 'pnCmp', 'pnWeeks', 'pnLast', 'pnRadar', 'pnInsight', 'pnToday', 'trHub', 'trPlan', 'trPrio', 'trLessons', 'thList', 'thTabs', 'thCol', 'stRec', 'stPhase', 'stOpen', 'stEnd', 'stClock', 'gmChips']) dedupeHtml(document.getElementById(id));
 loadData();
 $('#acct').textContent = acctLabel();
 wire();

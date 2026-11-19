@@ -219,10 +219,11 @@ function clockDeepHtml() {
 }
 const STH = {};
 async function renderStats() {
+  renderStatsBlocks();
   const ready = analyzedReady(), key0 = statsData().key;
   if (STH.rec && STH.rec[0] === key0) $('#stRec').innerHTML = STH.rec[1]; else if (!ready) $('#stRec').innerHTML = CALC;
   for (const id of ['stPhase', 'stOpen', 'stEnd', 'stClock']) if (!ready || !$('#' + id).dataset.k || $('#' + id).dataset.k !== statsData().key) $('#' + id).innerHTML = CALC;
-  if (!ready) { await warmPrep(); if (S.view !== 'stats') return; }
+  if (!ready) { await warmPrep(); if (S.view !== 'stats') return; renderStatsBlocks(); }
   const key = statsData().key;
   if (!STH.rec || STH.rec[0] !== key) { await new Promise(r => setTimeout(r, 0)); if (S.view !== 'stats') return; const h = recordsHtml(); STH.rec = [key, h]; $('#stRec').innerHTML = h; }
   for (const [id, fn] of [['stPhase', phaseCostHtml], ['stOpen', openingsDeep], ['stEnd', tradesEndsHtml], ['stClock', clockDeepHtml]]) {
@@ -579,13 +580,29 @@ function showQuote(step) {
   if (el.animate) for (const c of el.querySelectorAll('.qtext,figcaption>span:first-child')) c.animate([{ opacity: 0, transform: 'translateY(6px)' }, { opacity: 1, transform: 'none' }], { duration: 500, easing: 'cubic-bezier(.2,.8,.2,1)' });
 }
 function quoteTimer() { if (QT) clearInterval(QT); QT = setInterval(() => { if (S.view === 'painel' && !document.hidden) showQuote(1); }, 11000); }
+// plano de hoje: a meta de exercícios num anel e as tarefas que mais rendem agora
+function planHtml() {
+  const n = dailyCount(), st = streakDays(), f = Math.min(1, n / GOAL), tasks = [];
+  tasks.push({ done: n >= GOAL, t: 'Resolva ' + GOAL + ' exercícios', d: n >= GOAL ? 'meta de hoje batida' : 'faltam ' + (GOAL - n), a: n >= GOAL ? '' : '<button class="btn small" type="button" data-pz="mine">Treinar</button>' });
+  const due = repReady() ? repDue() : null;
+  if (due != null) tasks.push({ done: due === 0, t: due ? 'Revise o repertório' : 'Repertório em dia', d: due ? due + (due === 1 ? ' posição pendente' : ' posições pendentes') : 'nada pendente hoje', a: due ? '<button class="btn small" type="button" data-ar="open:rep">Revisar</button>' : '' });
+  const g = S.games[0];
+  if (g) {
+    if (!S.an[g.id]) tasks.push({ done: false, t: 'Analise a última partida', d: 'vs ' + esc(g.opp), a: '<button class="btn small" type="button" data-analyze="' + g.id + '">Analisar</button>' });
+    else { const did = store.get('self', {})[g.id]; tasks.push({ done: !!did, t: 'Você primeiro na última partida', d: did ? 'autocrítica de ' + did.s + '%' : 'ache seus erros antes do motor', a: did ? '' : '<button class="btn small" type="button" data-self-game="' + g.id + '">Começar</button>' }); }
+  }
+  const ok = tasks.filter(x => x.done).length;
+  return '<div class="plan-head"><svg class="plan-ring" viewBox="0 0 64 64" aria-hidden="true"><circle cx="32" cy="32" r="27" fill="none" stroke="var(--line)" stroke-width="6"/><circle cx="32" cy="32" r="27" fill="none" stroke="var(--accent)" stroke-width="6" stroke-linecap="round" stroke-dasharray="' + (f * 169.6).toFixed(1) + ' 169.6" transform="rotate(-90 32 32)"/><text x="32" y="37" text-anchor="middle">' + n + '</text></svg>' +
+    '<div class="stack" style="gap:2px;min-width:0"><span class="label">Plano de hoje</span><b>' + ok + ' de ' + tasks.length + ' feitos</b><span class="muted" style="font-size:12.5px">' + n + ' de ' + GOAL + ' exercícios' + (st > 1 ? ' · ' + st + ' dias seguidos' : '') + '</span></div></div>' +
+    '<ul class="plan-list">' + tasks.map(x => '<li class="' + (x.done ? 'done' : '') + '"><span class="ck" aria-hidden="true"></span><span class="stack" style="gap:1px;min-width:0;flex:1"><b>' + x.t + '</b><span class="muted">' + x.d + '</span></span>' + x.a + '</li>').join('') + '</ul>';
+}
 function renderHero() {
   const h = new Date().getHours(), G = S.games;
   const hi = h < 5 ? 'Boa madrugada' : h < 12 ? 'Bom dia' : h < 18 ? 'Boa tarde' : 'Boa noite';
   $('#h-painel').textContent = hi + ', ' + (S.me || 'enxadrista') + '!';
   $('#pnWhen').textContent = cap(new Date().toLocaleDateString('pt-BR', { weekday: 'long', day: 'numeric', month: 'long' }));
   if (!$('#pnQuote').innerHTML) { showQuote(0); quoteTimer(); }
-  if (!G.length) { $('#pnToday').innerHTML = '<p class="hero-line">Sincronize sua conta e eu te conto como foram as partidas do dia.</p>'; $('#pnQuick').innerHTML = ''; return; }
+  if (!G.length) { $('#pnToday').innerHTML = '<p class="hero-line">Sincronize sua conta e eu te conto como foram as partidas do dia.</p>'; $('#pnPlan').innerHTML = ''; return; }
   const H = habits(), T = H.today.slice().sort((a, b) => a.end - b.end);
   const W = T.filter(g => rk(g) === 'W').length, D = T.filter(g => rk(g) === 'D').length, L = T.length - W - D;
   let line, mood = '';
@@ -602,22 +619,7 @@ function renderHero() {
   }
   let html = '<p class="hero-line">' + line + '</p><p class="muted">' + esc(mood) + '</p>';
   if (T.length) html += '<div class="todayg">' + T.slice(-8).map(g => { const P = S.an[g.id] ? prepIf(g) : null, acc = P && P.acc ? pct(P.acc[g.c]) : ''; return '<button type="button" class="tg ' + rk(g) + '" data-openply="' + g.id + ':0"><b>' + ({ W: 'V', D: 'E', L: 'D' }[rk(g)]) + '</b><span>vs ' + esc(g.opp) + '</span>' + (acc ? '<i class="mono">' + acc + '</i>' : '') + '</button>'; }).join('') + '</div>';
-  html += '<div class="vxacts">' + (T.length ? '<button class="btn small primary" type="button" data-queue="today">Revisar as de hoje</button>' : '<button class="btn small primary" type="button" data-pz="warm">Aquecer com 3 exercícios</button>') + '<a class="btn small" href="#treino">Ir para o treino</a></div>';
+  html += '<div class="vxacts">' + (T.length ? '<button class="btn small primary" type="button" data-queue="today">Revisar as de hoje</button>' : '<button class="btn small primary" type="button" data-pz="warm">Aquecer com 3 exercícios</button>') + '</div>';
   $('#pnToday').innerHTML = html;
-  // números rápidos
-  const asc = G.slice().sort((a, b) => a.end - b.end); let win = 0, unb = 0;
-  for (let i = asc.length - 1; i >= 0 && rk(asc[i]) === 'W'; i--) win++;
-  for (let i = asc.length - 1; i >= 0 && rk(asc[i]) !== 'L'; i--) unb++;
-  const tc = (G.find(g => g.tc === 'blitz' && g.mR) ? 'blitz' : (G.find(g => g.mR) || {}).tc) || 'blitz';
-  const rNow = (G.find(g => g.tc === tc && g.mR) || {}).mR, wk = Date.now() / 1000 - 7 * 86400;
-  const r7 = (asc.filter(g => g.tc === tc && g.mR && g.end < wk).pop() || {}).mR;
-  const week = G.filter(g => g.end >= wk), ws = scoreOf(week);
-  const accs = analyzedGames().slice(0, 10).map(g => prepIf(g)).filter(P => P && P.acc).map(P => P.acc[P.g.c]);
-  const q = [
-    [win ? win + (win === 1 ? ' vitória' : ' vitórias') : unb ? unb + ' sem perder' : '—', win ? 'sequência atual' : unb ? 'sequência atual' : 'sem sequência agora'],
-    [dailyCount() + ' de ' + GOAL, 'exercícios de hoje' + (streakDays() > 1 ? ' · ' + streakDays() + ' dias seguidos' : '')],
-    [ws == null ? '—' : sp(ws) + '%', 'aproveitamento em 7 dias · ' + week.length + ' partidas'],
-    [accs.length ? pct(avg(accs)) : '—', 'precisão nas 10 últimas analisadas']
-  ];
-  $('#pnQuick').innerHTML = q.map(([b, s]) => '<div class="qs"><b>' + esc(b) + '</b><span>' + esc(s) + '</span></div>').join('');
+  $('#pnPlan').innerHTML = planHtml();
 }
