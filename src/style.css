@@ -85,6 +85,7 @@ p{margin:0}
   .bnav a[aria-current="page"]{color:var(--ink);font-weight:700}
   .bnav a[aria-current="page"] .ic{background:var(--accent-soft);color:var(--accent-ink)}
   main{padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 12px)}
+  html{scroll-padding-top:72px;scroll-padding-bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 12px)}
 }
 
 main{padding-block:20px 48px}

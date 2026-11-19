@@ -513,6 +513,7 @@ function dosTreeHtml(D) {
   DT = DT && DT.opp === D.opp ? DT : { opp: D.opp, c: 'w', path: [] };
   let node = D.tree[DT.c]; for (const m of DT.path) node = node && node.ch[m]; if (!node) { DT.path = []; node = D.tree[DT.c]; }
   const kids = Object.entries(node.ch).sort((a, b) => b[1].n - a[1].n).slice(0, 8);
+  DT.kids = kids.map(k => k[0]);
   const turnTheirs = (DT.path.length % 2 === 0) === (DT.c === 'w');
   return '<div class="hgrp"><span class="label">Árvore de aberturas dele</span><div class="seg" role="group"><button type="button" data-dt="c:w" aria-pressed="' + (DT.c === 'w') + '">Ele de brancas</button><button type="button" data-dt="c:b" aria-pressed="' + (DT.c === 'b') + '">Ele de pretas</button></div>' +
     '<div class="dtree"><div id="dosBoard" class="dosboard"></div><div class="stack" style="gap:6px;min-width:0"><div class="crumbs"><button type="button" data-dt="up:0">Início</button>' + DT.path.map((m, i) => '<button type="button" data-dt="up:' + (i + 1) + '">' + esc((i % 2 === 0 ? (i / 2 + 1) + '.' : '') + fig(m)) + '</button>').join('') + '</div><span class="muted" style="font-size:12.5px">' + (turnTheirs ? 'Lances dele aqui' : 'Lances dos adversários dele aqui') + ' · aproveitamento dele</span>' +
@@ -522,6 +523,10 @@ function dosTreeBoard() {
   const el = $('#dosBoard'); if (!el || !DT) return; DTB = new Board(el); DTB.setFlip(DT.c === 'b');
   const c = new Chess(); let last = null; for (const m of DT.path) { try { last = c.move(m); } catch (e) { break; } }
   DTB.setPosition(c.fen(), false); DTB.setMarks(last ? { last: [last.from, last.to] } : {});
+  // só os lances que estão na árvore dele podem ser feitos no tabuleiro
+  const fen = c.fen(), dests = {}, bySq = {};
+  for (const san of DT.kids || []) { try { const m = new Chess(fen).move(san); (dests[m.from] = dests[m.from] || []).push(m.to); bySq[m.from + m.to] = san; } catch (e) { /* lance fora desta posição */ } }
+  if (Object.keys(dests).length) DTB.setLive({ color: c.turn(), dests, marks: DTB.marks, onMove: (f, t) => { const san = bySq[f + t]; if (san && S.dos) dosTreeAction('go:' + san, S.dos); } });
 }
 function dosTreeAction(a, D) {
   if (a.startsWith('c:')) { DT.c = a.slice(2); DT.path = []; }

@@ -512,7 +512,7 @@ class Board {
       this.pend = null;
       const B = parseBoard(this.fen); const p = B[i];
       if (p && p.c === this.live.color) {
-        this.select(i);
+        this.select(i); boardInView(el);
         const it = this.items.find(x => x.idx === i);
         if (it) { this.drag = { i, it, moved: false, x: e.clientX, y: e.clientY }; try { el.setPointerCapture(e.pointerId); } catch (err) { /* sem captura */ } }
       } else this.unselect();
@@ -539,6 +539,12 @@ class Board {
     };
     el.addEventListener('pointerup', end); el.addEventListener('pointercancel', end);
   }
+}
+// no celular a barra de abas fica por cima do fim da página: ao pegar uma peça, o tabuleiro sobe para ficar inteiro à vista
+function boardInView(el) {
+  const nav = document.getElementById('bnav'); if (!nav || !nav.offsetParent) return;
+  const r = el.getBoundingClientRect(), top = nav.getBoundingClientRect().top - 8;
+  if (r.bottom > top && r.top > 60) window.scrollBy({ top: Math.min(r.bottom - top, r.top - 60), behavior: 'smooth' });
 }
 function arrowPts(x1, y1, x2, y2) {
   const dx = x2 - x1, dy = y2 - y1, L = Math.hypot(dx, dy) || 1, ux = dx / L, uy = dy / L, px = -uy, py = ux;
@@ -1664,6 +1670,10 @@ function renderRep() {
   RB.setFlip(REP.c === 'b'); RB.setPosition(c.fen(), true);
   const h = c.history({ verbose: true }); const lm = h[h.length - 1];
   RB.setMarks(lm ? { last: [lm.from, lm.to] } : {}); RB.setArrows([]);
+  // o tabuleiro da árvore também aceita lances: tocar ou arrastar avança na árvore
+  const rfen = c.fen();
+  if (!c.isGameOver()) RB.setLive({ color: c.turn(), dests: () => destsOf(rfen), marks: RB.marks, onMove: (f, t) => { const ch = new Chess(rfen); let m = null; try { m = ch.move({ from: f, to: t, promotion: 'q' }); } catch (e) { m = null; } if (m) REP.path.push(m.san); renderRep(); } });
+  else RB.setLive(null);
   $$('#repSeg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.rep === REP.c)));
   const yourTurn = c.turn() === REP.c;
   $('#repCrumb').innerHTML = '<button class="chip" type="button" data-repgo="0">Início</button>' + REP.path.map((m, i) => '<button class="chip" type="button" data-repgo="' + (i + 1) + '">' + esc((i % 2 === 0 ? (i / 2 + 1) + '. ' : '') + fig(m)) + '</button>').join('');
