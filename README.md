@@ -63,7 +63,7 @@ Chegam pela atualização automática, sem reinstalar.
 - **Corrida**: 3 minutos e 3 vidas com os seus próprios erros, do mais fácil ao mais difícil. A cada 5 acertos seguidos você ganha 10 segundos. O relógio pausa quando você sai da aba.
 - **Lances candidatos**: em posições difíceis das suas partidas, você lista de 2 a 3 lances no tabuleiro, escolhe um e o motor revela as melhores linhas. Treina o hábito de comparar opções antes de jogar.
 - **Você primeiro**: antes de abrir o motor, você percorre a partida, marca onde acha que errou e escreve o que aprendeu. O app compara com o motor e dá uma nota à sua autocrítica.
-- **Conquistas** (aba própria): 40 insígnias originais. São 33 com cinco níveis (bronze, prata, ouro, platina e diamante) e 7 raridades, como En passant, Subpromoção e Roque fatal. Cada nível dá XP, e o XP sobe o prestígio pela escada das peças: Peão, Cavalo, Bispo, Torre, Dama e Rei. Depois do Rei, cada 2.500 XP vale uma promoção. Há uma comemoração a cada insígnia e a cada promoção, e tudo vai junto na sincronização.
+- **Conquistas** (aba própria): 65 insígnias, sendo 52 com até cinco níveis (bronze, prata, ouro, platina e diamante) e 13 raridades, como En passant, Mate do pastor, Rei guerreiro e Xeque perpétuo. Cada nível dá XP, e o XP sobe o prestígio pela escada das peças: Peão, Cavalo, Bispo, Torre, Dama e Rei. Depois do Rei, cada 3.000 XP vale uma promoção. Visual em vidro translúcido com desfoque, comemoração a cada insígnia e promoção, e sincronização entre aparelhos.
 
 ## Novidades da versão 1.4
 

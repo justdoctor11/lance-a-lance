@@ -26,6 +26,27 @@ const PIECE = {
   king: 'M11.1 2h1.8v1.9h1.9v1.8h-1.9v1.9h-1.8V5.7H9.2V3.9h1.9zM12 8.3c3.6 0 6.2 1.7 6.2 4.1 0 1.6-1 2.9-2.3 3.9l.5 1.5H7.6l.5-1.5c-1.3-1-2.3-2.3-2.3-3.9 0-2.4 2.6-4.1 6.2-4.1zM6.5 18.7h11c.6 0 1 .4 1 1v.6c0 .6-.4 1-1 1h-11c-.6 0-1-.4-1-1v-.6c0-.6.4-1 1-1z'
 };
 const ICONS = {
+  olhofechado: '<path d="M3 9.5c2.2 3 5.4 4.8 9 4.8s6.8-1.8 9-4.8M6.5 13.3 5 16M17.5 13.3 19 16M12 14.6V17.5M9 14.2 8.2 17M15 14.2l.8 2.8"/>',
+  sequencia: '<path d="m5 6 5 6-5 6M12 6l5 6-5 6"/><path d="M19.5 6v12"/>',
+  marcador: '<path d="M6.5 3.5h11v17L12 16.5l-5.5 4z"/><path d="M9.5 8h5"/>',
+  chave: '<circle cx="8" cy="12" r="4.2"/><path d="M12.2 12H21M17.5 12v3.2M20.5 12v2.4"/>',
+  presente: '<rect x="3.5" y="9" width="17" height="11.5" rx="1.5"/><path d="M3.5 13h17M12 9v11.5M12 9c-1.5-3.5-5.5-4.5-6-2s3 2 6 2zM12 9c1.5-3.5 5.5-4.5 6-2s-3 2-6 2z"/>',
+  yin: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>',
+  roquelongo: '<path d="M20.5 12h-17M7.5 7.5 3.5 12l4 4.5M14 8.5v7M17.5 8.5v7"/>',
+  cruz: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 12h6M12 9v6"/>',
+  batimento: '<path d="M2.5 12.5h4l2-5 3.5 10 2.5-7 1.5 2h5.5"/>',
+  cronometro: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M10 2.5h4M18.5 6.5l1.5-1.5"/>',
+  bandeirabranca: '<path d="M5.5 21V3.5"/><path d="M5.5 4.5c3-1.8 5.5 1.8 8.5 0s3.5-1 4.5-.5v8c-1-.5-1.5-1.3-4.5.5s-5.5-1.8-8.5 0"/>',
+  espadas: '<path d="m4 4 9.5 9.5M20 4l-9.5 9.5M4 4v3.5M4 4h3.5M20 4v3.5M20 4h-3.5M6.5 15.5l2 2M17.5 15.5l-2 2M5 19.5l2.5-2.5M19 19.5 16.5 17"/>',
+  retorno: '<path d="M9 14.5 4.5 10 9 5.5"/><path d="M4.5 10h10a5 5 0 0 1 0 10H11"/>',
+  globo: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/>',
+  degraus: '<path d="M3.5 20.5h4v-4.5h4.5V11.5h4.5V7h4"/><path d="M17 3.5h3.5V7"/>',
+  grade4: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
+  cafe: '<path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM16.5 11h1.5a2.5 2.5 0 0 1 0 5h-1.8M8 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3"/>',
+  exclama: '<path d="M9 4.5v10M15 4.5v10"/><circle cx="9" cy="19" r=".9" fill="currentColor"/><circle cx="15" cy="19" r=".9" fill="currentColor"/>',
+  sol: '<circle cx="12" cy="14" r="4"/><path d="M12 5v2M5.5 8l1.4 1.4M18.5 8l-1.4 1.4M3 14h2M19 14h2M3 19.5h18"/>',
+  coroa: '<path d="m3.5 8.5 4.2 4 4.3-7 4.3 7 4.2-4-1.8 10H5.3z"/>',
+  dupla: '<path d="M3.5 12.5 6 9l2.3 2.6L10.5 7l2.2 4.6L15 9l2.5 3.5-1 4h-12z" transform="translate(-.5 -2)"/><path d="m8.5 18.5 2.5-3.5 2.3 2.6 2.2-4.6 2.2 4.6L20 15l2.5 3.5" transform="translate(-2.5 1)"/>',
   alvo: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
   raio: '<path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11.5h-6.5z"/>',
   garfo: '<path d="M5 20.5V10a4 4 0 0 1 4-4h10M15.5 2.5 19 6l-3.5 3.5M5 14.5h10M12 11l3.5 3.5L12 18"/>',
@@ -95,6 +116,27 @@ const BADGES = [
   { id: 'enciclopedia', cat: 'partidas', t: 'Enciclopédia', ic: 'biblioteca', lv: [25, 75, 150, 300, 500], d: n => 'Jogue ' + n + ' aberturas diferentes', v: X => X.openings },
   { id: 'coruja', cat: 'partidas', t: 'Coruja', ic: 'lua', lv: [10, 50, 150, 400, 1000], d: n => 'Vença ' + n + ' partidas entre meia-noite e 5 da manhã', v: X => X.nightW },
   { id: 'maratonista', cat: 'partidas', t: 'Maratonista', ic: 'p:pawn', lv: [500, 2000, 5000, 10000, 20000], d: n => 'Jogue ' + n.toLocaleString('pt-BR') + ' partidas', v: X => X.games },
+  // mais treino
+  { id: 'vendado', cat: 'treino', t: 'Olhos vendados', ic: 'olhofechado', lv: [5, 25, 75, 150, 300], d: n => 'Resolva ' + n + ' exercícios no modo às cegas ou sem peões', v: X => X.blind },
+  { id: 'emchamas', cat: 'treino', t: 'Em chamas', ic: 'sequencia', lv: [5, 10, 15, 20, 30], d: n => 'Acerte ' + n + ' seguidos numa Corrida', v: X => X.rushTop },
+  { id: 'revisor', cat: 'treino', t: 'Revisor', ic: 'marcador', lv: [10, 50, 150, 400, 1000], d: n => 'Revise ' + n + ' posições do seu repertório', v: X => X.repReviews },
+  // mais partidas
+  { id: 'otimo', cat: 'partidas', t: 'Ótimo lance', ic: 'exclama', lv: [5, 25, 75, 150, 300], d: n => 'Jogue ' + n + ' ótimos lances (!) nas partidas analisadas', v: X => X.great },
+  { id: 'especialista', cat: 'partidas', t: 'Especialista', ic: 'chave', lv: [25, 75, 150, 300, 600], d: n => 'Jogue ' + n + ' partidas com a mesma abertura', v: X => X.topOpening },
+  { id: 'gambiteiro', cat: 'partidas', t: 'Gambiteiro', ic: 'presente', lv: [5, 25, 75, 150, 300], d: n => 'Vença ' + n + ' partidas num gambito', v: X => X.gambitW },
+  { id: 'trevas', cat: 'partidas', t: 'Lado sombrio', ic: 'yin', lv: [10, 50, 150, 400, 1000], d: n => 'Vença ' + n + ' partidas de pretas', v: X => X.blackW },
+  { id: 'roquelongo', cat: 'partidas', t: 'Roque longo', ic: 'roquelongo', lv: [5, 25, 75, 150, 300], d: n => 'Vença ' + n + ' partidas depois de rocar grande', v: X => X.longCastleW },
+  { id: 'reinocentro', cat: 'partidas', t: 'Rei no centro', ic: 'cruz', lv: [5, 25, 75, 150, 300], d: n => 'Vença ' + n + ' partidas de 30+ lances sem rocar', v: X => X.noCastleW },
+  { id: 'resistencia', cat: 'partidas', t: 'Resistência', ic: 'batimento', lv: [5, 25, 75, 150, 300], d: n => 'Vença ' + n + ' partidas de 60 lances ou mais', v: X => X.longW },
+  { id: 'bandeira', cat: 'partidas', t: 'O relógio é peça', ic: 'cronometro', lv: [5, 25, 75, 150, 300], d: n => 'Vença ' + n + ' partidas no tempo', v: X => X.timeW },
+  { id: 'rendicao', cat: 'partidas', t: 'Bandeira branca', ic: 'bandeirabranca', lv: [25, 100, 250, 500, 1000], d: n => 'Faça ' + n + ' adversários abandonarem', v: X => X.resignW },
+  { id: 'rival', cat: 'partidas', t: 'Rivalidade', ic: 'espadas', lv: [5, 15, 30, 60, 100], d: n => 'Jogue ' + n + ' partidas contra o mesmo adversário', v: X => X.rival },
+  { id: 'revanche', cat: 'partidas', t: 'Revanche', ic: 'retorno', lv: [1, 5, 15, 40, 100], d: n => 'Vença logo depois de perder para o mesmo adversário ' + n + ' ' + pl(n, 'vez', 'vezes'), v: X => X.revenge },
+  { id: 'cosmopolita', cat: 'partidas', t: 'Cosmopolita', ic: 'globo', lv: [50, 200, 500, 1000, 2000], d: n => 'Enfrente ' + n.toLocaleString('pt-BR') + ' adversários diferentes', v: X => X.opponents },
+  { id: 'patamar', cat: 'partidas', t: 'Patamar', ic: 'degraus', lv: [800, 1000, 1200, 1500, 1800], d: n => 'Chegue a ' + n + ' de rating em algum ritmo', v: X => X.peak },
+  { id: 'polivalente', cat: 'partidas', t: 'Polivalente', ic: 'grade4', lv: [1, 2, 3, 4], d: n => n === 1 ? 'Vença uma partida' : 'Vença em ' + n + ' ritmos diferentes (bullet, blitz, rápida, diária)', v: X => X.tcW },
+  { id: 'sessao', cat: 'partidas', t: 'Sessão maratona', ic: 'cafe', lv: [15, 30, 50, 75, 100], d: n => 'Jogue ' + n + ' partidas num só dia', v: X => X.dayMax },
+  { id: 'madrugador', cat: 'habito', t: 'Madrugador', ic: 'sol', lv: [5, 25, 75, 150, 300], d: n => 'Vença ' + n + ' partidas entre 5 e 8 da manhã', v: X => X.morningW },
   // hábito
   { id: 'disciplina', cat: 'habito', t: 'Disciplina de ferro', ic: 'chama', lv: [3, 7, 21, 60, 180], d: n => 'Bata a meta diária ' + n + ' dias seguidos', v: X => X.streak },
   { id: 'analista', cat: 'habito', t: 'Analista', ic: 'lupa', lv: [25, 100, 300, 750, 1500], d: n => 'Analise ' + n + ' partidas com o motor', v: X => X.analyzed },
@@ -107,6 +149,12 @@ const BADGES = [
   { id: 'matedepeao', cat: 'raras', rare: true, t: 'Mate de peão', ic: 'p:pawn', d: () => 'Dê xeque-mate com um peão', v: X => X.pawnMate },
   { id: 'roquefatal', cat: 'raras', rare: true, t: 'Roque fatal', ic: 'roque', d: () => 'Dê xeque-mate roqueando', v: X => X.castleMate },
   { id: 'centenaria', cat: 'raras', rare: true, t: 'Centenária', ic: 'cem', d: () => 'Jogue uma partida de 100 lances ou mais', v: X => X.long100 },
+  { id: 'pastor', cat: 'raras', rare: true, t: 'Mate do pastor', ic: 'p:queen', d: () => 'Dê mate de brancas em até 4 lances', v: X => X.scholar },
+  { id: 'louco', cat: 'raras', rare: true, t: 'Mate do louco', ic: 'olho', d: () => 'Dê mate de pretas no segundo lance', v: X => X.fool },
+  { id: 'reiguerreiro', cat: 'raras', rare: true, t: 'Rei guerreiro', ic: 'coroa', d: () => 'Vença com o seu rei na 6ª fileira do adversário', v: X => X.kingWalk },
+  { id: 'fabrica', cat: 'raras', rare: true, t: 'Fábrica de damas', ic: 'dupla', d: () => 'Promova dois peões na mesma partida', v: X => X.doublePromo },
+  { id: 'coroacao', cat: 'raras', rare: true, t: 'Coroação', ic: 'promo', d: () => 'Dê xeque-mate promovendo um peão', v: X => X.promoMate },
+  { id: 'perpetuo', cat: 'raras', rare: true, t: 'Xeque perpétuo', ic: 'ciclo', d: () => 'Empate por repetição dando xeque nos seus três últimos lances', v: X => X.perpetual },
   { id: 'perfeita', cat: 'raras', rare: true, t: 'Partida perfeita', ic: 'gema', d: () => 'Termine uma partida de 25+ lances sem imprecisão, erro ou capivarada', v: X => X.perfect }
 ];
 const bLv = b => b.rare ? [1] : typeof b.lv === 'function' ? b.lv() : b.lv;
@@ -115,16 +163,16 @@ function bLevel(b, v) { let l = 0; for (const t of bLv(b)) if (v >= t) l++; retu
 function bXp(b, l) { if (!l) return 0; if (b.rare) return RARE_XP; let s = 0; for (let i = 0; i < l; i++) s += TIERS[i].xp; return s; }
 const bTierName = (b, l) => b.rare ? 'Rara' : TIERS[l - 1].n;
 
-/* prestígio: a escada das peças. Depois do Rei, cada 2.500 XP é uma promoção */
+/* prestígio: a escada das peças. Depois do Rei, cada 3.000 XP é uma promoção */
 const RANKS = [
   { n: 'Peão', p: 'pawn', xp: 0, m: 'bronze', d: 'Todo grande jogador começou aqui. Cada passo à frente conta.' },
-  { n: 'Cavalo', p: 'knight', xp: 300, m: 'silver', d: 'Você já salta por cima dos obstáculos.' },
-  { n: 'Bispo', p: 'bishop', xp: 900, m: 'gold', d: 'Você enxerga longe, pelas diagonais.' },
-  { n: 'Torre', p: 'rook', xp: 2000, m: 'plat', d: 'Força nas colunas abertas.' },
-  { n: 'Dama', p: 'queen', xp: 3500, m: 'diam', d: 'A peça mais poderosa do tabuleiro.' },
-  { n: 'Rei', p: 'king', xp: 5500, m: 'royal', d: 'O centro de tudo. Daqui em diante, cada 2.500 XP é uma promoção.' }
+  { n: 'Cavalo', p: 'knight', xp: 400, m: 'silver', d: 'Você já salta por cima dos obstáculos.' },
+  { n: 'Bispo', p: 'bishop', xp: 1200, m: 'gold', d: 'Você enxerga longe, pelas diagonais.' },
+  { n: 'Torre', p: 'rook', xp: 2800, m: 'plat', d: 'Força nas colunas abertas.' },
+  { n: 'Dama', p: 'queen', xp: 5000, m: 'diam', d: 'A peça mais poderosa do tabuleiro.' },
+  { n: 'Rei', p: 'king', xp: 8000, m: 'royal', d: 'O centro de tudo. Daqui em diante, cada 3.000 XP é uma promoção.' }
 ];
-const PROMO_XP = 2500;
+const PROMO_XP = 3000;
 function rankOf(xp) {
   let i = 0; while (i + 1 < RANKS.length && xp >= RANKS[i + 1].xp) i++;
   const promo = i === RANKS.length - 1 ? Math.floor((xp - RANKS[i].xp) / PROMO_XP) : 0;
@@ -154,18 +202,18 @@ function ring(n, k, r) {
   }
   return h;
 }
-const tierCls = (b, l) => !l ? 't0' : b.rare ? 'tr' : 't' + l;
+const tierCls = (b, l) => !l ? 'bt0' : b.rare ? 'btr' : 'bt' + l;
 function badgeSvg(id, lvl, size, extra) {
   const b = BADGES.find(x => x.id === id), cls = tierCls(b, lvl);
   const body = b.rare
     ? '<path class="seg' + (lvl ? ' on' : '') + '" d="M32 3.6 60.4 32 32 60.4 3.6 32z" stroke-linejoin="round"/><path class="disk" d="M32 10.2 53.8 32 32 53.8 10.2 32z"/>' + glyph(b.ic, 21, 21, 22)
-    : ring(bMax(b), lvl, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + glyph(b.ic, 18.5, 18.5, 27);
+    : ring(bMax(b), lvl, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + '<path class="gls" d="M11.6 22.5A22.5 22.5 0 0 1 52.4 22.5 34 26 0 0 0 11.6 22.5z"/><circle class="edge" cx="32" cy="32" r="23.4"/>' + glyph(b.ic, 18.5, 18.5, 27);
   return '<svg class="bd ' + cls + (extra ? ' ' + extra : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + body + '</svg>';
 }
-const RANK_T = ['t1', 't2', 't3', 't4', 't5', 'tr'];
+const RANK_T = ['bt1', 'bt2', 'bt3', 'bt4', 'bt5', 'btr'];
 function rankSvg(r, size, dim) {
   const R = RANKS[r.i];
-  return '<svg class="bd rk ' + (dim ? 't0' : RANK_T[r.i]) + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + ring(RANKS.length, dim ? 0 : r.i + 1, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + glyph('p:' + R.p, 18, 17.5, 28) +
+  return '<svg class="bd rk ' + (dim ? 'bt0' : RANK_T[r.i]) + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + ring(RANKS.length, dim ? 0 : r.i + 1, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + '<path class="gls" d="M11.6 22.5A22.5 22.5 0 0 1 52.4 22.5 34 26 0 0 0 11.6 22.5z"/><circle class="edge" cx="32" cy="32" r="23.4"/>' + glyph('p:' + R.p, 18, 17.5, 28) +
     (r.promo ? '<text class="pr" x="32" y="52.5" text-anchor="middle">' + roman(r.promo) + '</text>' : '') + '</svg>';
 }
 
@@ -176,15 +224,36 @@ function badgeGameStats() {
   const key = dataKey() + ':' + (GP.ready ? 1 : 0);
   if (BGAME && BGKEY === key) return BGAME;
   const X = { games: S.games.length, mateW: 0, giant: 0, mini: 0, winRow: 0, analyzed: 0, brill: 0, acc90: 0, clean: 0, comeback: 0, promos: 0, underpromo: 0, openings: 0, nightW: 0, mateTypes: 0, pawnMate: 0, castleMate: 0, stalemate: 0, long100: 0, ep: 0, perfect: 0 };
+  Object.assign(X, { blackW: 0, longCastleW: 0, noCastleW: 0, longW: 0, timeW: 0, resignW: 0, rival: 0, revenge: 0, opponents: 0, peak: 0, tcW: 0, dayMax: 0, morningW: 0, topOpening: 0, gambitW: 0, scholar: 0, fool: 0, kingWalk: 0, doublePromo: 0, promoMate: 0, perpetual: 0, great: 0 });
+  const peaks = new Map(), opc = new Map(), oppc = new Map(), lastVs = new Map(), tcs = new Set(), days = new Map();
   const ops = new Set(), mt = new Set(); let row = 0;
   for (const g of S.games.slice().sort((a, b) => a.end - b.end)) {
     const r = rk(g), mv = g.mv ? g.mv.split(' ') : [];
-    ops.add(opName(g));
+    const on = opName(g); ops.add(on); opc.set(on, (opc.get(on) || 0) + 1);
+    const ok = (g.opp || '').toLowerCase(); oppc.set(ok, (oppc.get(ok) || 0) + 1);
+    if (g.tc && g.mR) { const pk = peaks.get(g.tc) || { n: 0, m: 0 }; pk.n++; pk.m = Math.max(pk.m, g.mR); peaks.set(g.tc, pk); }
+    const dk = dayKey(new Date(g.end * 1000)); days.set(dk, (days.get(dk) || 0) + 1);
+    let castled = 0, myProm = 0, kingFar = false, myN = 0;
+    for (let i = 0; i < mv.length; i++) {
+      if (!myPly(g, i)) continue; const t = mv[i]; myN++;
+      if (t.startsWith('O-O-O')) castled = 2; else if (t.startsWith('O-O')) castled = castled || 1;
+      if (t.includes('=')) myProm++;
+      if (t[0] === 'K') { const sq = t.replace(/[+#x]/g, '').slice(-2), rank = +sq[1]; if ((g.c === 'w' && rank >= 6) || (g.c === 'b' && rank <= 3)) kingFar = true; }
+    }
+    if (myProm >= 2) X.doublePromo = 1;
+    if (g.res === 'repetition' && mv.length >= 6) { const mine = []; for (let i = mv.length - 1; i >= 0 && mine.length < 3; i--) if (myPly(g, i)) mine.push(mv[i]); if (mine.length === 3 && mine.every(t => t.endsWith('+'))) X.perpetual = 1; }
+    const prev = lastVs.get(ok); lastVs.set(ok, r);
     if (mv.length >= 200) X.long100 = 1;
     if (g.res === 'stalemate') X.stalemate = 1;
     for (let i = 0; i < mv.length; i++) if (myPly(g, i) && mv[i].includes('=')) { X.promos++; if (/=[NBR]/.test(mv[i])) X.underpromo = 1; }
     if (r === 'W') {
       row++; X.winRow = Math.max(X.winRow, row);
+      if (g.c === 'b') X.blackW++; if (castled === 2) X.longCastleW++; if (!castled && myN >= 30) X.noCastleW++;
+      if (mv.length >= 120) X.longW++; if (g.oRes === 'timeout') X.timeW++; if (g.oRes === 'resigned') X.resignW++;
+      if (prev === 'L') X.revenge++; if (g.tc) tcs.add(g.tc); if (kingFar) X.kingWalk = 1;
+      if (/gambit/i.test(g.op || '')) X.gambitW++;
+      { const hh = new Date(g.end * 1000).getHours(); if (hh >= 5 && hh < 8) X.morningW++; }
+      if (g.oRes === 'checkmated') { if (g.c === 'w' && mv.length <= 7) X.scholar = 1; if (g.c === 'b' && mv.length <= 4) X.fool = 1; const lt = mv[mv.length - 1] || ''; if (lt.includes('=') && lt.endsWith('#')) X.promoMate = 1; }
       if (g.oR && g.mR && g.oR - g.mR >= 200) X.giant++;
       const h = new Date(g.end * 1000).getHours(); if (h < 5) X.nightW++;
       const last = mv[mv.length - 1] || '';
@@ -196,12 +265,13 @@ function badgeGameStats() {
     } else if (r === 'L') row = 0;
   }
   X.openings = ops.size; X.mateTypes = mt.size;
+  X.topOpening = Math.max(0, ...opc.values()); X.rival = Math.max(0, ...oppc.values()); X.opponents = oppc.size; X.tcW = tcs.size; X.peak = Math.max(0, ...[...peaks.values()].filter(v => v.n >= 20).map(v => v.m)); X.dayMax = Math.max(0, ...days.values());
   for (const g of analyzedGames()) {
     X.analyzed++; const P = prepIf(g); if (!P || !P.cls) continue;
     let blunder = false, sloppy = false, mine = 0, low = false;
     P.cls.forEach((c, i) => {
       const m = P.moves[i]; if (m.color !== g.c) return; mine++;
-      if (c.k === 'brill') X.brill++; if (c.k === 'blunder') blunder = true;
+      if (c.k === 'brill') X.brill++; if (c.k === 'great') X.great++; if (c.k === 'blunder') blunder = true;
       if (c.k === 'inacc' || c.k === 'mistake' || c.k === 'blunder' || c.k === 'miss') sloppy = true;
       if (m.flags && m.flags.includes('e')) X.ep = 1;
       if (i >= 10 && P.evs[i] && sideWp(P.evs[i], g.c) <= 20) low = true;
@@ -227,6 +297,7 @@ function badgeStats() {
   X.ends = cnt('end:'); X.mates = cnt('mates:'); X.conv = cnt('convert:'); X.def = cnt('defend:') + cnt('mine:');
   X.rep = Object.values(store.get('rep', {})).filter(x => x.b >= 2).length;
   X.xbest = store.get('xbest', 0); X.clockW = store.get('clockHist', []).filter(x => x.res === 'W').length;
+  X.blind = tot('blind'); X.repReviews = tot('rep'); X.rushTop = (store.get('rush', {}).top) || 0;
   X.punish = tot('punish'); X.theory = tot('theory'); X.guess = tot('guess'); X.spot = tot('spot');
   X.srsLong = Object.values(store.get('srs', {})).filter(e => e.b >= 4).length;
   const days = new Set(Object.keys(daily).filter(k => daily[k] > 0)); for (const k in act) if (Object.values(act[k]).some(v => v > 0)) days.add(k);
@@ -325,12 +396,13 @@ function pnBadgesHtml() {
     '<div class="pnb">' + (got.length ? got.slice(0, 6).map(b => '<a href="#conquistas" class="pnb-i" title="' + esc(b.t + ' · ' + bTierName(b, B[b.id].l)) + '">' + badgeSvg(b.id, B[b.id].l, 50) + '</a>').join('') : '') + '</div>' +
     '<div style="display:flex;justify-content:space-between;align-items:center;gap:10px;flex-wrap:wrap"><span class="muted" style="font-size:13.5px">' + T.nb + ' de ' + BADGES.length + ' insígnias</span><a class="btn small" href="#conquistas">Ver conquistas</a></div>';
 }
-let CQF = 'all', CQKEY = '';
+let CQF = 'all', CQKEY = '', CQSEEN = false;
 function renderConquistas(force) {
   store.set('bdgNew', false);
   const key = dataKey() + ':' + JSON.stringify(store.get('bdg', {})) + ':' + CQF + ':' + (GP.ready ? 1 : 0);
   if (!force && key === CQKEY && $('#cqGrid').childElementCount) return;
   CQKEY = key;
+  const grid = $('#cqGrid'); if (!CQSEEN) { CQSEEN = true; grid.classList.add('anim'); setTimeout(() => grid.classList.remove('anim'), 1800); }
   const dot = document.querySelector('[data-v="conquistas"] .nb-dot'); if (dot) dot.hidden = true;
   const X = BSTAT = badgeStats(), B = store.get('bdg', {}), T = badgeTotals(B), R = RANKS[T.rank.i];
   const P = BADGES.map(b => ({ b, p: badgeProgress(b, X), got: Math.min(B[b.id] ? B[b.id].l : 0, bMax(b)) }));
@@ -349,17 +421,17 @@ function renderConquistas(force) {
   $('#cqGrid').innerHTML = BCATS.map(cat => {
     const items = P.filter(x => x.b.cat === cat.id && keep(x)); if (!items.length) return '';
     const n = P.filter(x => x.b.cat === cat.id && x.got).length, all = P.filter(x => x.b.cat === cat.id).length;
-    return '<section class="stack" style="gap:10px"><div class="cq-cat"><h2 class="h-card">' + cat.n + '</h2><span class="muted">' + n + ' de ' + all + ' · ' + esc(cat.d) + '</span></div><div class="cq-grid">' + items.map(x => cqCard(x, B)).join('') + '</div></section>';
+    return '<section class="stack" style="gap:10px"><div class="cq-cat"><h2 class="h-card">' + cat.n + '</h2><span class="muted">' + n + ' de ' + all + ' · ' + esc(cat.d) + '</span></div><div class="cq-grid">' + items.map((x, i) => cqCard(x, B, i)).join('') + '</div></section>';
   }).join('') || '<p class="muted">Nada aqui ainda.</p>';
 }
-function cqCard(x, B) {
+function cqCard(x, B, i) {
   const { b, p, got } = x, max = bMax(b), lv = bLv(b);
   const tiers = b.rare ? '<span class="' + (got ? 'ok' : '') + '">' + (got ? '✓ ' : '') + esc(b.d()) + ' · +' + RARE_XP + ' XP' + (got && B[b.id] ? ' · ' + dateLabel(Math.floor(B[b.id].t / 1000)) : '') + '</span>'
     : lv.map((t, i) => '<span class="' + (got > i ? 'ok' : '') + '"><b>' + TIERS[i].n + '</b> ' + esc(b.d(t)) + ' · +' + TIERS[i].xp + ' XP</span>').join('');
-  return '<button type="button" class="cq' + (got ? ' got' : '') + (b.rare ? ' rare' : '') + (got >= max ? ' max' : '') + '" data-cq="' + b.id + '" id="cq-' + b.id + '" aria-expanded="false">' + badgeSvg(b.id, got, 88) +
+  return '<button type="button" class="cq' + (got ? ' got' : '') + (b.rare ? ' rare' : '') + (got >= max ? ' max' : '') + '" data-cq="' + b.id + '" id="cq-' + b.id + '" aria-expanded="false" style="--i:' + (i || 0) + '"' + ((i || 0) < 10 ? ' data-a' : '') + '><span class="cq-b ' + tierCls(b, got) + '">' + badgeSvg(b.id, got, 88) + '</span>' +
     '<b>' + esc(b.t) + '</b><span class="cq-t">' + (got ? bTierName(b, got) + (b.rare ? '' : ' · ' + ROMAN[got - 1]) : 'Bloqueada') + '</span>' +
     (got < max ? '<div class="bbar sm"><i style="transform:scaleX(' + p.f.toFixed(3) + ')"></i></div><span class="muted cq-d">' + esc(b.rare ? b.d() : b.d(p.next)) + (b.rare ? '' : ' · <span class="mono">' + fmtXp(Math.min(Math.round(p.v), p.next)) + '/' + fmtXp(p.next) + '</span>') + '</span>' : '<span class="muted cq-d">' + (b.rare ? esc(b.d()) : 'Todos os níveis conquistados') + '</span>') +
-    '<span class="cq-more">' + tiers + '</span></button>';
+    '<span class="cq-more"><span class="cq-in">' + tiers + '</span></span><i class="cq-sh" aria-hidden="true"></i></button>';
 }
 document.addEventListener('click', e => {
   if (!e.target.closest) return;
@@ -376,3 +448,16 @@ document.addEventListener('click', e => {
   const c = e.target.closest('[data-cq]'); if (!c) return;
   const on = c.getAttribute('aria-expanded') !== 'true'; c.setAttribute('aria-expanded', String(on)); c.classList.toggle('open', on);
 });
+
+// inclinação suave e reflexo que acompanham o ponteiro (só com mouse ou caneta)
+let CQTILT = null;
+document.addEventListener('pointermove', e => {
+  if (e.pointerType === 'touch' || S.view !== 'conquistas') return;
+  const c = e.target.closest && e.target.closest('.cq');
+  if (CQTILT && CQTILT !== c) { CQTILT.style.removeProperty('--rx'); CQTILT.style.removeProperty('--ry'); CQTILT.classList.remove('tilt'); CQTILT = null; }
+  if (!c || matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+  const r = c.getBoundingClientRect(), x = (e.clientX - r.left) / r.width, y = (e.clientY - r.top) / r.height;
+  c.style.setProperty('--rx', ((.5 - y) * 7).toFixed(2) + 'deg'); c.style.setProperty('--ry', ((x - .5) * 9).toFixed(2) + 'deg');
+  c.style.setProperty('--mx', (x * 100).toFixed(1) + '%'); c.style.setProperty('--my', (y * 100).toFixed(1) + '%');
+  c.classList.add('tilt'); CQTILT = c;
+}, { passive: true });

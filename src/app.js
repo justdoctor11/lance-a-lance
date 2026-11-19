@@ -1954,7 +1954,7 @@ async function tryPuzzleMove(from, to) {
     PZ.done = true; blindReveal(); PB.setMarks({ last: [m.from, m.to], ok: m.to });
     const solved = store.get('solved', {}); solved[PZ.p.key] = 1; store.set('solved', solved);
     if (PZ.first) srsRecord(PZ.p.key, true); bumpDaily(); renderGoal(); haptic('ok');
-    if (PZ.p.kind === 'punish') act('punish'); else if (PZ.p.fen) act('theory');
+    if (PZ.p.kind === 'punish') act('punish'); else if (PZ.p.fen) act('theory'); if (store.get('blind', 'off') !== 'off') act('blind');
     fb.className = 'fb ok'; fb.textContent = (good === 'alt' ? fig(m.san) + ' também funciona: o motor avalia quase igual ao melhor lance. ' : 'Isso! ' + fig(m.san) + ' é o lance do motor. ') + explainBest() + (S.pzMode === 'review' ? ' ' + reviewNote() : '');
     if (S.pzMode === 'timed') { rushHit(); setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 450); }
     renderPzCount(); return;
