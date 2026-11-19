@@ -782,3 +782,10 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 @media (prefers-reduced-motion: reduce){#v-conquistas::before,.cq-emb::before,.cq-emb .bd,#cqGrid.anim .cq[data-a],.bfx-badge::before,#cqHero .bbar i,#cqNext .bbar i{animation:none}.cq,.cq-more{transition:none}}
 
 #cqGrid > section{content-visibility:auto;contain-intrinsic-size:auto 1100px}
+
+/* símbolos em duas camadas: mancha de cor translúcida, linha de tinta e uma sombra leve */
+.bd .gl .gf{fill:var(--bd-seg);opacity:.42;stroke:none}
+.bd .gl .gf *{stroke:none}
+.bd .gl .gsh{stroke:var(--bd-fg);fill:none;opacity:.14}
+.bd .gl path.gsh{fill:var(--bd-fg);stroke:none;opacity:.12}
+.bd.bt0 .gl .gf{opacity:.28}

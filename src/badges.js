@@ -25,62 +25,68 @@ const PIECE = {
   queen: 'M4.3 7.2a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM8.4 4.8a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM12 3.8a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM15.6 4.8a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM19.7 7.2a1.4 1.4 0 1 1 0 2.8 1.4 1.4 0 0 1 0-2.8zM4.9 10.4l3.9 2.6.2-4.6 3 4.2 3-4.2.2 4.6 3.9-2.6-2.2 6.6H7.1zM6.6 17.9h10.8l.4 1H6.2zM5.6 19.4h12.8c.6 0 1 .3 1 .8s-.4.9-1 .9H5.6c-.6 0-1-.4-1-.9s.4-.8 1-.8z',
   king: 'M11.1 2h1.8v1.9h1.9v1.8h-1.9v1.9h-1.8V5.7H9.2V3.9h1.9zM12 8.3c3.6 0 6.2 1.7 6.2 4.1 0 1.6-1 2.9-2.3 3.9l.5 1.5H7.6l.5-1.5c-1.3-1-2.3-2.3-2.3-3.9 0-2.4 2.6-4.1 6.2-4.1zM6.5 18.7h11c.6 0 1 .4 1 1v.6c0 .6-.4 1-1 1h-11c-.6 0-1-.4-1-1v-.6c0-.6.4-1 1-1z'
 };
+// peça em miniatura dentro de um símbolo: mesma silhueta das peças, com traço de espessura fixa
+const mini = (p, x, y, k, cls) => '<path' + (cls ? ' class="' + cls + '"' : '') + ' d="' + PIECE[p] + '" transform="translate(' + x + ' ' + y + ') scale(' + k + ')" vector-effect="non-scaling-stroke"/>';
 const ICONS = {
-  olhofechado: '<path d="M3 9.5c2.2 3 5.4 4.8 9 4.8s6.8-1.8 9-4.8M6.5 13.3 5 16M17.5 13.3 19 16M12 14.6V17.5M9 14.2 8.2 17M15 14.2l.8 2.8"/>',
-  sequencia: '<path d="m5 6 5 6-5 6M12 6l5 6-5 6"/><path d="M19.5 6v12"/>',
-  marcador: '<path d="M6.5 3.5h11v17L12 16.5l-5.5 4z"/><path d="M9.5 8h5"/>',
-  chave: '<circle cx="8" cy="12" r="4.2"/><path d="M12.2 12H21M17.5 12v3.2M20.5 12v2.4"/>',
-  presente: '<rect x="3.5" y="9" width="17" height="11.5" rx="1.5"/><path d="M3.5 13h17M12 9v11.5M12 9c-1.5-3.5-5.5-4.5-6-2s3 2 6 2zM12 9c1.5-3.5 5.5-4.5 6-2s-3 2-6 2z"/>',
-  yin: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/>',
-  roquelongo: '<path d="M20.5 12h-17M7.5 7.5 3.5 12l4 4.5M14 8.5v7M17.5 8.5v7"/>',
-  cruz: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M9 12h6M12 9v6"/>',
-  batimento: '<path d="M2.5 12.5h4l2-5 3.5 10 2.5-7 1.5 2h5.5"/>',
-  cronometro: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 9.5v4l2.5 1.5M10 2.5h4M18.5 6.5l1.5-1.5"/>',
-  bandeirabranca: '<path d="M5.5 21V3.5"/><path d="M5.5 4.5c3-1.8 5.5 1.8 8.5 0s3.5-1 4.5-.5v8c-1-.5-1.5-1.3-4.5.5s-5.5-1.8-8.5 0"/>',
-  espadas: '<path d="m4 4 9.5 9.5M20 4l-9.5 9.5M4 4v3.5M4 4h3.5M20 4v3.5M20 4h-3.5M6.5 15.5l2 2M17.5 15.5l-2 2M5 19.5l2.5-2.5M19 19.5 16.5 17"/>',
-  retorno: '<path d="M9 14.5 4.5 10 9 5.5"/><path d="M4.5 10h10a5 5 0 0 1 0 10H11"/>',
-  globo: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/>',
-  degraus: '<path d="M3.5 20.5h4v-4.5h4.5V11.5h4.5V7h4"/><path d="M17 3.5h3.5V7"/>',
-  grade4: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>',
-  cafe: '<path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM16.5 11h1.5a2.5 2.5 0 0 1 0 5h-1.8M8 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3"/>',
-  exclama: '<path d="M9 4.5v10M15 4.5v10"/><circle cx="9" cy="19" r=".9" fill="currentColor"/><circle cx="15" cy="19" r=".9" fill="currentColor"/>',
-  sol: '<circle cx="12" cy="14" r="4"/><path d="M12 5v2M5.5 8l1.4 1.4M18.5 8l-1.4 1.4M3 14h2M19 14h2M3 19.5h18"/>',
-  coroa: '<path d="m3.5 8.5 4.2 4 4.3-7 4.3 7 4.2-4-1.8 10H5.3z"/>',
-  dupla: '<path d="M3.5 12.5 6 9l2.3 2.6L10.5 7l2.2 4.6L15 9l2.5 3.5-1 4h-12z" transform="translate(-.5 -2)"/><path d="m8.5 18.5 2.5-3.5 2.3 2.6 2.2-4.6 2.2 4.6L20 15l2.5 3.5" transform="translate(-2.5 1)"/>',
-  alvo: '<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="4.5"/><circle cx="12" cy="12" r="1" fill="currentColor"/>',
-  raio: '<path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11.5h-6.5z"/>',
-  garfo: '<path d="M5 20.5V10a4 4 0 0 1 4-4h10M15.5 2.5 19 6l-3.5 3.5M5 14.5h10M12 11l3.5 3.5L12 18"/>',
-  olho: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3"/>',
-  grade: '<path d="M9 3.5 7.5 20.5M16.5 3.5 15 20.5M4 9h16.5M3.5 15H20"/>',
-  livro: '<path d="M4.5 5.5a2 2 0 0 1 2-2h13v15h-13a2 2 0 0 0-2 2zM4.5 20.5v-15M8.5 7.5h7M8.5 11h5"/>',
-  bandeira: '<path d="M5.5 21V3.5M5.5 4h12.5l-2.5 4.2 2.5 4.3H5.5"/>',
-  scan: '<path d="M4 8.5V4h4.5M15.5 4H20v4.5M20 15.5V20h-4.5M8.5 20H4v-4.5M7.5 12h9"/>',
-  relogio: '<circle cx="12" cy="13" r="8"/><path d="M12 8.5V13l3 2M9.5 2.5h5"/>',
-  martelo: '<path d="m13.2 3.2 7.6 7.6-3 3-7.6-7.6z"/><path d="M11.8 9.2 3.8 17.2l3 3 8-8"/>',
-  onda: '<circle cx="12" cy="12" r="2"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6"/>',
-  detetive: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="M15.5 15.5 21 21M8.8 8.7a1.8 1.8 0 1 1 2.6 1.6c-.6.3-.9.7-.9 1.3M10.5 13.7v.1"/>',
-  ciclo: '<path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18.5 2.5v4.2h-4.2M5.5 21.5v-4.2h4.2"/>',
-  chapeu: '<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2V11M21.5 9v5"/>',
-  estrela: '<path d="m12 3 2.7 5.6 6.1.9-4.4 4.3 1 6.1L12 17l-5.4 2.9 1-6.1-4.4-4.3 6.1-.9z"/>',
-  mira: '<circle cx="12" cy="12" r="7"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/>',
-  escudook: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9.2C7.5 20 4 17 4 12V6z"/><path d="m8.5 12 2.5 2.5 4.5-4.5"/>',
-  subida: '<path d="M3 17.5 9 11.5l4 4 8-8.5M15 7h6v6"/>',
-  montanha: '<path d="M2.5 20.5 9.5 8.5l4 6.2 2.5-4 5.5 9.8z"/>',
-  ampulheta: '<path d="M6.5 3h11M6.5 21h11M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"/>',
-  trofeu: '<path d="M8 3.5h8v6a4 4 0 0 1-8 0zM8 5.5H5a3 3 0 0 0 3 4.3M16 5.5h3a3 3 0 0 1-3 4.3M12 13.5v4M8.5 21h7M9.5 17.5h5"/>',
-  colecao: '<path d="m12 3.5 8.5 4.8L12 13 3.5 8.3z"/><path d="m3.5 12.4 8.5 4.8 8.5-4.8M3.5 16.4l8.5 4.8 8.5-4.8"/>',
-  promo: '<path d="M12 21V8M6.8 13.2 12 8l5.2 5.2M5 3.8h14"/>',
-  biblioteca: '<path d="M4 20V5h3v15M9 20V4h3v16M14.5 20.5l-1-15 3-.4 1.6 15z"/><path d="M3 20.5h18"/>',
-  lua: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M16 4.5v3M14.5 6h3"/>',
-  chama: '<path d="M12 3c.6 3.2 5 5.2 5 10.2a5 5 0 0 1-10 0c0-2.3 1.1-3.8 2.2-4.8.2 2 1.1 3.1 2.2 3.1 0-3.2-1.4-5.2.6-8.5z"/>',
-  lupa: '<circle cx="10.5" cy="10.5" r="6"/><path d="M15 15l5.5 5.5M8 10.5h5M10.5 8v5"/>',
-  calendario: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 14.8 2 2 4-4"/>',
-  meta: '<circle cx="12" cy="12" r="8.5"/><path d="m8 12.3 2.7 2.7 5.6-5.7"/>',
-  ep: '<path d="M6 18.5 17.5 7M11 7h6.5v6.5"/><path d="M5 11v.01M5 7.5v.01M8.5 4v.01"/>',
-  onda2: '<path d="M2.5 15.5c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 1.5-1 3-1.5M2.5 20c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 1.5-1 3-1.5"/><circle cx="12" cy="7.5" r="3.2"/>',
-  roque: '<path d="M3.5 12h17M7.5 7.5 3.5 12l4 4.5M16.5 7.5l4 4.5-4 4.5"/>',
-  cem: '<text x="12" y="15.6" text-anchor="middle" font-size="10.5" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,sans-serif" letter-spacing="-.4">100</text><path d="M4 19.5h16M4 4.5h16"/>',
-  gema: '<path d="M6.5 4h11l3.5 5-9 11L3 9z"/><path d="M3 9h18M9.5 4 8 9l4 11 4-11-1.5-5"/>'
+  // f: mancha de cor translúcida (o corpo); s: linha de tinta (a leitura)
+  alvo: { f: '<circle cx="11" cy="13" r="8"/>', s: '<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4.6"/><circle cx="11" cy="13" r="1.4" fill="currentColor"/><path d="M11 13 20 4M16.6 3.6 20.4 3.6 20.4 7.4"/>' },
+  raio: { f: '<path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11.5h-6.5z"/>', s: '<path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11.5h-6.5z"/><path d="M3.2 5.5 4.8 7M20.8 18.5 19.2 17M2.8 18h1.8"/>' },
+  garfo: { f: '<circle cx="5.5" cy="7" r="2.6"/><circle cx="12" cy="4.6" r="2.6"/><circle cx="18.5" cy="7" r="2.6"/>', s: '<path d="M12 21v-6.5M12 14.5 6.6 8.9M12 14.5V7.2M12 14.5l5.4-5.6"/><circle cx="5.5" cy="7" r="2.6"/><circle cx="12" cy="4.6" r="2.6"/><circle cx="18.5" cy="7" r="2.6"/><circle cx="12" cy="14.5" r="1.1" fill="currentColor"/>' },
+  olho: { f: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/>', s: '<path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12z"/><circle cx="12" cy="12" r="3.4"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/><path d="M13.6 10.6l.9-.9"/>' },
+  oposicao: { f: '<rect x="3" y="15" width="18" height="5.5" rx="1"/>', s: '<path d="M3 15h18M3 20.5h18M9 15v5.5M15 15v5.5"/><path d="M6 4v3.2M4.6 5.4h2.8M18 4v3.2M16.6 5.4h2.8"/><path d="M6 8c1.9 0 3 1 3 2.4 0 1-.6 1.7-1.3 2.2l.3 1.4H4l.3-1.4C3.6 12.1 3 11.4 3 10.4 3 9 4.1 8 6 8zM18 8c1.9 0 3 1 3 2.4 0 1-.6 1.7-1.3 2.2l.3 1.4h-4l.3-1.4c-.7-.5-1.3-1.2-1.3-2.2 0-1.4 1.1-2.4 3-2.4z"/>' },
+  grade: { f: '<path d="M9.2 9h6.8l-.8 6H8.4z"/>', s: '<path d="M10 3.5 7.6 20.5M17 3.5l-2.4 17M4 9h16.5M3.5 15H20"/>' },
+  livro: { f: '<path d="M12 6.5C9.5 5 6.5 4.5 3.5 5v13c3-.5 6 0 8.5 1.5zM12 6.5c2.5-1.5 5.5-2 8.5-1.5v13c-3-.5-6 0-8.5 1.5z"/>', s: '<path d="M12 6.5C9.5 5 6.5 4.5 3.5 5v13c3-.5 6 0 8.5 1.5 2.5-1.5 5.5-2 8.5-1.5V5c-3-.5-6 0-8.5 1.5zM12 6.5v13"/><path d="M6 8.6c1.3-.1 2.6.1 3.6.6M6 11.6c1.3-.1 2.6.1 3.6.6M14.4 9.2c1-.5 2.3-.7 3.6-.6M14.4 12.2c1-.5 2.3-.7 3.6-.6"/>' },
+  bandeira: { f: '<path d="M6 4h3.3v2.7H6zM12.6 4h3.3v2.7h-3.3zM9.3 6.7h3.3v2.6H9.3zM15.9 6.7h3.3v2.6h-3.3zM6 9.3h3.3V12H6zM12.6 9.3h3.3V12h-3.3z"/>', s: '<path d="M6 21.5V3.5"/><path d="M6 4h13.2v8H6"/>' },
+  scan: { f: '<path d="M12 7.2a2.2 2.2 0 1 1 0 4.4 2.2 2.2 0 0 1 0-4.4zM10.6 12.2h2.8c.1 1.6.8 2.6 1.8 3.3H8.8c1-.7 1.7-1.7 1.8-3.3zM8.2 16.2h7.6v1.6H8.2z"/>', s: '<path d="M3.5 8.5V3.5h5M15.5 3.5h5v5M20.5 15.5v5h-5M8.5 20.5h-5v-5"/><path d="M3 12h3M18 12h3" opacity=".7"/>' },
+  relogio: { f: '<rect x="2.5" y="9" width="19" height="11" rx="2"/>', s: '<rect x="2.5" y="9" width="19" height="11" rx="2"/><circle cx="8" cy="14.5" r="3.2"/><circle cx="16" cy="14.5" r="3.2"/><path d="M8 14.5V12.6M16 14.5l1.4-1.2M5.5 9V6.8h4V9M14.5 9V7.8h4V9"/>' },
+  martelo: { f: '<path d="m13.2 3.2 7.6 7.6-3 3-7.6-7.6z"/>', s: '<path d="m13.2 3.2 7.6 7.6-3 3-7.6-7.6z"/><path d="M11.8 9.2 3.8 17.2l3 3 8-8M3 21.5h8"/>' },
+  onda: { f: '<circle cx="12" cy="12" r="3.4"/>', s: '<circle cx="12" cy="12" r="1.6" fill="currentColor"/><path d="M8.2 8.2a5.4 5.4 0 0 0 0 7.6M15.8 8.2a5.4 5.4 0 0 1 0 7.6M5.2 5.2a9.6 9.6 0 0 0 0 13.6M18.8 5.2a9.6 9.6 0 0 1 0 13.6"/>' },
+  detetive: { f: '<circle cx="10.5" cy="10.5" r="6.5"/>', s: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5.5 5.5"/><path d="M8.7 8.7a1.8 1.8 0 1 1 2.6 1.6c-.6.3-.8.7-.8 1.3"/><circle cx="10.5" cy="13.8" r=".6" fill="currentColor"/>' },
+  ciclo: { f: '<circle cx="12" cy="12" r="4.2"/>', s: '<path d="M20 12a8 8 0 0 1-14 5.3M4 12a8 8 0 0 1 14-5.3M18.5 2.5v4.2h-4.2M5.5 21.5v-4.2h4.2"/><path d="M12 9.8v2.4l1.6 1"/>' },
+  chapeu: { f: '<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/>', s: '<path d="M2.5 9 12 4.5 21.5 9 12 13.5z"/><path d="M6.5 11v4.5c1.5 1.5 3.5 2.2 5.5 2.2s4-.7 5.5-2.2V11M21.5 9v5.5"/><circle cx="21.5" cy="15.5" r="1" fill="currentColor"/>' },
+  estrela: { f: '<path d="m11 4 2.5 5.1 5.6.8-4 4 .9 5.5-5-2.6-5 2.6.9-5.5-4-4 5.6-.8z"/>', s: '<path d="m11 4 2.5 5.1 5.6.8-4 4 .9 5.5-5-2.6-5 2.6.9-5.5-4-4 5.6-.8z"/><path d="M19.5 2.5v3M18 4h3M20.5 15.5v2M19.5 16.5h2"/>' },
+  mira: { f: '<circle cx="12" cy="12" r="7"/>', s: '<circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.6"/><path d="M12 2.5v5M12 16.5v5M2.5 12h5M16.5 12h5"/>' },
+  escudook: { f: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9.2C7.5 20 4 17 4 12V6z"/>', s: '<path d="M12 3l8 3v6c0 5-3.5 8-8 9.2C7.5 20 4 17 4 12V6z"/><path d="m8.5 12 2.5 2.5 4.5-4.5"/>' },
+  subida: { f: '<path d="M3 20.5V17.5l6-6 4 4 8-8.5v13.5z"/>', s: '<path d="M3 17.5 9 11.5l4 4 8-8.5M15 7h6v6M3 20.5h18"/>' },
+  montanha: { f: '<path d="M2.5 20.5 9.5 8.5l4 6.2 2.5-4 5.5 9.8z"/>', s: '<path d="M2.5 20.5 9.5 8.5l4 6.2 2.5-4 5.5 9.8z"/><path d="M9.5 8.5V3.5l3 1.2-3 1.2"/><circle cx="4.5" cy="6" r="1.4" fill="currentColor"/>' },
+  ampulheta: { f: '<path d="M8.6 6h6.8c-.6 2-3.4 3.4-3.4 5.2C12 9.4 9.2 8 8.6 6zM12 15.5c1.8 0 4 1.6 4 4.5H8c0-2.9 2.2-4.5 4-4.5z"/>', s: '<path d="M6.5 3h11M6.5 21h11M8 3c0 5 8 6 8 9s-8 4-8 9M16 3c0 5-8 6-8 9s8 4 8 9"/>' },
+  trofeu: { f: '<path d="M8 3.5h8v6a4 4 0 0 1-8 0z"/>', s: '<path d="M8 3.5h8v6a4 4 0 0 1-8 0zM8 5.5H5a3 3 0 0 0 3 4.3M16 5.5h3a3 3 0 0 1-3 4.3M12 13.5v4M8.5 21h7M9.5 17.5h5"/><path d="M12 5.8v3.4" opacity=".7"/>' },
+  colecao: { f: '<path d="m12 3.5 8.5 4.8L12 13 3.5 8.3z"/>', s: '<path d="m12 3.5 8.5 4.8L12 13 3.5 8.3z"/><path d="m3.5 12.4 8.5 4.8 8.5-4.8M3.5 16.4l8.5 4.8 8.5-4.8"/>' },
+  promo: { f: '<path d="m5 9 2.3-4.8 4.7 3.5 4.7-3.5L19 9z"/>' + mini('pawn', 8.4, 12.4, .3), s: '<path d="m5 9 2.3-4.8 4.7 3.5 4.7-3.5L19 9z"/><path d="M5.5 11.2h13"/>' + mini('pawn', 8.4, 12.4, .3) },
+  biblioteca: { f: '<path d="M4 20V5h3v15zM9 20V4h3v16z"/>', s: '<path d="M4 20V5h3v15M9 20V4h3v16M14.5 20.5l-1-15 3-.4 1.6 15z"/><path d="M3 20.5h18M4 8h3M9 7h3M4 16.5h3M9 17h3"/>' },
+  lua: { f: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/>', s: '<path d="M20 14.5A8 8 0 1 1 9.5 4a6.5 6.5 0 0 0 10.5 10.5z"/><path d="M16 3.5v3M14.5 5h3M20.5 8v2M19.5 9h2"/>' },
+  chama: { f: '<path d="M12 9.5c.4 2 3 3.2 3 6.2a3 3 0 0 1-6 0c0-1.4.6-2.3 1.3-2.9.1 1.2.7 1.9 1.3 1.9 0-1.9-.8-3.1.4-5.2z"/>', s: '<path d="M12 3c.6 3.2 5 5.2 5 10.2a5 5 0 0 1-10 0c0-2.3 1.1-3.8 2.2-4.8.2 2 1.1 3.1 2.2 3.1 0-3.2-1.4-5.2.6-8.5z"/>' },
+  lupa: { f: '<circle cx="10.5" cy="10.5" r="6.5"/>', s: '<circle cx="10.5" cy="10.5" r="6.5"/><path d="m15.5 15.5 5.5 5.5M7.8 12.8v-1.6M10.5 12.8V8.2M13.2 12.8v-3"/>' },
+  calendario: { f: '<path d="M5.5 5h13a2 2 0 0 1 2 2v3h-17V7a2 2 0 0 1 2-2z"/>', s: '<rect x="3.5" y="5" width="17" height="15.5" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4"/><path d="m9 15 2 2 4-4"/>' },
+  meta: { f: '<circle cx="12" cy="12" r="8.5"/>', s: '<circle cx="12" cy="12" r="8.5"/><path d="m8 12.3 2.7 2.7 5.6-5.7"/>' },
+  ep: { f: mini('pawn', 2.5, 9, .42) + mini('pawn', 12.5, 9, .42), s: mini('pawn', 2.5, 9, .42) + mini('pawn', 12.5, 9, .42) + '<path d="M8 7.5 15 2.8M11.6 2.8H15v3.4"/>' },
+  onda2: { f: '<path d="M2.5 14.5c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 1.5-1 3-1.5V21h-19z"/>', s: '<path d="M2.5 14.5c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 1.5-1 3-1.5M2.5 19c2 0 2-1.5 4-1.5s2 1.5 4 1.5 2-1.5 4-1.5 2 1.5 4 1.5 1.5-1 3-1.5"/><path d="M12 3v2.6M10.7 4.3h2.6M12 6.8c1.7 0 2.7.8 2.7 2 0 .7-.4 1.2-1 1.6l.2.9h-3.8l.2-.9c-.6-.4-1-.9-1-1.6 0-1.2 1-2 2.7-2z"/>' },
+  roque: { f: mini('rook', 1.5, 3.5, .42) + mini('king', 12.5, 3.5, .42), s: mini('rook', 1.5, 3.5, .42) + mini('king', 12.5, 3.5, .42) + '<path d="M3.5 18.5h17M7 21l-3.5-2.5L7 16M17 16l3.5 2.5L17 21"/>' },
+  cem: { f: '<rect x="2.5" y="6" width="19" height="12" rx="3"/>', s: '<rect x="2.5" y="6" width="19" height="12" rx="3"/><text x="12" y="15.2" text-anchor="middle" font-size="8.6" font-weight="800" fill="currentColor" stroke="none" font-family="system-ui,sans-serif" letter-spacing="-.3">100</text>' },
+  gema: { f: '<path d="M6.5 4h11L21 9H3z"/>', s: '<path d="M6.5 4h11l3.5 5-9 11L3 9z"/><path d="M3 9h18M9.5 4 8 9l4 11 4-11-1.5-5"/>' },
+  olhofechado: { f: '<path d="M2.5 7.5h19v4.5h-19z"/>', s: '<path d="M2.5 7.5h19v4.5h-19z"/><path d="M5 15.5c2 1.7 4.5 2.6 7 2.6s5-.9 7-2.6M7.5 17.4 6.5 19.6M16.5 17.4l1 2.2M12 18.1v2.4"/>' },
+  sequencia: { f: '<path d="M4 6l5 6-5 6h3.5l5-6-5-6z"/>', s: '<path d="m4 6 5 6-5 6M10.5 6l5 6-5 6M17 6l3.5 6-3.5 6"/>' },
+  marcador: { f: '<path d="M6.5 3.5h11v17L12 16.5l-5.5 4z"/>', s: '<path d="M6.5 3.5h11v17L12 16.5l-5.5 4z"/><path d="m9.2 9.2 2 2 3.6-3.6"/>' },
+  chave: { f: '<circle cx="7.5" cy="12" r="4.5"/>', s: '<circle cx="7.5" cy="12" r="4.5"/><circle cx="7.5" cy="12" r="1.5"/><path d="M12 12h9M17 12v3.4M20.5 12v2.6"/>' },
+  presente: { f: '<rect x="3.5" y="9" width="17" height="4"/>', s: '<rect x="3.5" y="9" width="17" height="11.5" rx="1.5"/><path d="M3.5 13h17M12 9v11.5M12 9c-1.5-3.5-5.5-4.5-6-2s3 2 6 2zM12 9c1.5-3.5 5.5-4.5 6-2s-3 2-6 2z"/>' },
+  yin: { f: '<circle cx="12" cy="12" r="8.5"/>', s: '<circle cx="12" cy="12" r="8.5"/><path d="M12 3.5a8.5 8.5 0 0 1 0 17z" fill="currentColor"/><circle cx="7.8" cy="12" r="1.3" fill="currentColor"/>' },
+  roquelongo: { f: mini('rook', 12, 2.5, .45), s: mini('king', 1.5, 2.5, .45) + mini('rook', 12, 2.5, .45) + '<path d="M20.5 18.5h-17M7 16l-3.5 2.5L7 21"/>' },
+  cruz: { f: '<path d="M8 8h4v4H8zM12 12h4v4h-4z"/>', s: '<rect x="4" y="4" width="16" height="16" rx="2"/><path d="M8 8h8v8H8z"/><path d="M12 8v8M8 12h8" opacity=".6"/>' },
+  batimento: { f: '<path d="M12 20.5S3.5 15.5 3.5 9.3A4.3 4.3 0 0 1 12 7.5a4.3 4.3 0 0 1 8.5 1.8c0 6.2-8.5 11.2-8.5 11.2z"/>', s: '<path d="M2.5 13h4l2-4.5 3.5 9 2.5-6.5 1.5 2h5.5"/>' },
+  cronometro: { f: '<circle cx="12" cy="13.5" r="7.5"/>', s: '<circle cx="12" cy="13.5" r="7.5"/><path d="M12 13.5V8.6M10 2.5h4M18.5 6.5 20 5"/><path d="M12 8.6l2.6.9-2.6.9" fill="currentColor"/>' },
+  bandeirabranca: { f: '<path d="M5.5 4.5c3-1.8 5.5 1.8 8.5 0s3.5-1 4.5-.5v8c-1-.5-1.5-1.3-4.5.5s-5.5-1.8-8.5 0z"/>', s: '<path d="M5.5 21V3.5"/><path d="M5.5 4.5c3-1.8 5.5 1.8 8.5 0s3.5-1 4.5-.5v8c-1-.5-1.5-1.3-4.5.5s-5.5-1.8-8.5 0"/>' },
+  espadas: { f: '<path d="M4 4h3.5l6 6-3.5 3.5-6-6zM20 4h-3.5l-6 6 3.5 3.5 6-6z"/>', s: '<path d="m4 4 9.5 9.5M20 4l-9.5 9.5M4 4v3.5M4 4h3.5M20 4v3.5M20 4h-3.5M6.5 15.5l2 2M17.5 15.5l-2 2M5 19.5l2.5-2.5M19 19.5 16.5 17"/>' },
+  retorno: { f: '<path d="M4.5 10h10a5 5 0 0 1 0 10H11v-4h3.5a1 1 0 0 0 0-2h-10z"/>', s: '<path d="M9 14.5 4.5 10 9 5.5"/><path d="M4.5 10h10a5 5 0 0 1 0 10H11"/>' },
+  globo: { f: '<circle cx="12" cy="12" r="8.5"/>', s: '<circle cx="12" cy="12" r="8.5"/><path d="M3.5 12h17M5 7.5h14M5 16.5h14M12 3.5c2.5 2.5 3.5 5.5 3.5 8.5s-1 6-3.5 8.5c-2.5-2.5-3.5-5.5-3.5-8.5s1-6 3.5-8.5z"/>' },
+  degraus: { f: '<path d="M3.5 20.5v-4.5h4.5v-4.5h4.5V7h4.5v13.5z"/>', s: '<path d="M3.5 20.5h17M3.5 20.5v-4.5h4.5v-4.5h4.5V7h4.5v13.5"/><path d="M17 7V2.5l3 1.3-3 1.3"/>' },
+  grade4: { f: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>', s: '<rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/>' },
+  cafe: { f: '<path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5z"/>', s: '<path d="M4.5 9.5h12v5a5 5 0 0 1-5 5h-2a5 5 0 0 1-5-5zM16.5 11h1.5a2.5 2.5 0 0 1 0 5h-1.8M8 3.5c-.8 1 .8 2 0 3M12 3.5c-.8 1 .8 2 0 3M3.5 21.5h14"/>' },
+  exclama: { f: '<rect x="6" y="3" width="12" height="18" rx="4"/>', s: '<path d="M12 6.5v8"/><circle cx="12" cy="17.6" r="1.2" fill="currentColor"/>' },
+  sol: { f: '<path d="M7.5 15.5a4.5 4.5 0 0 1 9 0z"/>', s: '<path d="M7.5 15.5a4.5 4.5 0 0 1 9 0M12 6.5v2M5.6 9.1l1.4 1.4M18.4 9.1 17 10.5M3 15.5h18M6 19h12"/>' },
+  coroa: { f: '<path d="m3.5 8.5 4.2 4 4.3-7 4.3 7 4.2-4-1.8 10H5.3z"/>', s: '<path d="m3.5 8.5 4.2 4 4.3-7 4.3 7 4.2-4-1.8 10H5.3z"/><path d="M5.5 21h13"/><circle cx="12" cy="14.5" r="1.2" fill="currentColor"/>' },
+  marcha: { f: mini('pawn', 3, 7.5, .55), s: mini('pawn', 3, 7.5, .55) + '<path d="M17 20V6M13.5 9.5 17 6l3.5 3.5"/><path d="M17 3.2v.01" stroke-width="2.4"/>' },
+  bobo: { f: '<path d="M4 16.5 6.5 5.5l5.5 6 5.5-6 2.5 11z"/>', s: '<path d="M4 16.5 6.5 5.5l5.5 6 5.5-6 2.5 11z"/><path d="M4 16.5h16v3.5H4z"/><circle cx="6.5" cy="4.2" r="1.3"/><circle cx="17.5" cy="4.2" r="1.3"/><circle cx="12" cy="18.2" r=".7" fill="currentColor"/>' },
+  dupla: { f: '<path d="m2.5 10 2.8 2.6L8.5 7.5l3.2 5.1 2.8-2.6-1.3 7H3.8z"/>', s: '<path d="m9.5 7.5 2.8 2.6 3.2-5.1 3.2 5.1L21.5 7.5l-1.3 7h-9.4z"/><path d="m2.5 10 2.8 2.6L8.5 7.5l3.2 5.1M3.8 17h9.4M4.5 20.5h15"/>' }
 };
 
 /* as insígnias. v(X): valor atual; lv: metas dos cinco níveis; rare: um nível só */
@@ -90,7 +96,7 @@ const BADGES = [
   { id: 'relampago', cat: 'treino', t: 'Relâmpago', ic: 'raio', lv: [8, 15, 22, 30, 40], d: n => 'Faça ' + n + ' acertos numa só Corrida', v: X => X.rbest },
   { id: 'kotov', cat: 'treino', t: 'Árvore de Kotov', ic: 'garfo', lv: [5, 20, 50, 120, 250], d: n => 'Tenha o melhor lance entre os seus candidatos ' + n + ' vezes', v: X => X.candFound },
   { id: 'autopsia', cat: 'treino', t: 'Autópsia', ic: 'olho', lv: [1, 5, 15, 40, 100], d: n => 'Tire 70% ou mais de autocrítica em ' + n + ' ' + pl(n, 'partida', 'partidas') + ' no Você primeiro', v: X => X.self70 },
-  { id: 'oposicao', cat: 'treino', t: 'Oposição', ic: 'p:king', lv: () => [2, 5, 9, 13, ENDS.length], d: n => 'Conclua ' + n + ' lições do curso de finais', v: X => X.ends },
+  { id: 'oposicao', cat: 'treino', t: 'Oposição', ic: 'oposicao', lv: () => [2, 5, 9, 13, ENDS.length], d: n => 'Conclua ' + n + ' lições do curso de finais', v: X => X.ends },
   { id: 'rede', cat: 'treino', t: 'Rede de mate', ic: 'grade', lv: () => [5, 10, 15, 20, MATES.length], d: n => 'Resolva ' + n + ' padrões de mate', v: X => X.mates },
   { id: 'livro', cat: 'treino', t: 'Livro aberto', ic: 'livro', lv: [10, 40, 100, 200, 400], d: n => 'Fixe ' + n + ' posições do seu repertório', v: X => X.rep },
   { id: 'tecnica', cat: 'treino', t: 'Técnica', ic: 'bandeira', lv: [1, 3, 8, 15, 30], d: n => 'Converta ' + n + ' ' + pl(n, 'vitória que tinha escapado', 'vitórias que tinham escapado'), v: X => X.conv },
@@ -112,7 +118,7 @@ const BADGES = [
   { id: 'miniatura', cat: 'partidas', t: 'Miniatura', ic: 'ampulheta', lv: [5, 25, 75, 200, 500], d: n => 'Dê mate em até 25 lances ' + n + ' ' + pl(n, 'vez', 'vezes'), v: X => X.mini },
   { id: 'invicto', cat: 'partidas', t: 'Invicto', ic: 'trofeu', lv: [5, 8, 11, 14, 18], d: n => 'Vença ' + n + ' partidas seguidas', v: X => X.winRow },
   { id: 'colecao', cat: 'partidas', t: 'Coleção de mates', ic: 'colecao', lv: [1, 2, 3, 4, 5], d: n => n === 1 ? 'Dê xeque-mate' : 'Dê mate com ' + n + ' peças diferentes (peão, cavalo, bispo, torre, dama)', v: X => X.mateTypes },
-  { id: 'peaopassado', cat: 'partidas', t: 'Peão passado', ic: 'promo', lv: [5, 25, 100, 300, 750], d: n => 'Promova ' + n + ' ' + pl(n, 'peão', 'peões') + ' nas suas partidas', v: X => X.promos },
+  { id: 'peaopassado', cat: 'partidas', t: 'Peão passado', ic: 'marcha', lv: [5, 25, 100, 300, 750], d: n => 'Promova ' + n + ' ' + pl(n, 'peão', 'peões') + ' nas suas partidas', v: X => X.promos },
   { id: 'enciclopedia', cat: 'partidas', t: 'Enciclopédia', ic: 'biblioteca', lv: [25, 75, 150, 300, 500], d: n => 'Jogue ' + n + ' aberturas diferentes', v: X => X.openings },
   { id: 'coruja', cat: 'partidas', t: 'Coruja', ic: 'lua', lv: [10, 50, 150, 400, 1000], d: n => 'Vença ' + n + ' partidas entre meia-noite e 5 da manhã', v: X => X.nightW },
   { id: 'maratonista', cat: 'partidas', t: 'Maratonista', ic: 'p:pawn', lv: [500, 2000, 5000, 10000, 20000], d: n => 'Jogue ' + n.toLocaleString('pt-BR') + ' partidas', v: X => X.games },
@@ -150,7 +156,7 @@ const BADGES = [
   { id: 'roquefatal', cat: 'raras', rare: true, t: 'Roque fatal', ic: 'roque', d: () => 'Dê xeque-mate roqueando', v: X => X.castleMate },
   { id: 'centenaria', cat: 'raras', rare: true, t: 'Centenária', ic: 'cem', d: () => 'Jogue uma partida de 100 lances ou mais', v: X => X.long100 },
   { id: 'pastor', cat: 'raras', rare: true, t: 'Mate do pastor', ic: 'p:queen', d: () => 'Dê mate de brancas em até 4 lances', v: X => X.scholar },
-  { id: 'louco', cat: 'raras', rare: true, t: 'Mate do louco', ic: 'olho', d: () => 'Dê mate de pretas no segundo lance', v: X => X.fool },
+  { id: 'louco', cat: 'raras', rare: true, t: 'Mate do louco', ic: 'bobo', d: () => 'Dê mate de pretas no segundo lance', v: X => X.fool },
   { id: 'reiguerreiro', cat: 'raras', rare: true, t: 'Rei guerreiro', ic: 'coroa', d: () => 'Vença com o seu rei na 6ª fileira do adversário', v: X => X.kingWalk },
   { id: 'fabrica', cat: 'raras', rare: true, t: 'Fábrica de damas', ic: 'dupla', d: () => 'Promova dois peões na mesma partida', v: X => X.doublePromo },
   { id: 'coroacao', cat: 'raras', rare: true, t: 'Coroação', ic: 'promo', d: () => 'Dê xeque-mate promovendo um peão', v: X => X.promoMate },
@@ -187,9 +193,12 @@ function roman(n) { const v = [[10, 'X'], [9, 'IX'], [5, 'V'], [4, 'IV'], [1, 'I
    As cores vêm de variáveis CSS por nível (.t0 a .t5 e .tr), então o mesmo desenho
    funciona no tema claro e no escuro. Sem degradês nem filtros: é leve para desenhar 40 de uma vez. */
 function ensureBadgeDefs() { /* nada a preparar: o desenho não usa definições compartilhadas */ }
-function glyph(ic, x, y, s) {
-  if (ic.startsWith('p:')) return '<svg class="gl" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24"><path d="' + PIECE[ic.slice(2)] + '" fill="currentColor" fill-rule="evenodd"/></svg>';
-  return '<svg class="gl" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.85" stroke-linecap="round" stroke-linejoin="round">' + ICONS[ic] + '</svg>';
+function glyph(ic, x, y, s, big) {
+  const open = '<svg class="gl" x="' + x + '" y="' + y + '" width="' + s + '" height="' + s + '" viewBox="0 0 24 24">';
+  // peças: corpo em cor translúcida, contorno em tinta e um ponto de luz
+  if (ic.startsWith('p:')) { const d = PIECE[ic.slice(2)]; return open + (big ? '<path class="gsh" d="' + d + '" transform="translate(.35 .6)"/>' : '') + '<path class="gf" d="' + d + '" fill-rule="evenodd"/><path d="' + d + '" fill="none" stroke="currentColor" stroke-width="1.15" stroke-linejoin="round"/></svg>'; }
+  const I = ICONS[ic], line = ' fill="none" stroke="currentColor" stroke-width="1.75" stroke-linecap="round" stroke-linejoin="round"';
+  return open + '<g class="gf">' + I.f + '</g>' + (big ? '<g class="gsh"' + line + ' transform="translate(.35 .6)">' + I.s + '</g>' : '') + '<g' + line + '>' + I.s + '</g></svg>';
 }
 // anel em n segmentos iguais, com intervalos iguais; os k primeiros acesos, a partir do topo
 function ring(n, k, r) {
@@ -206,14 +215,14 @@ const tierCls = (b, l) => !l ? 'bt0' : b.rare ? 'btr' : 'bt' + l;
 function badgeSvg(id, lvl, size, extra) {
   const b = BADGES.find(x => x.id === id), cls = tierCls(b, lvl);
   const body = b.rare
-    ? '<path class="seg' + (lvl ? ' on' : '') + '" d="M32 3.6 60.4 32 32 60.4 3.6 32z" stroke-linejoin="round"/><path class="disk" d="M32 10.2 53.8 32 32 53.8 10.2 32z"/>' + glyph(b.ic, 21, 21, 22)
-    : ring(bMax(b), lvl, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + '<path class="gls" d="M11.6 22.5A22.5 22.5 0 0 1 52.4 22.5 34 26 0 0 0 11.6 22.5z"/><circle class="edge" cx="32" cy="32" r="23.4"/>' + glyph(b.ic, 18.5, 18.5, 27);
+    ? '<path class="seg' + (lvl ? ' on' : '') + '" d="M32 3.6 60.4 32 32 60.4 3.6 32z" stroke-linejoin="round"/><path class="disk" d="M32 10.2 53.8 32 32 53.8 10.2 32z"/>' + glyph(b.ic, 19.5, 19.5, 25, size > 100)
+    : ring(bMax(b), lvl, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + '<path class="gls" d="M11.6 22.5A22.5 22.5 0 0 1 52.4 22.5 34 26 0 0 0 11.6 22.5z"/><circle class="edge" cx="32" cy="32" r="23.4"/>' + glyph(b.ic, 17, 17, 30, size > 100);
   return '<svg class="bd ' + cls + (extra ? ' ' + extra : '') + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + body + '</svg>';
 }
 const RANK_T = ['bt1', 'bt2', 'bt3', 'bt4', 'bt5', 'btr'];
 function rankSvg(r, size, dim) {
   const R = RANKS[r.i];
-  return '<svg class="bd rk ' + (dim ? 'bt0' : RANK_T[r.i]) + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + ring(RANKS.length, dim ? 0 : r.i + 1, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + '<path class="gls" d="M11.6 22.5A22.5 22.5 0 0 1 52.4 22.5 34 26 0 0 0 11.6 22.5z"/><circle class="edge" cx="32" cy="32" r="23.4"/>' + glyph('p:' + R.p, 18, 17.5, 28) +
+  return '<svg class="bd rk ' + (dim ? 'bt0' : RANK_T[r.i]) + '" width="' + size + '" height="' + size + '" viewBox="0 0 64 64" aria-hidden="true">' + ring(RANKS.length, dim ? 0 : r.i + 1, 29) + '<circle class="disk" cx="32" cy="32" r="24.2"/>' + '<path class="gls" d="M11.6 22.5A22.5 22.5 0 0 1 52.4 22.5 34 26 0 0 0 11.6 22.5z"/><circle class="edge" cx="32" cy="32" r="23.4"/>' + glyph('p:' + R.p, 18, 17.5, 28, size > 100) +
     (r.promo ? '<text class="pr" x="32" y="52.5" text-anchor="middle">' + roman(r.promo) + '</text>' : '') + '</svg>';
 }
 
