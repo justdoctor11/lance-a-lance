@@ -77,7 +77,7 @@ p{margin:0}
 @media (max-width:899px){
   .tabs{display:none}
   .top-in{gap:12px;padding-block:10px}
-  .bnav{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
+  .bnav{display:grid;grid-template-columns:repeat(8,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
   .bnav a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;font:600 10.5px var(--f-display);letter-spacing:-.01em;min-width:0;color:var(--muted);text-decoration:none}
   .bnav a .ic{position:relative;display:flex;padding:3px 12px;border-radius:999px;transition:background .25s var(--ease)}
   .bnav a[aria-current="page"]{color:var(--ink);font-weight:700}
@@ -752,7 +752,7 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 .cq{background:color-mix(in srgb,var(--surface) 72%,transparent);border-color:color-mix(in srgb,#fff 40%,var(--line));box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 50%,transparent);transition:transform .45s cubic-bezier(.2,.8,.2,1),border-color .25s,background-color .25s;position:relative;overflow:hidden}
 .cq.tilt{transform:perspective(700px) rotateX(var(--rx,0)) rotateY(var(--ry,0));transition:transform .08s linear,border-color .25s}
 .cq:active{transform:scale(.975)}
-.cq-sh{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .3s;background:radial-gradient(240px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,.35),transparent 55%)}
+.cq-sh{position:absolute;inset:0;pointer-events:none;opacity:0;transition:opacity .4s;background:radial-gradient(120px circle at var(--mx,50%) var(--my,0%),rgba(255,255,255,.10),rgba(255,255,255,.04) 45%,transparent 70%)}
 .cq.tilt .cq-sh{opacity:1}
 .cq-b{position:relative;display:block;isolation:isolate}
 .cq.got .cq-b::before{content:"";position:absolute;inset:-6px;border-radius:50%;z-index:-1;background:radial-gradient(circle,color-mix(in srgb,var(--bd-seg) 60%,transparent),transparent 66%);transition:transform .4s var(--ease),opacity .4s}
@@ -969,3 +969,8 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 .trs b span{font:inherit;color:inherit;white-space:normal}
 #repSeg button{white-space:nowrap;padding:0 14px}
 .trstat:empty,#repSum:empty,#trHub:empty{display:none}
+
+@media (max-width:899px){.bnav a{font-size:9.5px;letter-spacing:-.025em}.bnav a .ic{padding:3px 7px}}
+@media (max-width:400px){.bnav{padding-left:max(4px,env(safe-area-inset-left,0px));padding-right:max(4px,env(safe-area-inset-right,0px))}.bnav a{font-size:9px}.bnav a .ic{padding:3px 5px}}
+@media (max-width:380px){.bnav a{font-size:8.4px;letter-spacing:-.035em}.bnav a .ic{padding:3px 4px}}
+.bnav a[aria-current="page"]{letter-spacing:-.035em}

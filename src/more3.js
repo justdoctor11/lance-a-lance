@@ -296,7 +296,7 @@ function phaseCostHtml() {
 }
 
 /* ---------- deslizar entre as abas (celular) ---------- */
-var SWIPE_ORDER = ['painel', 'partidas', 'analise', 'stats', 'treino', 'academia', 'conquistas'];
+var SWIPE_ORDER = ['painel', 'partidas', 'analise', 'stats', 'treino', 'repertorio', 'academia', 'conquistas'];
 function swipeInit() {
   const main = $('main.wrap'); if (!main) return;
   const mq = matchMedia('(max-width: 899px)');
@@ -563,7 +563,7 @@ document.addEventListener('click', e => {
 function v14Data() {
   // widget e lembrete já com o que se sabe; o repertório entra quando ficar pronto
   setTimeout(() => { widgetPush(); remSchedule(); }, 1500);
-  setTimeout(() => { repBuild().then(() => { widgetPush(); remSchedule(); const el = $('#repTile'); if (el) el.textContent = String(repToday() || 0); if (S.view === 'treino') renderRepSum(); }).catch(() => {}); }, 1500);
+  setTimeout(() => { repBuild().then(() => { widgetPush(); remSchedule(); const el = $('#repTile'); if (el) el.textContent = String(repToday() || 0); if (S.view === 'repertorio') renderRepSum(); }).catch(() => {}); }, 1500);
 }
 function v14Start() {
   swipeInit(); warmPaint();

@@ -684,7 +684,7 @@ const LESSONS = {
 };
 
 /* ---------- navegação ---------- */
-const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats', 'conquistas', 'academia'];
+const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats', 'conquistas', 'academia', 'repertorio'];
 function route() {
   const h = (location.hash || '').replace('#', '');
   const v = VIEWS.includes(h) ? h : 'painel';
@@ -701,6 +701,7 @@ function viewKey(v) {
   if (v === 'analise') return S.vx || S.guess || S.pendingGuess || S.shownGid !== S.gid || S.shownPly !== S.ply ? null : b + ':' + S.gid;
   if (v === 'treino') return S.pendingReview || S.pendingWarm || S.pendingPz ? null : b + ':' + Object.keys(CRIT).length + ':' + today + ':' + JSON.stringify(store.get('arena', {})).length + ':' + store.get('xbest', 0) + ':' + JSON.stringify(store.get('rep', {})).length + ':' + (repReady() ? 1 : 0);
   if (v === 'stats') return b;
+  if (v === 'repertorio') return b + ':' + REP.c + ':' + REP.path.join(' ') + ':' + JSON.stringify(store.get('rep', {})).length + ':' + (repReady() ? 1 : 0);
   if (v === 'academia') return S.acPane || ANALYZING.size || CRITING.size ? null : b + ':' + Object.keys(CRIT).length + ':' + ['capi', 'mem', 'tempo', 'libDone', 'aulas', 'accts', 'combine', 'libR'].map(k => JSON.stringify(store.get(k, 0)).length).join('.');
   return null;
 }
@@ -713,13 +714,14 @@ function renderView(v) {
   if (v === 'stats') renderStats();
   if (v === 'conquistas') renderConquistas();
   if (v === 'academia') renderAcademia();
+  if (v === 'repertorio') renderRepertorio();
 }
 function showView(v) {
   const first = !S.view;
   S.view = v;
   for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
   if (S.swipeDir) swipeMark($('#v-' + v));
-  const nv = v === 'arena' ? (S.arena && ARX[S.arena.kind] ? 'academia' : 'treino') : v;
+  const nv = v === 'arena' ? (S.arena && ARX[S.arena.kind] ? 'academia' : S.arena && S.arena.kind === 'rep' ? 'repertorio' : 'treino') : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
   window.scrollTo(0, 0);
@@ -1710,12 +1712,20 @@ function renderRep() {
   const holes = repHoles(root, REP.c);
   $('#repHoles').innerHTML = holes.length ? holes.map(x => '<button class="repmv" type="button" data-reppath="' + esc(x.path.join(' ')) + '"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(pathSan(x.path)) + '</span><span class="mono">' + sp(x.s) + '%</span><span class="mono muted">' + x.n + '</span></button>').join('') : '<p class="muted">Nenhum furo claro com 10 ou mais partidas.</p>';
 }
+function renderRepertorio() {
+  repSec(store.get('repSec', 'arvore'));
+  if (!analyzedReady()) { warmPrep().then(() => { if (S.view === 'repertorio') renderRepertorio(); }); }
+  const tok = S.rptok = {};
+  const stages = [() => renderRepSum(), () => renderRep(), () => renderTheory()];
+  const next = () => { if (S.rptok !== tok) return; const f = stages.shift(); if (!f) return; try { f(); } catch (e) { /* segue */ } if (stages.length) setTimeout(next, 0); };
+  next();
+}
 function renderRepSum() {
   const el = $('#repSum'); if (!el) return;
   const rd = repToday(), fixed = Object.values(store.get('rep', {})).filter(x => x.b >= 2).length;
   let holes = 0; try { holes = repHoles(repTree('w'), 'w').length + repHoles(repTree('b'), 'b').length; } catch (e) { holes = 0; }
   const cell = (big, lab) => '<div class="trs"><b class="mono">' + big + '</b><span>' + lab + '</span></div>';
-  el.innerHTML = '<div class="stack" style="gap:3px;min-width:0"><h2 class="h-card">Seu repertório</h2><p class="sub">Árvore das suas aberturas, furos, teoria e armadilhas, tudo num lugar. Treine com repetição espaçada: o que você erra volta antes.</p></div>' +
+  el.innerHTML = '<div class="stack" style="gap:3px;min-width:0"><h2 class="h-card">Treino de repertório</h2><p class="sub">Repetição espaçada: o que você erra volta antes.</p></div>' +
     '<div class="rep-sum-r"><div class="trstat">' + cell('<span id="repTile">' + (rd == null ? '…' : rd) + '</span>', 'para hoje') + cell(fixed, 'posições fixadas') + cell(holes, holes === 1 ? 'furo' : 'furos') + '</div>' +
     '<button class="btn primary" type="button" data-ar="open:rep">Treinar o repertório</button></div>';
 }
@@ -1900,12 +1910,12 @@ function renderGoal() {
 function repSec(k) {
   if (!['arvore', 'furos', 'teoria'].includes(k)) k = 'arvore'; store.set('repSec', k);
   $$('#repNav [data-rsec]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.rsec === k)));
-  $$('#v-treino [data-rs]').forEach(x => { x.hidden = x.dataset.rs !== k; });
+  $$('#v-repertorio [data-rs]').forEach(x => { x.hidden = x.dataset.rs !== k; });
 }
 /* abas internas do Treino */
 function trTab(k, scroll) {
-  if (!['hoje', 'ex', 'modos', 'rep'].includes(k)) k = 'hoje';
-  S.trTab = k; store.set('trTab', k); if (k === 'rep') repSec(store.get('repSec', 'arvore'));
+  if (!['hoje', 'ex', 'modos'].includes(k)) k = 'hoje';
+  S.trTab = k; store.set('trTab', k);
   $$('#trTabs [data-trt]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.trt === k)));
   $$('#v-treino [data-trp]').forEach(p => { p.hidden = p.dataset.trp !== k; });
   if (scroll) { const t = $('#trTabs'); if (t && t.getBoundingClientRect().top < 60) t.scrollIntoView({ block: 'start' }); }
@@ -1930,7 +1940,7 @@ function renderTreino() {
   for (const p of T.prios.slice(0, 3)) { const Ls = LESSONS[p.k]; steps.push({ t: Ls.t, d: (p.extra || Ls.d) + ' (' + p.n + ' de ' + T.errs + ' erros)', links: Ls.links }); }
   $('#trPrio').innerHTML = steps.map((s, k) => '<div class="step' + (k === 0 ? ' on' : '') + '"><span class="num">' + (k + 1) + '</span><div><b>' + esc(s.t) + '</b><p class="muted" style="font-size:14px;line-height:1.45">' + esc(s.d) + '</p>' + (s.links.length ? '<div class="links">' + s.links.map(([t, u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + ' ↗</a>').join('') + '</div>' : '') + '</div></div>').join('');
   $('#trLessons').innerHTML = Object.keys(LESSONS).map(k => { const Ls = LESSONS[k]; return '<details class="lesson"><summary>' + esc(Ls.t) + '</summary><div class="body"><p class="muted">' + esc(Ls.d) + '</p><ul>' + Ls.how.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><div class="links">' + Ls.links.map(([t, u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + ' ↗</a>').join('') + '</div></div></details>'; }).join('');
-  }, () => renderRep(), () => renderRepSum(), () => renderTheory()];
+  }];
   const next = () => { if (TRT !== tok) return; const f = stages.shift(); if (!f) return; try { f(); } catch (e) { /* segue para a próxima parte */ } if (stages.length) setTimeout(next, 0); };
   setTimeout(next, 0);
 }
@@ -2391,14 +2401,14 @@ function wire() {
     const pzb = e.target.closest('[data-pz]'); if (pzb) { const k = pzb.dataset.pz; if (S.view === 'treino') { trTab('ex', true); setPzMode(k); } else { if (k === 'warm') S.pendingWarm = true; else S.pendingPz = k; location.hash = 'treino'; } return; }
     const tht = e.target.closest('[data-thtab]'); if (tht) { TH.tab = tht.dataset.thtab; renderTheory(); return; }
     const thc = e.target.closest('[data-thcol]'); if (thc) { TH.c = thc.dataset.thcol; renderTheory(); return; }
-    const thr = e.target.closest('[data-thtree]'); if (thr) { const v = thr.dataset.thtree, i = v.indexOf('|'); REP.c = v.slice(0, i); const pth = v.slice(i + 1); REP.path = pth ? pth.split(' ') : []; renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const thr = e.target.closest('[data-thtree]'); if (thr) { const v = thr.dataset.thtree, i = v.indexOf('|'); REP.c = v.slice(0, i); const pth = v.slice(i + 1); REP.path = pth ? pth.split(' ') : []; repSec('arvore'); if (S.view !== 'repertorio') { location.hash = 'repertorio'; return; } renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const thx = e.target.closest('[data-thtrain]'); if (thx) { setPzMode('theory', thx.dataset.thtrain); $('#puz').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const rvb = e.target.closest('[data-review]'); if (rvb) { S.pendingReview = rvb.dataset.review; if (S.view === 'treino') renderTreino(); else location.hash = 'treino'; return; }
     const prb = e.target.closest('[data-pref]'); if (prb) { setPref(prb.dataset.pref); return; }
     if (e.target.closest('[data-pgn]')) { exportPgn(); return; }
     const rpm = e.target.closest('[data-repmv]'); if (rpm) { REP.path.push(rpm.dataset.repmv); renderRep(); return; }
     const rpg = e.target.closest('[data-repgo]'); if (rpg) { REP.path = REP.path.slice(0, +rpg.dataset.repgo); renderRep(); return; }
-    const rpp = e.target.closest('[data-reppath]'); if (rpp) { REP.path = rpp.dataset.reppath.split(' '); trTab('rep'); repSec('arvore'); if (S.view !== 'treino') { location.hash = 'treino'; return; } renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const rpp = e.target.closest('[data-reppath]'); if (rpp) { REP.path = rpp.dataset.reppath.split(' '); repSec('arvore'); if (S.view !== 'repertorio') { location.hash = 'repertorio'; return; } renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
     const trt = e.target.closest('[data-trt]'); if (trt) { trTab(trt.dataset.trt, true); haptic('move'); return; }
     const rsb = e.target.closest('[data-rsec]'); if (rsb) { repSec(rsb.dataset.rsec); haptic('move'); return; }
     const rps = e.target.closest('[data-rep]'); if (rps) { REP.c = rps.dataset.rep; REP.path = []; renderRep(); return; }

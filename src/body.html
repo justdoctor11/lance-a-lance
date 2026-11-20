@@ -11,6 +11,7 @@
       <a href="#analise" data-v="analise">Análise</a>
       <a href="#treino" data-v="treino">Treino</a>
       <a href="#stats" data-v="stats">Estatísticas</a>
+      <a href="#repertorio" data-v="repertorio">Repertório</a>
       <a href="#academia" data-v="academia">Academia</a>
       <a href="#conquistas" data-v="conquistas">Conquistas</a>
     </nav>
@@ -138,7 +139,6 @@
         <button type="button" role="tab" data-trt="hoje" aria-selected="true">Hoje</button>
         <button type="button" role="tab" data-trt="ex" aria-selected="false">Exercícios</button>
         <button type="button" role="tab" data-trt="modos" aria-selected="false">Modos</button>
-        <button type="button" role="tab" data-trt="rep" aria-selected="false">Repertório</button>
       </div>
 
       <div class="trp" data-trp="hoje" role="tabpanel">
@@ -187,8 +187,15 @@
         <div class="stack" style="gap:22px" id="trHub"></div>
       </div>
 
-      <div class="trp" data-trp="rep" role="tabpanel" hidden>
-        <div class="stack" style="gap:18px">
+    </div>
+  </section>
+  <section class="view" id="v-repertorio" aria-labelledby="h-rep">
+    <div class="stack" style="gap:18px">
+      <div class="stack" style="gap:4px">
+        <h1 class="h-page" id="h-rep">Repertório</h1>
+        <p class="sub">Suas aberturas: a árvore com o aproveitamento de cada caminho, os furos, a teoria e as armadilhas</p>
+      </div>
+      <div class="stack" style="gap:18px">
           <section class="card pad rep-sum" id="repSum"></section>
           <div class="seg repnav" id="repNav" role="tablist" aria-label="Partes do repertório"><button type="button" role="tab" data-rsec="arvore" aria-selected="true">Árvore</button><button type="button" role="tab" data-rsec="furos" aria-selected="false">Furos</button><button type="button" role="tab" data-rsec="teoria" aria-selected="false">Teoria</button></div>
           <section class="card pad stack" id="repCard" data-rs="arvore" style="gap:14px">
@@ -213,7 +220,6 @@
         <div class="stack" style="gap:10px" id="thList"></div>
       </section>
         </div>
-      </div>
     </div>
   </section>
   <!-- ESTATÍSTICAS -->
@@ -322,6 +328,7 @@
   <a href="#analise" data-v="analise"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><rect x="3" y="3" width="16" height="16" rx="2"></rect><path d="M3 11h16M11 3v16" stroke-opacity=".5"></path><rect x="3" y="3" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect><rect x="11" y="11" width="8" height="8" fill="currentColor" stroke="none" opacity=".3"></rect></svg></span>Análise</a>
   <a href="#stats" data-v="stats"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><path d="M4 18V11M9 18V5M14 18v-9M19 18v-5"></path></svg></span>Números</a>
   <a href="#treino" data-v="treino"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><circle cx="11" cy="11" r="8"></circle><circle cx="11" cy="11" r="4"></circle><circle cx="11" cy="11" r="1" fill="currentColor"></circle></svg></span>Treino</a>
+  <a href="#repertorio" data-v="repertorio"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M11 18.5V11M11 11 5.5 6.5M11 11l5.5-4.5M5.5 6.5V4.5M16.5 6.5V4.5"></path><circle cx="11" cy="18.5" r="1.6" fill="currentColor" stroke="none"></circle><circle cx="5.5" cy="3.6" r="1.6"></circle><circle cx="16.5" cy="3.6" r="1.6"></circle><circle cx="11" cy="11" r="1.4" fill="currentColor" stroke="none"></circle></svg></span>Repertório</a>
   <a href="#academia" data-v="academia"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 8.5 11 4l9 4.5-9 4.5z"></path><path d="M6 10.5v4.2c1.4 1.4 3 2.1 5 2.1s3.6-.7 5-2.1v-4.2M20 8.5V13"></path></svg></span>Academia</a>
   <a href="#conquistas" data-v="conquistas"><span class="ic"><svg width="22" height="22" viewBox="0 0 22 22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h8v5.5a4 4 0 0 1-8 0zM7 5H4.2a2.8 2.8 0 0 0 2.9 4M15 5h2.8a2.8 2.8 0 0 1-2.9 4M11 12.5v3.5M7.5 19h7M8.5 16h5"></path></svg><i class="nb-dot" hidden></i></span>Conquistas</a>
 </nav>
