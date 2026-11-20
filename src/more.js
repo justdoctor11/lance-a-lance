@@ -1023,23 +1023,26 @@ function hubHtml() {
   const Ls = lists(), pn = punishQueue().length, d = done();
   const endsOk = ENDS.filter(e => d['end:' + e.id] && d['end:' + e.id].ok).length;
   const tile = (go, t, big, sub) => '<button class="tile" type="button" ' + go + '><span class="label">' + t + '</span><b class="mono">' + big + '</b><span class="muted">' + sub + '</span></button>';
-  const rd = repToday();
-  const B = store.get('bdg', {}), nb = Object.keys(B).filter(k => B[k].l).length, sv = Object.keys(store.get('self', {})).length;
-  return tile('data-pz="timed"', 'Corrida', store.get('rbest', 0), 'recorde · 3 min, 3 vidas') +
-    tile('data-ar="open:cand"', 'Lances candidatos', (store.get('cand', {}).best || 0) + '/20', 'melhor rodada · treina o cálculo') +
-    tile('data-ar="open:self"', 'Você primeiro', sv, 'partidas revisadas antes do motor') +
-    tile('href="#conquistas" data-go-cq', 'Conquistas', nb + '/' + BADGES.length, 'insígnias desbloqueadas') +
-    tile('data-ar="open:rep"', 'Repertório', '<span id="repTile">' + (rd == null ? '…' : rd) + '</span>', 'posições das suas aberturas para treinar hoje') +
-    tile('data-ar="open:convert"', 'Converter a vitória', Ls.conv.length, 'partidas ganhas que escaparam') +
-    tile('data-ar="open:defend"', 'Defenda a posição', Ls.def.length, 'posições perdidas para salvar') +
-    tile('data-ar="open:xray"', 'Raio-X da peça', store.get('xbest', 0), 'recorde em 60 s') +
-    tile('data-pz="punish"', 'Puna o erro', pn, 'posições logo depois de um erro seu') +
-    tile('data-ar="open:end"', 'Curso de finais', endsOk + '/' + ENDS.length, 'lições · ' + Ls.ends.length + ' finais seus') +
-    tile('data-ar="open:clock"', 'Treino de relógio', store.get('clockHist', []).length, 'partidas com relógio') +
-    tile('data-guess-last', 'Adivinhe o lance', Object.keys(store.get('guess', {})).length, 'partidas revisadas') +
-    tile('data-ar="open:spot"', 'Ache o erro', 5, 'trechos por rodada') +
-    tile('data-ar="open:mates"', 'Padrões de mate', MATES.filter(p => d['mates:' + p.id] && d['mates:' + p.id].ok).length + '/' + MATES.length, 'padrões resolvidos') +
-    (Object.keys(CRIT).length ? tile('data-pz="crit"', 'Lance único', critQueue().length, 'momentos críticos seus') : tile('data-crit-bulk', 'Lance único', '—', 'calcular nas últimas 30 partidas'));
+  const sv = Object.keys(store.get('self', {})).length;
+  const G = [
+    ['Táticas', 'Ache o lance, rápido e certo', [
+      tile('data-pz="timed"', 'Corrida', store.get('rbest', 0), 'recorde · 3 min, 3 vidas'),
+      tile('data-pz="punish"', 'Puna o erro', pn, 'posições depois de um erro seu'),
+      Object.keys(CRIT).length ? tile('data-pz="crit"', 'Lance único', critQueue().length, 'momentos críticos seus') : tile('data-crit-bulk', 'Lance único', '—', 'calcular nas últimas 30 partidas'),
+      tile('data-ar="open:mates"', 'Padrões de mate', MATES.filter(p => d['mates:' + p.id] && d['mates:' + p.id].ok).length + '/' + MATES.length, 'padrões resolvidos'),
+      tile('data-ar="open:xray"', 'Raio-X da peça', store.get('xbest', 0), 'recorde em 60 s'),
+      tile('data-ar="open:spot"', 'Ache o erro', 5, 'trechos por rodada')]],
+    ['Cálculo e autocrítica', 'Pense como numa partida séria', [
+      tile('data-ar="open:cand"', 'Lances candidatos', (store.get('cand', {}).best || 0) + '/20', 'melhor rodada'),
+      tile('data-ar="open:self"', 'Você primeiro', sv, 'partidas revisadas antes do motor'),
+      tile('data-guess-last', 'Adivinhe o lance', Object.keys(store.get('guess', {})).length, 'partidas revisadas')]],
+    ['Partidas e finais', 'Jogue de novo os momentos que decidiram', [
+      tile('data-ar="open:convert"', 'Converter a vitória', Ls.conv.length, 'vitórias que escaparam'),
+      tile('data-ar="open:defend"', 'Defenda a posição', Ls.def.length, 'posições perdidas para salvar'),
+      tile('data-ar="open:end"', 'Curso de finais', endsOk + '/' + ENDS.length, 'lições · ' + Ls.ends.length + ' finais seus'),
+      tile('data-ar="open:clock"', 'Treino de relógio', store.get('clockHist', []).length, 'partidas com relógio')]]
+  ];
+  return G.map(([t, d2, tiles]) => '<section class="stack" style="gap:10px"><div class="stack" style="gap:1px"><h2 class="st-group" style="margin:0">' + t + '</h2><span class="muted" style="font-size:13px">' + d2 + '</span></div><div class="hub">' + tiles.join('') + '</div></section>').join('');
 }
 
 /* ---------- modo foco ---------- */

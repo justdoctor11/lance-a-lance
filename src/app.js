@@ -1710,6 +1710,15 @@ function renderRep() {
   const holes = repHoles(root, REP.c);
   $('#repHoles').innerHTML = holes.length ? holes.map(x => '<button class="repmv" type="button" data-reppath="' + esc(x.path.join(' ')) + '"><span style="min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">' + esc(pathSan(x.path)) + '</span><span class="mono">' + sp(x.s) + '%</span><span class="mono muted">' + x.n + '</span></button>').join('') : '<p class="muted">Nenhum furo claro com 10 ou mais partidas.</p>';
 }
+function renderRepSum() {
+  const el = $('#repSum'); if (!el) return;
+  const rd = repToday(), fixed = Object.values(store.get('rep', {})).filter(x => x.b >= 2).length;
+  let holes = 0; try { holes = repHoles(repTree('w'), 'w').length + repHoles(repTree('b'), 'b').length; } catch (e) { holes = 0; }
+  const cell = (big, lab) => '<div class="trs"><b class="mono">' + big + '</b><span>' + lab + '</span></div>';
+  el.innerHTML = '<div class="stack" style="gap:3px;min-width:0"><h2 class="h-card">Seu repertório</h2><p class="sub">Árvore das suas aberturas, furos, teoria e armadilhas, tudo num lugar. Treine com repetição espaçada: o que você erra volta antes.</p></div>' +
+    '<div class="rep-sum-r"><div class="trstat">' + cell('<span id="repTile">' + (rd == null ? '…' : rd) + '</span>', 'para hoje') + cell(fixed, 'posições fixadas') + cell(holes, holes === 1 ? 'furo' : 'furos') + '</div>' +
+    '<button class="btn primary" type="button" data-ar="open:rep">Treinar o repertório</button></div>';
+}
 async function repEval() {
   const c = new Chess(); for (const m of REP.path) { try { c.move(m); } catch (e) { break; } }
   const out = $('#repEv'); out.textContent = 'Calculando…';
@@ -1882,13 +1891,31 @@ function renderPzCount() {
 }
 function renderGoal() {
   const n = dailyCount(), st = streakDays(), f = Math.min(1, n / GOAL);
-  $('#trGoal').innerHTML = '<svg width="44" height="44" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-2)" stroke-width="5"></circle><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (f * 113.1).toFixed(1) + ' 113.1" transform="rotate(-90 22 22)" style="transition:stroke-dasharray .5s var(--ease)"></circle></svg><div class="stack" style="gap:0"><b>' + Math.min(n, 999) + ' de ' + GOAL + ' hoje</b><span class="muted" style="font-size:13px">' + (st ? 'Sequência: ' + st + ' dia' + (st > 1 ? 's' : '') + ' batendo a meta' : 'Bata a meta de ' + GOAL + ' exercícios por dia') + (store.get('rbest', 0) ? ' · recorde na Corrida: ' + store.get('rbest', 0) : '') + '</span></div>';
+  let due = 0; try { due = dueList().length; } catch (e) { due = 0; }
+  const solved = Object.keys(store.get('solved', {})).length;
+  const cell = (big, lab, extra) => '<div class="trs"' + (extra || '') + '><b class="mono">' + big + '</b><span>' + lab + '</span></div>';
+  $('#trGoal').innerHTML = '<div class="trs trs-ring"><svg width="38" height="38" viewBox="0 0 44 44" aria-hidden="true"><circle cx="22" cy="22" r="18" fill="none" stroke="var(--surface-2)" stroke-width="5"></circle><circle cx="22" cy="22" r="18" fill="none" stroke="var(--accent)" stroke-width="5" stroke-linecap="round" stroke-dasharray="' + (f * 113.1).toFixed(1) + ' 113.1" transform="rotate(-90 22 22)" style="transition:stroke-dasharray .5s var(--ease)"></circle></svg><div><b class="mono">' + Math.min(n, 999) + '<small>/' + GOAL + '</small></b><span>hoje</span></div></div>' +
+    cell(st, st === 1 ? 'dia seguido' : 'dias seguidos') + cell(due, 'para revisar', due ? ' data-pz="due" role="button" tabindex="0"' : '') + cell(solved.toLocaleString('pt-BR'), 'resolvidos');
+}
+function repSec(k) {
+  if (!['arvore', 'furos', 'teoria'].includes(k)) k = 'arvore'; store.set('repSec', k);
+  $$('#repNav [data-rsec]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.rsec === k)));
+  $$('#v-treino [data-rs]').forEach(x => { x.hidden = x.dataset.rs !== k; });
+}
+/* abas internas do Treino */
+function trTab(k, scroll) {
+  if (!['hoje', 'ex', 'modos', 'rep'].includes(k)) k = 'hoje';
+  S.trTab = k; store.set('trTab', k); if (k === 'rep') repSec(store.get('repSec', 'arvore'));
+  $$('#trTabs [data-trt]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.trt === k)));
+  $$('#v-treino [data-trp]').forEach(p => { p.hidden = p.dataset.trp !== k; });
+  if (scroll) { const t = $('#trTabs'); if (t && t.getBoundingClientRect().top < 60) t.scrollIntoView({ block: 'start' }); }
 }
 let TRT = null;
 function renderTreino() {
-  if (!analyzedReady()) { if (!PB) PB = new Board($('#pzBoard')); $('#pzQ').textContent = 'Preparando seus exercícios…'; warmPrep().then(() => { if (S.view === 'treino') renderTreino(); }); return; }
+  if (!analyzedReady()) { trTab(S.pendingReview || S.pendingWarm || S.pendingPz ? 'ex' : S.trTab || store.get('trTab', 'hoje')); if (!PB) PB = new Board($('#pzBoard')); $('#pzQ').textContent = 'Preparando seus exercícios…'; warmPrep().then(() => { if (S.view === 'treino') renderTreino(); }); return; }
   const T = buildTraining(); if (!PB) PB = new Board($('#pzBoard'));
   renderGoal();
+  trTab(S.pendingReview || S.pendingWarm || S.pendingPz ? 'ex' : S.trTab || store.get('trTab', 'hoje'));
   if (S.pendingReview) { const g = S.pendingReview; S.pendingReview = null; setPzMode('review', g); }
   else if (S.pendingWarm) { S.pendingWarm = false; setPzMode('warm'); }
   else if (S.pendingPz) { const k = S.pendingPz; S.pendingPz = null; setPzMode(k); }
@@ -1903,7 +1930,7 @@ function renderTreino() {
   for (const p of T.prios.slice(0, 3)) { const Ls = LESSONS[p.k]; steps.push({ t: Ls.t, d: (p.extra || Ls.d) + ' (' + p.n + ' de ' + T.errs + ' erros)', links: Ls.links }); }
   $('#trPrio').innerHTML = steps.map((s, k) => '<div class="step' + (k === 0 ? ' on' : '') + '"><span class="num">' + (k + 1) + '</span><div><b>' + esc(s.t) + '</b><p class="muted" style="font-size:14px;line-height:1.45">' + esc(s.d) + '</p>' + (s.links.length ? '<div class="links">' + s.links.map(([t, u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + ' ↗</a>').join('') + '</div>' : '') + '</div></div>').join('');
   $('#trLessons').innerHTML = Object.keys(LESSONS).map(k => { const Ls = LESSONS[k]; return '<details class="lesson"><summary>' + esc(Ls.t) + '</summary><div class="body"><p class="muted">' + esc(Ls.d) + '</p><ul>' + Ls.how.map(x => '<li>' + esc(x) + '</li>').join('') + '</ul><div class="links">' + Ls.links.map(([t, u]) => '<a href="' + u + '" target="_blank" rel="noopener">' + esc(t) + ' ↗</a>').join('') + '</div></div></details>'; }).join('');
-  }, () => renderRep(), () => renderTheory()];
+  }, () => renderRep(), () => renderRepSum(), () => renderTheory()];
   const next = () => { if (TRT !== tok) return; const f = stages.shift(); if (!f) return; try { f(); } catch (e) { /* segue para a próxima parte */ } if (stages.length) setTimeout(next, 0); };
   setTimeout(next, 0);
 }
@@ -2318,7 +2345,7 @@ async function syncPgn() {
   refreshAll(); analyzeLatest(10); setTimeout(closeSync, 1400);
 }
 function setSrc(src) {
-  S.src = src; $$('.seg button').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.src === src)));
+  S.src = src; $$('.seg button[data-src]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.src === src)));
   $('#syncAuto').hidden = src === 'pgn'; $('#syncPgn').hidden = src !== 'pgn'; $('#syncStatus').textContent = '';
 }
 function openSync() {
@@ -2361,7 +2388,7 @@ function wire() {
     const ln = e.target.closest('[data-line]');
     if (ln) { startLine(ln.dataset.line, ln.dataset.uci.split(' '), +ln.dataset.base); return; }
     const vxb = e.target.closest('[data-vx]'); if (vxb) { vxAction(vxb.dataset.vx); return; }
-    const pzb = e.target.closest('[data-pz]'); if (pzb) { const k = pzb.dataset.pz; if (S.view === 'treino') { setPzMode(k); if (k === 'theory' || (k === 'timed' && pzb.classList.contains('tile'))) $('#puz').scrollIntoView({ behavior: 'smooth', block: 'start' }); } else { if (k === 'warm') S.pendingWarm = true; else S.pendingPz = k; location.hash = 'treino'; } return; }
+    const pzb = e.target.closest('[data-pz]'); if (pzb) { const k = pzb.dataset.pz; if (S.view === 'treino') { trTab('ex', true); setPzMode(k); } else { if (k === 'warm') S.pendingWarm = true; else S.pendingPz = k; location.hash = 'treino'; } return; }
     const tht = e.target.closest('[data-thtab]'); if (tht) { TH.tab = tht.dataset.thtab; renderTheory(); return; }
     const thc = e.target.closest('[data-thcol]'); if (thc) { TH.c = thc.dataset.thcol; renderTheory(); return; }
     const thr = e.target.closest('[data-thtree]'); if (thr) { const v = thr.dataset.thtree, i = v.indexOf('|'); REP.c = v.slice(0, i); const pth = v.slice(i + 1); REP.path = pth ? pth.split(' ') : []; renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
@@ -2371,7 +2398,9 @@ function wire() {
     if (e.target.closest('[data-pgn]')) { exportPgn(); return; }
     const rpm = e.target.closest('[data-repmv]'); if (rpm) { REP.path.push(rpm.dataset.repmv); renderRep(); return; }
     const rpg = e.target.closest('[data-repgo]'); if (rpg) { REP.path = REP.path.slice(0, +rpg.dataset.repgo); renderRep(); return; }
-    const rpp = e.target.closest('[data-reppath]'); if (rpp) { REP.path = rpp.dataset.reppath.split(' '); renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const rpp = e.target.closest('[data-reppath]'); if (rpp) { REP.path = rpp.dataset.reppath.split(' '); trTab('rep'); repSec('arvore'); if (S.view !== 'treino') { location.hash = 'treino'; return; } renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); return; }
+    const trt = e.target.closest('[data-trt]'); if (trt) { trTab(trt.dataset.trt, true); haptic('move'); return; }
+    const rsb = e.target.closest('[data-rsec]'); if (rsb) { repSec(rsb.dataset.rsec); haptic('move'); return; }
     const rps = e.target.closest('[data-rep]'); if (rps) { REP.c = rps.dataset.rep; REP.path = []; renderRep(); return; }
     if (e.target.closest('#repEval')) { repEval(); return; }
     const tb = e.target.closest('#tbox i'); if (tb) { setPly(+tb.dataset.p); return; }

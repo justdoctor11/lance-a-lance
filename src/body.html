@@ -126,15 +126,43 @@
 
   <!-- TREINO -->
   <section class="view" id="v-treino" aria-labelledby="h-treino">
-    <div class="stack">
-      <div class="stack" style="gap:4px">
-        <h1 class="h-page" id="h-treino">Treino</h1>
-        <p class="sub">Exercícios tirados dos seus próprios erros, mais um plano montado a partir deles</p>
+    <div class="stack" style="gap:18px">
+      <div class="tr-top">
+        <div class="stack" style="gap:4px;min-width:0">
+          <h1 class="h-page" id="h-treino">Treino</h1>
+          <p class="sub">Exercícios tirados dos seus próprios erros</p>
+        </div>
+        <div class="trstat" id="trGoal"></div>
       </div>
-      <div class="goal" id="trGoal"></div>
-      <div class="hub" id="trHub"></div>
-      <div class="tr">
-        <section class="card puz" id="puz">
+      <div class="seg trtabs" id="trTabs" role="tablist" aria-label="Seções do treino">
+        <button type="button" role="tab" data-trt="hoje" aria-selected="true">Hoje</button>
+        <button type="button" role="tab" data-trt="ex" aria-selected="false">Exercícios</button>
+        <button type="button" role="tab" data-trt="modos" aria-selected="false">Modos</button>
+        <button type="button" role="tab" data-trt="rep" aria-selected="false">Repertório</button>
+      </div>
+
+      <div class="trp" data-trp="hoje" role="tabpanel">
+        <div class="tr">
+          <section class="card pad stack" style="gap:12px">
+            <div class="stack" style="gap:2px"><h2 class="h-card">Plano da semana</h2><p class="sub">Montado com as suas fraquezas; os anéis enchem conforme você treina</p></div>
+            <div class="stack" style="gap:14px" id="trPlan"></div>
+          </section>
+          <div class="stack">
+            <section class="card pad stack" style="gap:12px">
+              <h2 class="h-card">Prioridades</h2>
+              <div class="steps" id="trPrio"></div>
+            </section>
+            <section class="card pad">
+              <h2 class="h-card" style="margin-bottom:6px">Entenda seus erros</h2>
+              <div id="trLessons"></div>
+            </section>
+          </div>
+        </div>
+      </div>
+
+      <div class="trp" data-trp="ex" role="tabpanel" hidden>
+        <div class="tr-ex">
+          <section class="card puz" id="puz">
           <div class="chips" id="pzModes" role="group" aria-label="Modo de treino"></div>
           <div style="display:flex;justify-content:space-between;align-items:center;gap:8px;flex-wrap:wrap">
             <span class="label" id="pzFrom"></span>
@@ -152,36 +180,30 @@
           </div>
           <div class="fb" id="pzFb" role="status"></div>
         </section>
-        <div class="stack">
-          <section class="card pad stack" style="gap:12px">
-            <div class="stack" style="gap:2px"><h2 class="h-card">Plano da semana</h2><p class="sub">Montado com as suas fraquezas; os anéis enchem conforme você treina</p></div>
-            <div class="stack" style="gap:14px" id="trPlan"></div>
-          </section>
-          <section class="card pad stack" style="gap:12px">
-            <h2 class="h-card">Prioridades</h2>
-            <div class="steps" id="trPrio"></div>
-          </section>
-
-          <section class="card pad stack" style="gap:10px">
-            <div class="stack" style="gap:2px"><h2 class="h-card">Furos do seu repertório</h2><p class="sub">Linhas com 10 ou mais partidas em que você rende bem abaixo da sua média. Toque para abrir na árvore.</p></div>
-            <div class="stack" style="gap:6px" id="repHoles"></div>
-          </section>
-          <section class="card pad">
-            <h2 class="h-card" style="margin-bottom:6px">Conceitos</h2>
-            <div id="trLessons"></div>
-          </section>
         </div>
       </div>
-      <section class="card pad stack" id="repCard" style="gap:14px">
+
+      <div class="trp" data-trp="modos" role="tabpanel" hidden>
+        <div class="stack" style="gap:22px" id="trHub"></div>
+      </div>
+
+      <div class="trp" data-trp="rep" role="tabpanel" hidden>
+        <div class="stack" style="gap:18px">
+          <section class="card pad rep-sum" id="repSum"></section>
+          <div class="seg repnav" id="repNav" role="tablist" aria-label="Partes do repertório"><button type="button" role="tab" data-rsec="arvore" aria-selected="true">Árvore</button><button type="button" role="tab" data-rsec="furos" aria-selected="false">Furos</button><button type="button" role="tab" data-rsec="teoria" aria-selected="false">Teoria</button></div>
+          <section class="card pad stack" id="repCard" data-rs="arvore" style="gap:14px">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
           <div class="stack" style="gap:2px"><h2 class="h-card">Árvore do seu repertório</h2><p class="sub">Seus primeiros 8 lances em todas as partidas, com o aproveitamento de cada caminho</p></div>
           <div class="seg" id="repSeg" role="group" aria-label="Cor"><button type="button" data-rep="w" aria-pressed="true">De brancas</button><button type="button" data-rep="b" aria-pressed="false">De pretas</button></div>
         </div>
-        <div class="vxacts"><button class="btn small accent" type="button" data-ar="open:rep">Treinar o repertório com repetição espaçada</button></div>
-        <div class="chips" id="repCrumb"></div>
+                <div class="chips" id="repCrumb"></div>
         <div class="rep"><div class="repb"><div id="repBoard"></div></div><div class="stack" style="gap:8px;min-width:0" id="repInfo"></div></div>
       </section>
-      <section class="card pad stack" id="thCard" style="gap:14px">
+            <section class="card pad stack" data-rs="furos" style="gap:10px" hidden>
+              <div class="stack" style="gap:2px"><h2 class="h-card">Furos do repertório</h2><p class="sub">Linhas com 10 ou mais partidas em que você rende bem abaixo da sua média. Toque para abrir na árvore.</p></div>
+              <div class="stack" style="gap:6px" id="repHoles"></div>
+            </section>
+            <section class="card pad stack" id="thCard" data-rs="teoria" style="gap:14px" hidden>
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
           <div class="stack" style="gap:2px"><h2 class="h-card">Teoria e armadilhas</h2><p class="sub" id="thSub"></p></div>
           <button class="btn small accent" type="button" data-pz="theory">Treinar essas posições</button>
@@ -190,6 +212,8 @@
         <div class="chips" id="thCol" role="group" aria-label="Cor"></div>
         <div class="stack" style="gap:10px" id="thList"></div>
       </section>
+        </div>
+      </div>
     </div>
   </section>
   <!-- ESTATÍSTICAS -->
