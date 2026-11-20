@@ -2432,7 +2432,7 @@ function updState(kind, ver) {
   if (kind) { UPD.kind = kind; UPD.ver = ver || ''; }
   const b = $('#updBtn'); if (!b) return;
   b.classList.toggle('on', !!UPD.kind); b.classList.toggle('wait', UPD.busy);
-  const t = UPD.kind === 'app' ? 'Nova versão pronta: toque para atualizar' : UPD.kind === 'shell' ? 'Instalador ' + UPD.ver + ' baixado: toque para reiniciar e instalar' : UPD.kind === 'apk' ? 'Versão ' + UPD.ver + ' do aplicativo disponível' : UPD.busy ? 'Procurando atualização…' : 'Procurar atualização';
+  const t = UPD.kind === 'app' ? 'Nova versão pronta: toque para atualizar' : UPD.kind === 'shell' ? 'Instalador ' + UPD.ver + ' baixado: toque para reiniciar e instalar' : UPD.busy ? 'Procurando atualização…' : 'Procurar atualização';
   b.title = t; b.setAttribute('aria-label', t);
 }
 function updCheck(quiet) {
@@ -2444,9 +2444,11 @@ window.addEventListener('lal-update', () => { const was = UPD.kind; updState('ap
 window.addEventListener('lal-shell-ready', e => { updState('shell', e.detail && e.detail.version); toast('Instalador novo baixado: toque no botão com o ponto verde para instalar'); });
 document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !UPD.kind && Date.now() - UPD.last > 30 * 60 * 1000) updCheck(true); });
 setTimeout(() => { if (!window.__checkUpdate) { const b = $('#updBtn'), s = b && b.nextElementSibling; if (b) b.hidden = true; if (s) s.hidden = true; } else updState(); }, 0);
+let APK_NEW = '';
 window.addEventListener('lal-shell-new', e => {
   if (NATIVE && NATIVE.platform === 'windows' && !NATIVE.portable) return;
-  updState('apk', e.detail.version);
+  // instalador novo (APK/portátil): não sequestra o botão; o botão cuida só das atualizações do app, que se aplicam sozinhas
+  APK_NEW = e.detail.version;
 });
 window.addEventListener('lal-uptodate', () => { if (!UPD.quiet && !UPD.kind) toast('Você já está na versão mais recente'); });
 window.addEventListener('lal-update-fail', () => { if (!UPD.quiet) toast('Não consegui procurar atualizações agora'); });
@@ -2454,7 +2456,6 @@ document.addEventListener('click', e => {
   if (!e.target.closest('#updBtn')) return;
   if (UPD.kind === 'app') location.reload();
   else if (UPD.kind === 'shell' && window.native && window.native.installShellUpdate) window.native.installShellUpdate();
-  else if (UPD.kind === 'apk') { const a = document.createElement('a'); a.href = window.__RELEASES; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
   else { toast('Procurando atualização…'); updCheck(false); }
 });
 document.addEventListener('click', e => {
