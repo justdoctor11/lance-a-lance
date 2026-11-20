@@ -1344,12 +1344,13 @@ async function autoSync() {
       for (const d of ms) {
         const u = 'https://api.chess.com/pub/player/' + encodeURIComponent(S.me.toLowerCase()) + '/games/' + d.getUTCFullYear() + '/' + String(d.getUTCMonth() + 1).padStart(2, '0');
         const tx = await browserText(u, t => monthOk(t, u));
-        tx.replace(/"pgn":"((?:[^"\\]|\\.)*)"/g, (_, x) => { try { games.push(pgnToGame(JSON.parse('"' + x + '"'), S.me)); } catch (e) { /* trecho truncado */ } return ''; });
+        const pg = []; tx.replace(/"pgn":"((?:[^"\\]|\\.)*)"/g, (_, x) => { try { pg.push(JSON.parse('"' + x + '"')); } catch (e) { /* trecho truncado */ } return ''; });
+        games = games.concat(await parseNew(pg, S.me, before));
       }
     } else {
       const last = S.games.length ? Math.max.apply(null, S.games.map(g => g.end)) : 0;
       const tx = await browserText('https://lichess.org/api/games/user/' + encodeURIComponent(S.me) + '?max=50&clocks=true&opening=true' + (last ? '&since=' + (last * 1000 + 1000) : ''), t => t.includes('[Event') || t.trim().length < 400);
-      games = splitPgns(tx).map(p => pgnToGame(p, S.me));
+      games = await parseNew(splitPgns(tx), S.me, before);
     }
     games = games.filter(g => g && !before.has(g.id)).sort((a, b) => b.end - a.end);
     if (games.length) {
@@ -2159,6 +2160,21 @@ function kidMark(c, path, m, mover) {
 
 /* ---------- sincronização e importação ---------- */
 function hash(s) { let h = 0; for (let i = 0; i < s.length; i++) h = (h * 31 + s.charCodeAt(i)) | 0; return (h >>> 0).toString(36); }
+/* id da partida sem montar o tabuleiro: evita reprocessar com o chess.js o que já está salvo */
+function pgnId(pgn) {
+  const L = (pgn.match(/\[Link "([^"]*)"\]/) || pgn.match(/\[Site "([^"]*)"\]/) || [])[1] || '';
+  const m = L.match(/(\d{6,})\/?$/) || L.match(/lichess\.org\/([A-Za-z0-9]{8})/); return m ? m[1] : 'h' + hash(pgn);
+}
+/* lê só as partidas novas, em pedaços, devolvendo a vez para a tela entre eles */
+async function parseNew(pgns, me, known) {
+  const out = []; let t = performance.now();
+  for (const p of pgns) {
+    if (known && known.has(pgnId(p))) continue;
+    const g = pgnToGame(p, me); if (g) out.push(g);
+    if (performance.now() - t > 24) { await new Promise(r => setTimeout(r, 0)); t = performance.now(); }
+  }
+  return out;
+}
 function pgnToGame(pgn, me) {
   const H = {}; pgn.replace(/\[(\w+)\s+"([^"]*)"\]/g, (_, k, v) => { H[k] = v; return ''; });
   if ((H.Variant && H.Variant !== 'Standard') || H.SetUp === '1' || H.FEN) return null;
@@ -2257,8 +2273,8 @@ async function syncAuto() {
         catch (e) { if (e && e.code && e.code !== 'empty' && e.code !== 'tool_error' && e.code !== 'upstream_error') throw e; failed.push(u.slice(-7).replace('/', '-')); continue; }
         const pgns = [];
         tx.replace(/"pgn":"((?:[^"\\]|\\.)*)"/g, (_, x) => { try { pgns.push(JSON.parse('"' + x + '"')); } catch (e) { /* trecho truncado */ } return ''; });
-        const games = pgns.map(p => pgnToGame(p, user)).filter(Boolean);
-        total += games.length; added += importGames(games, true);
+        const games = await parseNew(pgns, user, new Set((MEM.games['games:' + acctKey()] || []).map(g => g.id)));
+        total += pgns.length; added += importGames(games, true);
         if (!monthComplete(tx)) trunc.push(u.slice(-7).replace('/', '-') + ' (' + games.length + ' lidas)');
         else if (u !== latest) done[u] = games.length;
         if (k % 4 === 3) { await saveGames(); await kv.set(mkey, done); }
@@ -2268,7 +2284,7 @@ async function syncAuto() {
       const since = await kv.get(mkey, 0);
       st.textContent = 'Lendo partidas no Lichess…';
       const tx = await browserText('https://lichess.org/api/games/user/' + encodeURIComponent(user) + '?max=3000&clocks=true&opening=true' + (since ? '&since=' + (since * 1000 + 1000) : ''), t => t.includes('[Event') || t.trim().length < 400);
-      const games = splitPgns(tx).map(p => pgnToGame(p, user)).filter(Boolean);
+      const games = await parseNew(splitPgns(tx), user, null);
       total = games.length; added = importGames(games, true);
       if (games.length) await kv.set(mkey, Math.max.apply(null, games.map(g => g.end)));
     }
