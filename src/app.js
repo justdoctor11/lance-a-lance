@@ -1334,7 +1334,7 @@ function autoSyncStart() {
   setTimeout(autoSync, 4000);
 }
 async function autoSync() {
-  if (autoBusy || !autoSyncOn() || !$('#sync').hidden) return; autoBusy = true;
+  if (autoBusy || !autoSyncOn() || !$('#sync').hidden) return; autoBusy = true; $('#top').classList.add('busy');
   try {
     const before = new Set(S.games.map(g => g.id)); let games = [];
     if (S.plat === 'chesscom') {
@@ -1358,7 +1358,7 @@ async function autoSync() {
       const g = games[0]; if (S.an[g.id]) toast('Relatório pronto: ' + resultOf(g).label.trim() + ' vs ' + g.opp);
     }
   } catch (e) { /* tenta no próximo ciclo */ }
-  autoBusy = false;
+  autoBusy = false; $('#top').classList.remove('busy');
 }
 
 /* ---------- relatório da última partida ---------- */
@@ -2234,7 +2234,7 @@ async function browserText(url, okFn) {
 async function syncAuto() {
   const st = $('#syncStatus'); const user = $('#syncUser').value.trim(); if (!user) { st.textContent = 'Digite seu usuário.'; return; }
   const plat = S.src === 'lichess' ? 'lichess' : 'chesscom';
-  $('#syncGo').disabled = true;
+  $('#syncGo').disabled = true; $('#top').classList.add('busy');
   await switchAccount(user, plat);
   const mkey = 'months:' + acctKey();
   let total = 0, added = 0; const failed = [], trunc = [];
@@ -2286,7 +2286,7 @@ async function syncAuto() {
       code === 'server_not_connected' || code === 'server_unavailable' || code === 'server_not_found' ? 'O navegador do app Claude não está disponível agora. Abra o Peão Passado no app para computador ou use “Colar PGN”.' :
       'A leitura parou no meio.') + (total ? ' ' + total + ' partidas já foram salvas; sincronize de novo para continuar de onde parou.' : '') + ' (código: ' + code + ')';
   }
-  $('#syncGo').disabled = false;
+  $('#syncGo').disabled = false; $('#top').classList.remove('busy');
 }
 async function syncPgn() {
   const st = $('#syncStatus'); const pgns = splitPgns($('#pgnText').value);

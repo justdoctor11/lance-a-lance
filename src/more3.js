@@ -570,3 +570,6 @@ function v14Start() {
   if (gsOn()) { setTimeout(() => gsSync(false), 3500); setInterval(() => gsSync(false), 15 * 60000); }
   document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'hidden' && GS.timer && gsOn()) gsSync(false); if (document.visibilityState === 'visible') widgetPush(); });
 }
+
+/* barra superior: some no topo da página, vira vidro quando o conteúdo rola por baixo */
+(function () { const t = $('#top'); if (!t) return; let on = null; const f = () => { const v = scrollY < 4; if (v !== on) { on = v; t.classList.toggle('flat', v); } }; addEventListener('scroll', f, { passive: true }); f(); })();

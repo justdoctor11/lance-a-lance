@@ -76,8 +76,6 @@ p{margin:0}
 .bnav{display:none}
 @media (max-width:899px){
   .tabs{display:none}
-  .acct{max-width:34vw;font-size:11px}
-  .brand b{font-size:16px}
   .top-in{gap:12px;padding-block:10px}
   .bnav{display:grid;grid-template-columns:repeat(7,minmax(0,1fr));position:fixed;left:0;right:0;bottom:0;z-index:30;background:color-mix(in srgb,var(--surface) 92%,transparent);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);border-top:1px solid var(--line);padding:6px max(8px,env(safe-area-inset-right,0px)) calc(6px + env(safe-area-inset-bottom,0px)) max(8px,env(safe-area-inset-left,0px))}
   .bnav a{display:flex;flex-direction:column;align-items:center;gap:3px;padding:4px 0;font:600 10.5px var(--f-display);letter-spacing:-.01em;min-width:0;color:var(--muted);text-decoration:none}
@@ -320,7 +318,6 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 @media (max-width:420px){.lgstats{grid-template-columns:repeat(2,minmax(0,1fr))}}
 .chk{display:flex;gap:10px;align-items:flex-start;font-size:14px;line-height:1.4;cursor:pointer}
 .chk input{width:18px;height:18px;margin-top:1px;accent-color:var(--accent);flex:none}
-.acct.live::before{content:"";display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--win);margin-right:6px;vertical-align:1px;animation:pulse 2.4s ease-in-out infinite}
 @keyframes pulse{50%{opacity:.35}}
 .hgrp{display:flex;flex-direction:column;gap:6px}
 .hrow{display:grid;grid-template-columns:96px minmax(0,1fr) 48px 44px;gap:10px;align-items:center;font-size:13.5px}
@@ -365,7 +362,6 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 .kmark.bad{background:var(--bad-bg);color:var(--bad-ink)}
 .kmark.warn{background:var(--hint-bg);color:var(--hint-ink)}
 .kmark.good{background:var(--best-bg);color:var(--best-ink)}
-@media (max-width:520px){.acct{font-size:0;max-width:none}.acct.live::before{margin-right:0}}
 .updbar{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(var(--nav-h) + env(safe-area-inset-bottom,0px) + 14px);z-index:65;display:flex;align-items:center;gap:10px;flex-wrap:wrap;justify-content:center;max-width:calc(100% - 32px);padding:10px 12px 10px 16px;border-radius:14px;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow);font-weight:600;font-size:14px;animation:sheetIn .3s var(--ease)}
 @media (min-width:900px){.updbar{bottom:24px}}
 @media (prefers-reduced-motion: reduce){
@@ -895,3 +891,40 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 @media (max-width:640px){.ac-drs{grid-template-columns:1fr;gap:8px}.ac-dr{padding:12px 14px;gap:12px}.ac-ic{width:38px;height:38px}.ac-ex{grid-template-columns:1fr}.ac-mini{max-width:260px}}
 @media (max-width:420px){.bnav a{font-size:9.5px;letter-spacing:-.02em}.bnav a .ic{padding:3px 8px}}
 .ac-al .tag{font-family:var(--f-display);font-weight:600;font-size:11.5px;padding:4px 9px;color:var(--accent-ink);border-color:color-mix(in srgb,var(--accent) 40%,var(--line))}
+
+/* ---------- barra superior: Linha de Horizonte ---------- */
+.top{transition:background-color .25s var(--ease),border-color .25s var(--ease),box-shadow .25s var(--ease)}
+.top-in{gap:20px;padding-block:8px;min-height:52px}
+.brand{gap:10px;min-width:0}
+.seal{display:grid;place-items:center;flex:none;width:32px;height:32px;border-radius:10px;background:var(--grad-accent,var(--accent));color:#fff;box-shadow:inset 0 1px 0 rgba(255,255,255,.28),0 2px 8px -3px color-mix(in srgb,var(--accent) 70%,transparent)}
+.seal svg{filter:drop-shadow(0 1px 0 rgba(0,0,0,.18))}
+.brand-t{display:flex;flex-direction:column;gap:1px;min-width:0;line-height:1}
+.brand-t b{font:750 15.5px/1.15 var(--f-display);letter-spacing:-.015em}
+.acct{display:flex;align-items:center;gap:5px;font:500 11px/1.2 var(--f-mono);color:var(--muted);letter-spacing:-.01em;max-width:46vw;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.acct:empty{display:none}
+.acct.live::before{content:"";flex:none;width:6px;height:6px;border-radius:50%;background:var(--win);box-shadow:0 0 0 3px color-mix(in srgb,var(--win) 18%,transparent);animation:pulse 2.4s ease-in-out infinite}
+.top-r{gap:8px}
+.caps{display:flex;align-items:center;height:38px;padding:3px;border-radius:999px;background:color-mix(in srgb,var(--surface) 70%,transparent);border:1px solid color-mix(in srgb,var(--ink) 9%,transparent);box-shadow:inset 0 1px 0 color-mix(in srgb,#fff 50%,transparent)}
+.cap-b{display:inline-flex;align-items:center;justify-content:center;gap:7px;height:30px;min-width:34px;padding:0 9px;border:0;border-radius:999px;background:transparent;color:var(--ink);font:600 13px var(--f-display);cursor:pointer;transition:background-color .18s var(--ease),transform .12s var(--ease)}
+.cap-b:hover{background:color-mix(in srgb,var(--ink) 7%,transparent)}
+.cap-b:active{transform:scale(.92)}
+.cap-b:focus-visible{outline:2px solid var(--accent);outline-offset:1px}
+.cap-sep{width:1px;height:16px;background:color-mix(in srgb,var(--ink) 14%,transparent)}
+.cap-l{display:none}
+.top.busy .sync-ic{animation:capSpin 1s linear infinite}
+@keyframes capSpin{to{transform:rotate(360deg)}}
+@media (min-width:900px){.top-in{min-height:58px}.cap-l{display:inline}.cap-b#openSync{padding:0 13px 0 10px}.acct{max-width:220px}}
+.top.flat,:root:not([data-glass="off"]) .top.flat{background:transparent;border-bottom-color:transparent;box-shadow:none;backdrop-filter:none;-webkit-backdrop-filter:none}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .caps{border-color:rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}}
+:root[data-theme="dark"] .caps{border-color:rgba(255,255,255,.09);box-shadow:inset 0 1px 0 rgba(255,255,255,.05)}
+@media (prefers-reduced-motion:reduce){.top.busy .sync-ic{animation:none}}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]) .seal{color:#1a1408}}
+:root[data-theme="dark"] .seal{color:#1a1408}
+.top-in{padding-block:6px;min-height:46px;gap:16px}
+.seal{width:30px;height:30px;border-radius:9px}
+.brand-t b{font-size:15px}
+.caps{height:36px}
+.cap-b{height:28px}
+:root:not([data-glass="off"]) .top:not(.flat){background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.6) blur(24px);-webkit-backdrop-filter:saturate(1.6) blur(24px);border-bottom-color:color-mix(in srgb,var(--ink) 8%,transparent);box-shadow:0 8px 24px -20px rgba(0,0,0,.5)}
+@media (min-width:900px){.top-in{min-height:54px}}
+.tabs{padding:3px}.tabs .pill{top:3px;bottom:3px}.tabs a{padding:6px 14px;font-size:13.5px}
