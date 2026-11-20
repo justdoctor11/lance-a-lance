@@ -53,9 +53,12 @@ const isSeed = () => S.plat === 'chesscom' && S.me.toLowerCase() === SEED_OWNER;
 function loadData() {
   const map = new Map();
   for (const g of (isSeed() ? SEED_GAMES : []).concat(MEM.games['games:' + acctKey()] || [])) map.set(g.id, g);
+  // contas combinadas: as partidas das outras contas entram sem rating (ratings de sites diferentes não se comparam)
+  let extra = false;
+  if (store.get('combine', false)) for (const a of store.get('accts', [])) { const k = a.p + ':' + a.u.toLowerCase(); if (k === acctKey()) continue; for (const g of MEM.games['games:' + k] || []) if (!map.has(g.id)) { map.set(g.id, Object.assign({}, g, { pf: a.p, mR: null, oR: null, pmR: g.mR, poR: g.oR })); extra = true; } }
   S.games = Array.from(map.values()).sort((a, b) => b.end - a.end);
   S.an = Object.assign({}, SEED_AN, MEM.an || {});
-  AGG = isSeed() && SEED_AGG ? SEED_AGG : computeAgg(S.games);
+  AGG = isSeed() && SEED_AGG && !extra ? SEED_AGG : computeAgg(S.games);
 }
 function computeAgg(games) {
   const A = { total: games.length, byTc: {}, byColor: { w: { W: 0, D: 0, L: 0 }, b: { W: 0, D: 0, L: 0 } }, lossHow: {}, winHow: {}, openings: [], rating: { rapid: [], blitz: [] } };
@@ -78,6 +81,7 @@ function acctLabel() { return S.me + ' · ' + PLAT[S.plat]; }
 async function hydrate() {
   if (!MEM.an) MEM.an = await kv.get('an', {});
   const k = 'games:' + acctKey(); if (!MEM.games[k]) MEM.games[k] = await kv.get(k, []);
+  if (store.get('combine', false)) for (const a of store.get('accts', [])) { const j = 'games:' + a.p + ':' + a.u.toLowerCase(); if (!MEM.games[j]) MEM.games[j] = await kv.get(j, []); }
 }
 async function switchAccount(user, plat) {
   const changed = user.toLowerCase() !== S.me.toLowerCase() || plat !== S.plat;
@@ -679,7 +683,7 @@ const LESSONS = {
 };
 
 /* ---------- navegação ---------- */
-const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats', 'conquistas'];
+const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats', 'conquistas', 'academia'];
 function route() {
   const h = (location.hash || '').replace('#', '');
   const v = VIEWS.includes(h) ? h : 'painel';
@@ -706,13 +710,14 @@ function renderView(v) {
   if (v === 'arena') renderArena();
   if (v === 'stats') renderStats();
   if (v === 'conquistas') renderConquistas();
+  if (v === 'academia') renderAcademia();
 }
 function showView(v) {
   const first = !S.view;
   S.view = v;
   for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
   if (S.swipeDir) swipeMark($('#v-' + v));
-  const nv = v === 'arena' ? 'treino' : v;
+  const nv = v === 'arena' ? (S.arena && ARX[S.arena.kind] ? 'academia' : 'treino') : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
   window.scrollTo(0, 0);
@@ -2188,7 +2193,7 @@ function importGames(list, defer) {
 }
 async function saveGames() {
   const key = 'games:' + acctKey(); const imp = MEM.games[key] || [];
-  imp.sort((a, b) => b.end - a.end); await kv.set(key, imp); loadData(); TRAIN = null; cloudPushGames();
+  imp.sort((a, b) => b.end - a.end); await kv.set(key, imp); loadData(); TRAIN = null; cloudPushGames(); if (imp.length) acctNote();
 }
 function monthComplete(t) {
   const i = t.lastIndexOf('"pgn"'); if (i < 0) return /"games"\s*:\s*\[\s*\]/.test(t);

@@ -134,7 +134,7 @@ function stopArenaTimers() { if (ARTICK) clearInterval(ARTICK); ARTICK = 0; }
 function arBoard() {
   if (!AR) {
     AR = new Board($('#arBoard'));
-    AR.el.addEventListener('pointerdown', e => { const A = S.arena; if (A && A.kind === 'xray' && !A.lobby) xrayTap(e); });
+    AR.el.addEventListener('pointerdown', e => { const A = S.arena; if (A && A.kind === 'xray' && !A.lobby) xrayTap(e); else if (A && !A.lobby && ARX[A.kind] && ARX[A.kind].tap) ARX[A.kind].tap(e); });
   }
   return AR;
 }
@@ -142,13 +142,14 @@ function renderArena() {
   arBoard(); const A = S.arena;
   if (arHuman() && MAIA.st === 'off' && store.get('maiaOk', false)) maiaLoad();
   if (!A) { $('#arHead').innerHTML = ''; $('#arPanel').innerHTML = '<p>Escolha um treino na aba Treino.</p><a class="btn primary" href="#treino">Ir para o Treino</a>'; AR.setPosition('8/8/8/8/8/8/8/8 w - - 0 1', false); return; }
+  if (ARX[A.kind]) { const X = ARX[A.kind]; if (X.needPrep && !analyzedReady()) { $('#arPanel').innerHTML = CALC; warmPrep().then(() => { if (S.view === 'arena') renderArena(); }); return; } if (A.lobby) X.lobby(); else X.redraw(); return; }
   if (A.kind === 'rep' && !A.lobby) { repDraw(); return; }
   if (A.kind === 'self' && S.pendingSelf && (analyzedReady() || PREP.get(S.pendingSelf))) { const gid = S.pendingSelf; S.pendingSelf = null; startSelf(gid); return; }
   if (!analyzedReady() && A.kind !== 'end' && A.kind !== 'clock' && A.kind !== 'rep') { $('#arPanel').innerHTML = CALC; warmPrep().then(() => { if (S.view === 'arena') renderArena(); }); return; }
   if (A.lobby) renderLobby(); else if (A.kind === 'cand') candRedraw(); else if (A.kind === 'self') selfDraw(); else arDraw(false);
 }
 function arHead(title, sub) {
-  $('#arHead').innerHTML = '<div class="stack" style="gap:3px;min-width:0"><span class="label">' + esc(KIND_LAB[S.arena.kind] || 'Treino') + '</span><span class="who">' + esc(title) + '</span>' + (sub ? '<span class="muted" style="font-size:13.5px">' + esc(sub) + '</span>' : '') + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + (S.arena.lobby ? '' : '<button class="btn small" type="button" data-ar="lobby">Outras posições</button>') + '<a class="btn small" href="#treino">Voltar ao treino</a></div>';
+  $('#arHead').innerHTML = '<div class="stack" style="gap:3px;min-width:0"><span class="label">' + esc(KIND_LAB[S.arena.kind] || 'Treino') + '</span><span class="who">' + esc(title) + '</span>' + (sub ? '<span class="muted" style="font-size:13.5px">' + esc(sub) + '</span>' : '') + '</div><div style="display:flex;gap:8px;flex-wrap:wrap">' + (S.arena.lobby ? '' : '<button class="btn small" type="button" data-ar="lobby">Outras posições</button>') + (ARX[S.arena.kind] ? '<a class="btn small" href="#academia">Voltar à Academia</a>' : '<a class="btn small" href="#treino">Voltar ao treino</a>') + '</div>';
 }
 function eloSeg() { const v = store.get('arElo', 1600); return '<div class="stack" style="gap:6px"><span class="label">Força do adversário (motor)</span><div class="seg" role="group">' + AR_ELOS.map(([e, t]) => '<button type="button" data-ar="elo:' + e + '" aria-pressed="' + (v === e) + '">' + t + '</button>').join('') + '</div></div>'; }
 function itemRow(x, i, extra) {
@@ -161,6 +162,7 @@ function lobbyPreview(fen, color, last) {
 }
 function renderLobby() {
   const A = S.arena, k = A.kind; let h = '';
+  if (ARX[k]) return ARX[k].lobby();
   if (k === 'rep') return repLobby();
   if (k === 'convert' || k === 'defend' || k === 'mine') {
     const Ls = lists(), items = k === 'convert' ? Ls.conv : k === 'defend' ? Ls.def : Ls.ends;
@@ -225,6 +227,7 @@ function arLobbyAction(a) {
   if (a.startsWith('melo:')) { store.set('maiaElo', +a.slice(5)); renderLobby(); return; }
   if (a.startsWith('pick:')) { A.sel = +a.slice(5); renderLobby(); return; }
   if (A.kind === 'rep' && repLobbyAction(a)) return;
+  if (ARX[A.kind]) { if (a === 'go') return ARX[A.kind].start(); if (ARX[A.kind].lobbyAct && ARX[A.kind].lobbyAct(a)) return; return; }
   if (a.startsWith('tc:')) { A.su.tc = a.slice(3); store.set('clkTc', A.su.tc); renderLobby(); return; }
   if (a.startsWith('col:')) { A.su.color = a.slice(4); renderLobby(); return; }
   if (a === 'go') {
@@ -450,6 +453,7 @@ function arAction(a) {
   const A = S.arena; if (!A) return;
   if (A.lobby || a === 'lobby' || a.startsWith('open:')) return arLobbyAction(a);
   if (A.kind === 'spot' && a !== 'restart') return spotAction(a);
+  if (ARX[A.kind]) return ARX[A.kind].action(a);
   if (A.kind === 'cand') return candAction(a);
   if (A.kind === 'self') return selfAction(a);
   if (A.kind === 'rep') return repAction(a);

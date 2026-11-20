@@ -336,4 +336,5 @@ document.addEventListener('keydown', e => {
 });
 
 /*@BADGES@*/
+/*@ACAD@*/
 setTimeout(() => { try { gpDoneP().then(badgeSoon); } catch (e) { badgeSoon(); } }, 3000);

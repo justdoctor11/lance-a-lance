@@ -31,7 +31,7 @@ const payload = {
   build: BUILD, minShell: MIN_SHELL, latestShell: SHELL, at: new Date().toISOString(),
   css: rd('src/style.css') + '\n/* Peças cburnett (Colin M.L. Burnett, GPLv2+) */\n' + rd('vendor/pieces-cburnett.css') + '\n/* Peças Merida (GPLv2+), Chessnut (Apache 2.0), Fantasy e Spatial (MIT), Staunty, Maestro, Cardinal e California (CC BY-NC-SA 4.0), Moderno (original) */\n' + rd('vendor/pieces-extra.css') + '\nhtml.native-android .acct{max-width:40vw}',
   body: rd('src/body.html'),
-  js: rd('src/app.js').replace('/*@MORE@*/', () => rd('src/more.js')).replace('/*@MORE2@*/', () => rd('src/more2.js')).replace('/*@MORE3@*/', () => rd('src/more3.js')).replace('/*@MORE4@*/', () => rd('src/more4.js')).replace('/*@BADGES@*/', () => rd('src/badges.js')).replace('/*@GP@*/', () => 'var CHESS_SRC = ' + JSON.stringify(rd('vendor/lib/chess.js')) + ';\n' + rd('src/gp.js')).replace('/*@DEBUG@*/', () => process.env.LAL_DEBUG ? rd('scripts/debug-hook.js') : '')
+  js: rd('src/app.js').replace('/*@MORE@*/', () => rd('src/more.js')).replace('/*@MORE2@*/', () => rd('src/more2.js')).replace('/*@MORE3@*/', () => rd('src/more3.js')).replace('/*@MORE4@*/', () => rd('src/more4.js')).replace('/*@BADGES@*/', () => rd('src/badges.js')).replace('/*@ACAD@*/', () => rd('src/academia.js')).replace('/*@PUZ@*/', () => 'const PUZ_RAW = ' + JSON.stringify(rd('src/puzzles.txt')) + ';').replace('/*@GP@*/', () => 'var CHESS_SRC = ' + JSON.stringify(rd('vendor/lib/chess.js')) + ';\n' + rd('src/gp.js')).replace('/*@DEBUG@*/', () => process.env.LAL_DEBUG ? rd('scripts/debug-hook.js') : '')
 };
 const safeJson = o => JSON.stringify(o).replace(/</g, '\\u003c');
 

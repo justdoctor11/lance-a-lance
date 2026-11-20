@@ -56,6 +56,17 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - **Conforto**: fila de revisão, confirmação de lance com toque duplo, árvore de aberturas do adversário no dossiê.
 - **Visual**: vidro, gradientes e transições entre telas. Nos Ajustes, "Simples" desliga os efeitos em aparelhos mais fracos.
 
+## Academia (nova aba)
+
+- **Qual é a capivarada?**: dois lances da mesma posição das suas partidas, um deles foi o erro que aconteceu. Ache qual e veja por que perde.
+- **Memória**: a posição aparece por 5 a 20 segundos, some, e vêm três perguntas (onde estava uma peça, quantos peões, o que havia numa casa).
+- **Calcular ou jogar rápido?**: a partir dos momentos críticos, decida se a posição pede cálculo; o app mostra quanto tempo você gastou ali e compara seu tempo médio em lances críticos e tranquilos.
+- **Biblioteca de táticas**: 3.452 puzzles do banco aberto do Lichess (CC0) por tema, com rating de puzzles próprio e o tema "Para você" tirado dos seus erros.
+- **Aulas**: 12 aulas escritas para o app, ordenadas pelos seus pontos fracos, cada uma com um exemplo das suas partidas e um treino para praticar.
+- **Você e o seu nível**: em quantas partidas você foi melhor que o adversário em precisão, capivaradas, abertura, finais e relógio.
+- **Relatório para o treinador**: resumo em texto para copiar, salvar ou compartilhar, com posições-chave e link de análise.
+- **Análise em fila** e **contas combinadas** (Chess.com + Lichess nas estatísticas e treinos; os gráficos de rating seguem só a conta principal).
+
 ## Novidades da versão 1.5
 
 Chegam pela atualização automática, sem reinstalar.
@@ -110,3 +121,4 @@ Os resultados (classificação dos lances, treino, repertório, mates) foram con
 - ONNX Runtime Web 1.23.2 (MIT), baixado sob demanda do jsDelivr.
 - Fontes Geist e Geist Mono (SIL Open Font License 1.1).
 - Nomes de aberturas: base `lichess-org/chess-openings` (CC0).
+- Puzzles da Biblioteca de táticas: banco de puzzles do Lichess (database.lichess.org, CC0).

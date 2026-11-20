@@ -28,6 +28,9 @@ const PIECE = {
 // peça em miniatura dentro de um símbolo: mesma silhueta das peças, com traço de espessura fixa
 const mini = (p, x, y, k, cls) => '<path' + (cls ? ' class="' + cls + '"' : '') + ' d="' + PIECE[p] + '" transform="translate(' + x + ' ' + y + ') scale(' + k + ')" vector-effect="non-scaling-stroke"/>';
 const ICONS = {
+  alerta: { f: '<path d="M12 3.2 21.4 19.6H2.6z"/>', s: '<path d="M12 3.2 21.4 19.6H2.6z"/><path d="M12 9.2v5"/><circle cx="12" cy="16.9" r="1" fill="currentColor"/>' },
+  memoria: { f: '<rect x="4" y="4" width="16" height="16" rx="2.5"/>', s: '<rect x="4" y="4" width="16" height="16" rx="2.5"/><path d="M4 12h16M12 4v16" stroke-opacity=".45"/><rect x="12" y="4" width="8" height="8" fill="currentColor" stroke="none" opacity=".35"/><rect x="4" y="12" width="8" height="8" fill="currentColor" stroke="none" opacity=".35"/><path d="M7.5 7.5h.01M16.5 16.5h.01" stroke-width="2.6"/>' },
+  estante: { f: '<path d="M4.5 4h3.6v16H4.5zM9.6 4h3.6v16H9.6z"/>', s: '<path d="M4.5 4h3.6v16H4.5zM9.6 4h3.6v16H9.6zM14.6 5.4l3.4-.9 3.4 14.6-3.4.9z"/><path d="M4.5 7.5h3.6M9.6 7.5h3.6M4.5 16.5h3.6M9.6 16.5h3.6"/><path d="M3 20.5h18"/>' },
   // f: mancha de cor translúcida (o corpo); s: linha de tinta (a leitura)
   alvo: { f: '<circle cx="11" cy="13" r="8"/>', s: '<circle cx="11" cy="13" r="8"/><circle cx="11" cy="13" r="4.6"/><circle cx="11" cy="13" r="1.4" fill="currentColor"/><path d="M11 13 20 4M16.6 3.6 20.4 3.6 20.4 7.4"/>' },
   raio: { f: '<path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11.5h-6.5z"/>', s: '<path d="M13.5 2.5 5 13.5h6.5l-1 8 8.5-11.5h-6.5z"/><path d="M3.2 5.5 4.8 7M20.8 18.5 19.2 17M2.8 18h1.8"/>' },
@@ -101,6 +104,9 @@ const BADGES = [
   { id: 'livro', cat: 'treino', t: 'Livro aberto', ic: 'livro', lv: [10, 40, 100, 200, 400], d: n => 'Fixe ' + n + ' posições do seu repertório', v: X => X.rep },
   { id: 'tecnica', cat: 'treino', t: 'Técnica', ic: 'bandeira', lv: [1, 3, 8, 15, 30], d: n => 'Converta ' + n + ' ' + pl(n, 'vitória que tinha escapado', 'vitórias que tinham escapado'), v: X => X.conv },
   { id: 'fortaleza', cat: 'treino', t: 'Fortaleza', ic: 'p:rook', lv: [1, 3, 8, 15, 30], d: n => 'Salve ' + n + ' ' + pl(n, 'posição difícil', 'posições difíceis'), v: X => X.def },
+  { id: 'anticapivara', cat: 'treino', t: 'Anticapivara', ic: 'alerta', lv: [10, 40, 120, 300, 700], d: n => 'Ache ' + n + ' capivaradas no Qual é a capivarada?', v: X => X.capiOk },
+  { id: 'fotografica', cat: 'treino', t: 'Memória fotográfica', ic: 'memoria', lv: [8, 10, 12, 14, 15], d: n => 'Acerte ' + n + ' de 15 numa rodada de Memória', v: X => X.memBest },
+  { id: 'estante', cat: 'treino', t: 'Estante de táticas', ic: 'estante', lv: [10, 50, 150, 400, 1000], d: n => 'Resolva ' + n + ' puzzles da Biblioteca de táticas', v: X => X.libOk },
   { id: 'raiox', cat: 'treino', t: 'Raio-X', ic: 'scan', lv: [4, 7, 10, 13, 16], d: n => 'Acerte ' + n + ' posições numa rodada do Raio-X', v: X => X.xbest },
   { id: 'zeitnot', cat: 'treino', t: 'Zeitnot', ic: 'relogio', lv: [1, 3, 8, 15, 30], d: n => 'Vença ' + n + ' ' + pl(n, 'partida', 'partidas') + ' no treino de relógio', v: X => X.clockW },
   { id: 'castigo', cat: 'treino', t: 'Castigo', ic: 'martelo', lv: [5, 25, 75, 150, 300], d: n => 'Puna ' + n + ' erros no modo Puna o erro', v: X => X.punish },
@@ -305,6 +311,7 @@ function badgeStats() {
   X.self70 = Object.values(store.get('self', {})).filter(x => x.s >= 70).length;
   X.ends = cnt('end:'); X.mates = cnt('mates:'); X.conv = cnt('convert:'); X.def = cnt('defend:') + cnt('mine:');
   X.rep = Object.values(store.get('rep', {})).filter(x => x.b >= 2).length;
+  X.capiOk = (store.get('capi', {}).ok) || 0; X.memBest = (store.get('mem', {}).best) || 0; X.libOk = Object.values(store.get('libDone', {})).filter(x => x === 1).length;
   X.xbest = store.get('xbest', 0); X.clockW = store.get('clockHist', []).filter(x => x.res === 'W').length;
   X.blind = tot('blind'); X.repReviews = tot('rep'); X.rushTop = (store.get('rush', {}).top) || 0;
   X.punish = tot('punish'); X.theory = tot('theory'); X.guess = tot('guess'); X.spot = tot('spot');
