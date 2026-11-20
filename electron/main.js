@@ -1,6 +1,7 @@
 // Peão Passado para Windows (Electron)
 const { app, BrowserWindow, ipcMain, protocol, net, nativeTheme, shell, Menu } = require('electron');
 const path = require('path');
+const fs = require('fs');
 const { pathToFileURL } = require('url');
 
 const WWW = path.join(__dirname, '..', 'www');
@@ -10,6 +11,9 @@ const TYPES = { '.html': 'text/html; charset=utf-8', '.js': 'text/javascript', '
 protocol.registerSchemesAsPrivileged([{ scheme: 'app', privileges: { standard: true, secure: true, supportFetchAPI: true, corsEnabled: true } }]);
 
 if (!app.requestSingleInstanceLock()) app.quit();
+// O nome "Peão Passado" entra no User-Agent padrão; o "ã" quebrava o protocolo app:// (cabeçalho fora de ASCII)
+// e nada além do index.html carregava (lib/chess.js, motor, fontes).
+app.userAgentFallback = app.userAgentFallback.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/[^\x20-\x7e]/g, '');
 
 function createWindow() {
   const win = new BrowserWindow({
@@ -35,9 +39,11 @@ app.whenReady().then(() => {
     const u = new URL(req.url); let rel = decodeURIComponent(u.pathname).replace(/^\/+/, '') || 'index.html';
     const file = path.normalize(path.join(WWW, rel));
     if (!file.startsWith(WWW)) return new Response('Proibido', { status: 403 });
-    const res = await net.fetch(pathToFileURL(file).toString());
-    const type = TYPES[path.extname(file).toLowerCase()];
-    return type ? new Response(res.body, { status: res.status, headers: { 'content-type': type } }) : res;
+    // lê direto do disco (funciona dentro do app.asar) em vez de net.fetch, que repassava os cabeçalhos da página
+    try {
+      const data = await fs.promises.readFile(file);
+      return new Response(data, { status: 200, headers: { 'content-type': TYPES[path.extname(file).toLowerCase()] || 'application/octet-stream' } });
+    } catch (e) { return new Response('Não encontrado', { status: 404 }); }
   });
   ipcMain.handle('fetchText', async (_e, url) => {
     const host = new URL(url).hostname;

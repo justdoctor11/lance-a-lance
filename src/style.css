@@ -928,3 +928,14 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 :root:not([data-glass="off"]) .top:not(.flat){background:color-mix(in srgb,var(--bg) 82%,transparent);backdrop-filter:saturate(1.6) blur(24px);-webkit-backdrop-filter:saturate(1.6) blur(24px);border-bottom-color:color-mix(in srgb,var(--ink) 8%,transparent);box-shadow:0 8px 24px -20px rgba(0,0,0,.5)}
 @media (min-width:900px){.top-in{min-height:54px}}
 .tabs{padding:3px}.tabs .pill{top:3px;bottom:3px}.tabs a{padding:6px 14px;font-size:13.5px}
+
+/* botão de atualização: ponto verde pulsante quando há versão nova pronta */
+#updBtn{position:relative}
+#updBtn .udot{position:absolute;top:4px;right:5px;width:8px;height:8px;border-radius:50%;background:var(--win);box-shadow:0 0 0 2px var(--surface);opacity:0;transform:scale(.4);transition:opacity .25s var(--ease),transform .25s var(--ease)}
+#updBtn.on .udot{opacity:1;transform:none}
+#updBtn.on .udot::after{content:"";position:absolute;inset:0;border-radius:50%;background:var(--win);animation:udot 1.8s ease-out infinite}
+#updBtn.on{color:var(--win)}
+#updBtn.wait svg{animation:udown 1s ease-in-out infinite}
+@keyframes udot{0%{transform:scale(1);opacity:.7}100%{transform:scale(2.8);opacity:0}}
+@keyframes udown{50%{transform:translateY(2px)}}
+@media (prefers-reduced-motion:reduce){#updBtn.on .udot::after,#updBtn.wait svg{animation:none}}

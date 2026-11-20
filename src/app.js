@@ -1,5 +1,6 @@
 (function () {
 'use strict';
+/*@CHESS@*/
 /* ---------- utilidades ---------- */
 const $ = (s, r = document) => r.querySelector(s);
 const $$ = (s, r = document) => Array.from(r.querySelectorAll(s));
@@ -700,6 +701,7 @@ function viewKey(v) {
   if (v === 'analise') return S.vx || S.guess || S.pendingGuess || S.shownGid !== S.gid || S.shownPly !== S.ply ? null : b + ':' + S.gid;
   if (v === 'treino') return S.pendingReview || S.pendingWarm || S.pendingPz ? null : b + ':' + Object.keys(CRIT).length + ':' + today + ':' + JSON.stringify(store.get('arena', {})).length + ':' + store.get('xbest', 0) + ':' + JSON.stringify(store.get('rep', {})).length + ':' + (repReady() ? 1 : 0);
   if (v === 'stats') return b;
+  if (v === 'academia') return S.acPane || ANALYZING.size || CRITING.size ? null : b + ':' + Object.keys(CRIT).length + ':' + ['capi', 'mem', 'tempo', 'libDone', 'aulas', 'accts', 'combine', 'libR'].map(k => JSON.stringify(store.get(k, 0)).length).join('.');
   return null;
 }
 function renderView(v) {
@@ -2408,20 +2410,42 @@ function updBanner(html) {
   let el = $('#updBar'); if (!el) { el = document.createElement('div'); el.id = 'updBar'; el.className = 'updbar'; el.setAttribute('role', 'status'); document.body.appendChild(el); }
   el.innerHTML = html; el.hidden = false;
 }
-window.addEventListener('lal-update', () => updBanner('<span>Nova versão do app pronta.</span><button class="btn small primary" type="button" data-upd="reload">Atualizar agora</button><button class="btn small" type="button" data-upd="later">Depois</button>'));
-window.addEventListener('lal-shell-ready', () => updBanner('<span>Nova versão do instalador baixada.</span><button class="btn small primary" type="button" data-upd="shell">Reiniciar e instalar</button><button class="btn small" type="button" data-upd="later">Ao fechar</button>'));
+/* botão da barra: verde e pulsando quando há versão pronta; um toque aplica na hora */
+const UPD = { kind: null, ver: '', busy: false, quiet: false, last: Date.now() };
+function updState(kind, ver) {
+  if (kind) { UPD.kind = kind; UPD.ver = ver || ''; }
+  const b = $('#updBtn'); if (!b) return;
+  b.classList.toggle('on', !!UPD.kind); b.classList.toggle('wait', UPD.busy);
+  const t = UPD.kind === 'app' ? 'Nova versão pronta: toque para atualizar' : UPD.kind === 'shell' ? 'Instalador ' + UPD.ver + ' baixado: toque para reiniciar e instalar' : UPD.kind === 'apk' ? 'Versão ' + UPD.ver + ' do aplicativo disponível' : UPD.busy ? 'Procurando atualização…' : 'Procurar atualização';
+  b.title = t; b.setAttribute('aria-label', t);
+}
+function updCheck(quiet) {
+  if (!window.__checkUpdate || UPD.busy) return;
+  UPD.busy = true; UPD.quiet = quiet; UPD.last = Date.now(); updState();
+  window.__checkUpdate().finally(() => { UPD.busy = false; updState(); if (UPD.kind === 'app' && !quiet) location.reload(); });
+}
+window.addEventListener('lal-update', () => { const was = UPD.kind; updState('app'); if (UPD.quiet && was !== 'app') toast('Nova versão pronta: toque no botão com o ponto verde'); });
+window.addEventListener('lal-shell-ready', e => { updState('shell', e.detail && e.detail.version); toast('Instalador novo baixado: toque no botão com o ponto verde para instalar'); });
+document.addEventListener('visibilitychange', () => { if (document.visibilityState === 'visible' && !UPD.kind && Date.now() - UPD.last > 30 * 60 * 1000) updCheck(true); });
+setTimeout(() => { if (!window.__checkUpdate) { const b = $('#updBtn'), s = b && b.nextElementSibling; if (b) b.hidden = true; if (s) s.hidden = true; } else updState(); }, 0);
 window.addEventListener('lal-shell-new', e => {
   if (NATIVE && NATIVE.platform === 'windows' && !NATIVE.portable) return;
-  if (store.get('shellSeen') === e.detail.version) return; store.set('shellSeen', e.detail.version);
-  updBanner('<span>Versão ' + esc(e.detail.version) + ' do aplicativo disponível.</span><a class="btn small primary" href="' + window.__RELEASES + '" target="_blank" rel="noopener">Baixar</a><button class="btn small" type="button" data-upd="later">Depois</button>');
+  updState('apk', e.detail.version);
 });
-window.addEventListener('lal-uptodate', () => toast('Você já está na versão mais recente'));
-window.addEventListener('lal-update-fail', () => toast('Não consegui procurar atualizações agora'));
+window.addEventListener('lal-uptodate', () => { if (!UPD.quiet && !UPD.kind) toast('Você já está na versão mais recente'); });
+window.addEventListener('lal-update-fail', () => { if (!UPD.quiet) toast('Não consegui procurar atualizações agora'); });
+document.addEventListener('click', e => {
+  if (!e.target.closest('#updBtn')) return;
+  if (UPD.kind === 'app') location.reload();
+  else if (UPD.kind === 'shell' && window.native && window.native.installShellUpdate) window.native.installShellUpdate();
+  else if (UPD.kind === 'apk') { const a = document.createElement('a'); a.href = window.__RELEASES; a.target = '_blank'; a.rel = 'noopener'; document.body.appendChild(a); a.click(); a.remove(); }
+  else { toast('Procurando atualização…'); updCheck(false); }
+});
 document.addEventListener('click', e => {
   const b = e.target.closest('[data-upd]'); if (!b) return; const a = b.dataset.upd;
   if (a === 'reload') location.reload();
   else if (a === 'shell' && window.native && window.native.installShellUpdate) window.native.installShellUpdate();
-  else if (a === 'check' && window.__checkUpdate) { toast('Procurando atualização…'); window.__checkUpdate(); }
+  else if (a === 'check' && window.__checkUpdate) { toast('Procurando atualização…'); updCheck(false); }
   else if (a === 'later') { const el = $('#updBar'); if (el) el.hidden = true; }
 });
 
