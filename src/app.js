@@ -2008,6 +2008,7 @@ function bestSan() { const l = lineSan(PZ.fen, [PZ.p.best]); return l[0] ? fig(l
 function reviewNote() { const C = coachFor(PZ.P, PZ.p.ply); return 'Na partida: ' + [C.verdict[0], C.punish[0]].filter(Boolean).join(' '); }
 async function tryPuzzleMove(from, to) {
   if (!PZ || PZ.done) return;
+  if (PZ.line) return lineMove(from, to);
   const cur = PZ; const c = new Chess(PZ.fen); let m;
   try { m = c.move({ from, to, promotion: 'q' }); } catch (e) { return; }
   PB.setLive(null); PB.setPosition(c.fen(), true);
@@ -2018,7 +2019,7 @@ async function tryPuzzleMove(from, to) {
     let alt = null;
     try {
       await Promise.race([Engine.init(), sleep(8000).then(() => { throw new Error('t'); })]);
-      const r = await evalPos(c.fen(), S.pzMode === 'timed' ? 300 : 700); const eb = pzEv();
+      const r = await evalPos(c.fen(), S.pzMode === 'timed' ? 300 : 700); const eb = pzEv(); cur.altPv = r.pv;
       const wb = PZ.p.side === 'w' ? wpWhite(eb) : 100 - wpWhite(eb), wa = PZ.p.side === 'w' ? wpWhite(r) : 100 - wpWhite(r);
       alt = wb - wa;
     } catch (e) { alt = null; }
@@ -2032,6 +2033,8 @@ async function tryPuzzleMove(from, to) {
     if (PZ.first) srsRecord(PZ.p.key, true); bumpDaily(); renderGoal(); haptic('ok');
     if (PZ.p.kind === 'punish') act('punish'); else if (PZ.p.fen) act('theory'); if (store.get('blind', 'off') !== 'off') act('blind');
     fb.className = 'fb ok'; fb.textContent = (good === 'alt' ? fig(m.san) + ' também funciona: o motor avalia quase igual ao melhor lance. ' : 'Isso! ' + fig(m.san) + ' é o lance do motor. ') + explainBest() + (S.pzMode === 'review' ? ' ' + reviewNote() : '');
+    // fora da Corrida: segue a linha do motor até o mate, o ganho de material ou 3 lances seus
+    if (S.pzMode !== 'timed') { const eb = pzEv(), rest = good === 'best' ? (eb.pv || []).slice(1) : (cur.altPv || []); if (lineStart(cur, c.fen(), rest, m)) { renderPzCount(); return; } }
     if (S.pzMode === 'timed') { rushHit(); setTimeout(() => { if (!S.tm.over && PZ === cur) { S.puz++; loadPuzzle(); } }, 450); }
     renderPzCount(); return;
   }
@@ -2041,20 +2044,88 @@ async function tryPuzzleMove(from, to) {
   fb.className = 'fb no'; fb.textContent = fig(m.san) + ' não resolve. ' + (cur.alt == null ? 'O lance procurado é outro.' : 'Sua chance cairia ' + Math.round(cur.alt) + ' pontos percentuais.') + ' Tente de novo.';
   setTimeout(() => { if (!PZ || PZ.done || PZ !== cur) return; PB.setPosition(PZ.fen, true); const prev = PZ.P && PZ.p.ply > 0 ? PZ.P.moves[PZ.p.ply - 1] : null; armPuzzle(PZ.fen, PZ.p.side, PZ.p.last ? { last: PZ.p.last } : prev ? { last: [prev.from, prev.to] } : {}); }, 900);
 }
+/* ---------- continuar a linha depois do acerto ---------- */
+function lineStart(cur, fen, rest, m) {
+  let c; try { c = new Chess(fen); } catch (e) { return false; }
+  if (c.isGameOver() || !rest || !rest.length) return false;
+  const eb = pzEv(), side = cur.p.side, mate = isMateFor(eb, side) ? Math.abs(eb.mate) : 0, M = material(parseBoard(cur.fen));
+  cur.done = false; cur.line = { fen, rest: rest.slice(), n: 1, max: mate ? Math.min(mate, 8) : 3, mate, mat0: M[side] - M[other(side)], side, sans: [m.san], last: [m.from, m.to] };
+  const fb = $('#pzFb'); fb.textContent += ' Continue a linha: o adversário responde.';
+  setTimeout(() => lineReply(cur), 650);
+  return true;
+}
+function lineMat(L) { const M = material(parseBoard(L.fen)); return M[L.side] - M[other(L.side)] - L.mat0; }
+async function lineReply(cur) {
+  const L = cur.line; if (PZ !== cur || !L || cur.done) return;
+  if (!L.rest.length) { try { const r = await evalPos(L.fen, 600); L.rest = r.best ? [r.best].concat([]) : []; } catch (e) { L.rest = []; } if (PZ !== cur) return; }
+  const u = L.rest.shift(); if (!u) return lineEnd(cur, 'fim');
+  const c = new Chess(L.fen); let m; try { m = c.move({ from: u.slice(0, 2), to: u.slice(2, 4), promotion: u[4] || 'q' }); } catch (e) { return lineEnd(cur, 'fim'); }
+  L.fen = c.fen(); L.last = [m.from, m.to]; L.sans.push(m.san);
+  PB.setPosition(L.fen, true); haptic('move');
+  if (c.isGameOver()) return lineEnd(cur, 'fim');
+  // material ganho e assentado depois da resposta: missão cumprida (fora das linhas de mate)
+  if (!L.mate && L.n >= 2 && lineMat(L) >= 2) return lineEnd(cur, 'mat');
+  if (!L.rest.length) { try { const r = await evalPos(L.fen, 700); L.rest = r.pv && r.pv.length ? r.pv.slice() : r.best ? [r.best] : []; } catch (e) { L.rest = []; } if (PZ !== cur) return; }
+  if (!L.rest.length) return lineEnd(cur, 'fim');
+  const fb = $('#pzFb'); fb.className = 'fb hint'; fb.textContent = 'O adversário jogou ' + fig(m.san) + '. Sua vez: continue a linha (' + (L.n + 1) + 'º lance' + (L.mate ? ', mate em ' + (L.max - L.n) : '') + ').';
+  PB.setLive({ color: L.side, dests: () => destsOf(L.fen), marks: { last: L.last }, onMove: (f, t) => tryPuzzleMove(f, t) }); PB.setMarks({ last: L.last });
+}
+async function lineMove(from, to) {
+  const cur = PZ, L = cur.line, c = new Chess(L.fen); let m;
+  try { m = c.move({ from, to, promotion: 'q' }); } catch (e) { return; }
+  const uci = m.from + m.to + (m.promotion || ''), fb = $('#pzFb'), before = L.fen;
+  PB.setLive(null); PB.setPosition(c.fen(), true);
+  let ok = uci === L.rest[0], newPv = null;
+  if (!ok) {
+    fb.className = 'fb hint'; fb.textContent = 'Conferindo com o motor…';
+    try { const eb = await evalPos(before, 500), ea = await evalPos(c.fen(), 600); if (c.isCheckmate() || sideWp(eb, L.side) - sideWp(ea, L.side) < 5) { ok = true; newPv = ea.pv || []; } } catch (e) { ok = false; }
+    if (PZ !== cur || cur.done) return;
+  }
+  if (!ok) {
+    haptic('err'); PB.setMarks({ last: [m.from, m.to], bad: m.to });
+    fb.className = 'fb no'; fb.textContent = fig(m.san) + ' deixa escapar a vantagem. Tente de novo, ou toque em Ver solução.';
+    setTimeout(() => { if (PZ !== cur || cur.done) return; PB.setPosition(before, true); PB.setMarks({ last: L.last }); PB.setLive({ color: L.side, dests: () => destsOf(before), marks: { last: L.last }, onMove: (f, t) => tryPuzzleMove(f, t) }); }, 900);
+    return;
+  }
+  L.fen = c.fen(); L.last = [m.from, m.to]; L.sans.push(m.san); L.n++; haptic('ok');
+  L.rest = newPv ? newPv.slice() : L.rest.slice(1);
+  PB.setMarks({ last: L.last, ok: m.to });
+  if (c.isCheckmate()) return lineEnd(cur, 'mate');
+  if (c.isGameOver()) return lineEnd(cur, 'fim');
+  if (L.n >= L.max) return lineEnd(cur, L.mate ? 'fim' : lineMat(L) >= 2 ? 'mat' : 'max');
+  fb.className = 'fb ok'; fb.textContent = 'Isso: ' + fig(m.san) + '.';
+  setTimeout(() => lineReply(cur), 550);
+}
+function lineEnd(cur, why) {
+  if (PZ !== cur) return; const L = cur.line; cur.done = true; PB.setLive(null); blindReveal();
+  const g = lineMat(L), fb = $('#pzFb'); fb.className = 'fb ok';
+  fb.textContent = (why === 'mate' ? 'Xeque-mate! ' : why === 'mat' || g >= 2 ? 'Linha completa: você ganhou ' + g + ' ponto' + (g > 1 ? 's' : '') + ' de material. ' : 'Linha completa. ') + 'Sequência: ' + L.sans.map(fig).join(' ') + '.';
+  renderPzCount();
+}
+async function lineSolution(cur) {
+  const L = cur.line; cur.done = true; PB.setLive(null); blindReveal();
+  const fb = $('#pzFb'); fb.className = 'fb hint';
+  let rest = L.rest.slice(); if (!rest.length) { try { const r = await evalPos(L.fen, 700); rest = r.pv || []; } catch (e) { rest = []; } }
+  const l = lineSan(L.fen, rest.slice(0, 6), 6); fb.textContent = 'A linha segue: ' + l.map(x => fig(x.san)).join(' ') + '.';
+  for (const x of l) { await sleep(650); if (PZ !== cur) return; PB.setPosition(x.m.after, true); PB.setMarks({ last: [x.m.from, x.m.to] }); }
+}
 function explainBest() {
   const eb = pzEv(); const l = lineSan(PZ.fen, eb.pv.length ? eb.pv : [eb.best]); if (!l[0]) return '';
   const F = factsFor(PZ.fen, l[0].m, PZ.p.ply); const why = ideaShort(F, l[0].m);
   return (why ? cap(why) + '. ' : '') + 'Linha: ' + l.slice(0, 5).map(x => fig(x.san)).join(' ') + '.';
 }
 function puzzleHint() {
-  if (!PZ || PZ.done) return; PZ.hints++; if (S.pzMode === 'timed' && S.tm) { S.tm.combo = 0; renderPzCount(); }
+  if (!PZ || PZ.done) return;
+  if (PZ.line) { const u = PZ.line.rest[0]; if (!u) return; const B = parseBoard(PZ.line.fen), pc = B[sqI(u.slice(0, 2))]; const fb = $('#pzFb'); fb.className = 'fb hint'; fb.textContent = 'Dica: ' + pz(pc.t) + ' em ' + u.slice(0, 2) + '.'; PB.setMarks({ last: PZ.line.last, sel: u.slice(0, 2) }); return; } PZ.hints++; if (S.pzMode === 'timed' && S.tm) { S.tm.combo = 0; renderPzCount(); }
   if (PZ.first) { srsRecord(PZ.p.key, false); PZ.first = false; }
   const b = PZ.p.best; const B = parseBoard(PZ.fen); const p = B[sqI(b.slice(0, 2))]; const fb = $('#pzFb'); fb.className = 'fb hint';
   if (PZ.hints === 1) fb.textContent = 'Dica: use ' + pz(p.t) + '.';
   else { fb.textContent = 'Dica: ' + pz(p.t) + ' em ' + b.slice(0, 2) + '.'; PB.setMarks(Object.assign({}, PB.live ? PB.live.marks : {}, { sel: b.slice(0, 2) })); }
 }
 async function puzzleSolution() {
-  if (!PZ) return; if (PZ.first) { srsRecord(PZ.p.key, false); PZ.first = false; }
+  if (!PZ) return;
+  if (PZ.line) { if (!PZ.done) lineSolution(PZ); return; }
+  if (PZ.first) { srsRecord(PZ.p.key, false); PZ.first = false; }
   PZ.done = true; blindReveal(); PB.setLive(null);
   if (S.pzMode === 'timed' && S.tm && !S.tm.over) { rushMiss(); if (S.tm.over) return; }
   const eb = pzEv(); const l = lineSan(PZ.fen, eb.pv.length ? eb.pv : [eb.best], 6);
