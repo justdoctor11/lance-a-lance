@@ -729,16 +729,15 @@ function showView(v) {
   // transição com direção também nos toques da barra (como no gesto de deslizar)
   if (!S.swipeDir && prev && prev !== v && typeof SWIPE_ORDER !== 'undefined') { const a = SWIPE_ORDER.indexOf(prev), b = SWIPE_ORDER.indexOf(v); if (a >= 0 && b >= 0) S.swipeDir = b > a ? 1 : -1; }
   S.view = v;
-  for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
-  if (S.swipeDir) swipeMark($('#v-' + v));
+  const swap = () => { for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v); if (S.swipeDir) swipeMark($('#v-' + v)); window.scrollTo(0, 0); };
   const nv = v === 'arena' ? (S.arena && ARX[S.arena.kind] ? (ARX[S.arena.kind].nav ? ARX[S.arena.kind].nav() : 'academia') : S.arena && S.arena.kind === 'rep' ? 'repertorio' : 'treino') : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
-  window.scrollTo(0, 0);
   requestAnimationFrame(movePill);
   const k = viewKey(v);
-  if (k && VKEY[v] === k) { if (v === 'painel') renderHero(); return; }
-  const run = () => { if (S.view !== v) return; renderView(v); VKEY[v] = viewKey(v); };
+  // a tela nova só aparece já desenhada: troca e desenho no mesmo passo, sem quadro com conteúdo velho
+  if (k && VKEY[v] === k) { S.vtok = null; swap(); if (v === 'painel') renderHero(); return; }
+  const run = () => { if (S.view !== v) return; swap(); renderView(v); VKEY[v] = viewKey(v); };
   if (first) run(); else { const tok = S.vtok = {}; requestAnimationFrame(() => setTimeout(() => { if (S.vtok === tok) run(); }, 0)); }
 }
 const PILLMQ = matchMedia('(max-width: 899px)');
@@ -1729,7 +1728,9 @@ function renderRepertorio() {
   repSec(store.get('repSec', 'arvore'));
   if (!analyzedReady()) { warmPrep().then(() => { if (S.view === 'repertorio') renderRepertorio(); }); }
   const tok = S.rptok = {};
-  const stages = [() => renderRepSum(), () => renderRep(), () => { const el = $('#opList'); if (el) el.innerHTML = openingsHtml(); }, () => renderTheory()];
+  // o que fica no topo sai no mesmo quadro; o resto (partes escondidas) vem logo depois
+  try { renderRepSum(); renderRep(); } catch (e) { /* segue */ }
+  const stages = [() => { const el = $('#opList'); if (el) el.innerHTML = openingsHtml(); }, () => renderTheory()];
   const next = () => { if (S.rptok !== tok) return; const f = stages.shift(); if (!f) return; try { f(); } catch (e) { /* segue */ } if (stages.length) setTimeout(next, 0); };
   next();
 }
