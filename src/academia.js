@@ -635,7 +635,7 @@ function levelCmp() {
   LVC = R; LVK = key; return R;
 }
 function levelHtml() {
-  const R = levelCmp(); if (R.n < 10) return '<p class="muted">Analise pelo menos 10 partidas para comparar você com o seu nível.</p>';
+  const R = levelCmp(); if (R.n < 10) return emptyHtml('chart', 'Comparação ainda indisponível', 'Analise pelo menos 10 partidas para comparar você com os adversários do seu nível.');
   const row = (t, o, tip) => { const n = o.b + o.w; if (n < 6) return ''; const f = o.b / n; return '<div class="ac-lv"><div class="ac-lv-t"><span>' + t + '</span><b class="mono">' + Math.round(f * 100) + '%</b></div><div class="ac-lv-bar" aria-hidden="true"><i style="width:' + (f * 100).toFixed(1) + '%"></i><em></em></div><span class="muted">' + tip + ' · ' + n + ' partidas</span></div>'; };
   const ao = R.oR.length ? Math.round(avg(R.oR)) : null, am = R.mR.length ? Math.round(avg(R.mR)) : null;
   return '<p class="muted" style="font-size:13.5px">Em quantas partidas você foi melhor que o adversário em cada quesito. Seus adversários são o seu nível' + (ao ? ': rating médio ' + ao + (am ? ', o seu ' + am : '') : '') + '. Acima de 50% é ponto forte; abaixo, ponto a treinar.</p>' +

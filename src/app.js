@@ -81,6 +81,7 @@ function computeAgg(games) {
 function acctLabel() { return S.me + ' · ' + PLAT[S.plat]; }
 async function hydrate() {
   if (!MEM.an) MEM.an = await kv.get('an', {});
+  if (!MEM.hum) MEM.hum = await kv.get('hum', {});
   const k = 'games:' + acctKey(); if (!MEM.games[k]) MEM.games[k] = await kv.get(k, []);
   if (store.get('combine', false)) for (const a of store.get('accts', [])) { const j = 'games:' + a.p + ':' + a.u.toLowerCase(); if (!MEM.games[j]) MEM.games[j] = await kv.get(j, []); }
 }
@@ -256,7 +257,7 @@ function evTxt(e) {
   const v = (e.cp || 0) / 100; return (v > 0 ? '+' : v < 0 ? '−' : '') + Math.abs(v).toFixed(1).replace('.', ',');
 }
 const isMateFor = (e, side) => e && e.mate != null && e.mate !== 0 && (side === 'w' ? e.mate > 0 : e.mate < 0);
-const CLS = { brill: { t: 'Brilhante', s: '!!' }, great: { t: 'Ótimo', s: '!' }, best: { t: 'Melhor', s: '★' }, exc: { t: 'Excelente', s: '✓✓' }, good: { t: 'Bom', s: '✓' }, inacc: { t: 'Imprecisão', s: '?!' }, mistake: { t: 'Erro', s: '?' }, blunder: { t: 'Capivarada', s: '??' }, miss: { t: 'Chance perdida', s: '✕' }, forced: { t: 'Único lance', s: '□' }, dz: { t: 'Posição decidida', s: '·' } };
+const CLS = { brill: { t: 'Brilhante', s: '!!' }, great: { t: 'Ótimo', s: '!' }, best: { t: 'Melhor', s: '★' }, exc: { t: 'Excelente', s: '✓✓' }, good: { t: 'Bom', s: '✓' }, inacc: { t: 'Imprecisão', s: '?!' }, mistake: { t: 'Erro', s: '?' }, blunder: { t: 'Capivarada', s: '??' }, miss: { t: 'Chance perdida', s: '✕' }, forced: { t: 'Único lance', s: '□' }, dz: { t: 'Posição decidida', s: '·' } , hard: { t: 'Chance difícil', s: '◇' }};
 const BAD = { inacc: 1, mistake: 1, blunder: 1, miss: 1 };
 
 const PREP = new Map();
@@ -287,7 +288,7 @@ function attachAnalysis(P) {
   P.asig = anSig(raw); P.evs = raw.map(evOf); classify(P);
 }
 function classify(P) {
-  const out = [], F = factsOk(P) ? P.facts : null;
+  const out = [], F = factsOk(P) ? P.facts : null, HU = (MEM.hum || {})[P.g.id] || null;
   for (let i = 0; i < P.moves.length; i++) {
     const m = P.moves[i], side = m.color, eb = P.evs[i], ea = P.evs[i + 1];
     const b = wpWhite(eb), a = wpWhite(ea);
@@ -305,8 +306,11 @@ function classify(P) {
     }
     let only = false;
     if (k === 'best' && typeof critOf === 'function') { const cr = critOf(P, i); if (cr && cr.gap >= 15 && cr.wp >= 30) { k = 'great'; only = true; } }
+    // Maia: chance perdida que menos de 10% dos jogadores do nível achariam não conta como erro
+    const hp = HU && HU[i] != null ? HU[i] : null;
+    if (k === 'miss' && hp != null && hp < 10) k = 'hard';
     const acc = Math.max(0, Math.min(100, 103.1668 * Math.exp(-0.04354 * loss) - 3.1669));
-    out.push({ k, loss, wb, wa, acc, uci, isBest, only });
+    out.push({ k, loss, wb, wa, acc, uci, isBest, only, hp });
   }
   // zona decidida: do primeiro lance em que a partida fica decidida (97%+) e não volta mais
   const w = P.evs.map(wpWhite), N = w.length; let dz = null, dzSide = null;
@@ -336,7 +340,8 @@ function coachFor(P, i) {
     inacc: 'Imprecisão: a chance estimada de vitória das ' + SIDE[me] + ' caiu ' + Math.round(c.loss) + ' pontos percentuais.',
     mistake: 'Erro: a chance estimada de vitória das ' + SIDE[me] + ' caiu ' + Math.round(c.loss) + ' pontos percentuais.',
     blunder: 'Capivarada: o lance muda o rumo da partida (−' + Math.round(c.loss) + ' pontos percentuais de chance de vitória).',
-    miss: 'Chance perdida: o adversário tinha acabado de errar e havia um lance para punir.',
+    miss: 'Chance perdida: o adversário tinha acabado de errar e havia um lance para punir.' + (c.hp != null ? ' ' + Math.round(c.hp) + '% dos jogadores de ~' + humElo(me === P.g.c ? (P.g.mR || P.g.pmR) : (P.g.oR || P.g.poR)) + ' achariam o lance certo.' : ''),
+    hard: 'Chance difícil: havia um lance para punir o erro do adversário, mas só ' + Math.round(c.hp || 0) + '% dos jogadores de ~' + humElo(me === P.g.c ? (P.g.mR || P.g.pmR) : (P.g.oR || P.g.poR)) + ' o encontrariam (estimativa do Maia). Não conta como erro.',
     forced: 'Único lance legal na posição.'
   }[c.k];
   out.verdict.push(lead);
@@ -605,11 +610,14 @@ async function analyzeGame(g, onProg) {
       let c; try { c = new Chess(P.fens[i]); } catch (e) { c = null; }
       if (c && c.isGameOver()) evs.push(c.isCheckmate() ? [null, 0, null, '', c.turn()] : [0, null, null, '', null]);
       else { const r = await Engine.go(P.fens[i], 220); evs.push([r.cp, r.mate, r.best, r.pv.join(' '), null]); }
-      if (onProg) onProg((i + 1) / P.fens.length);
+      if (onProg) onProg((i + 1) / P.fens.length * .8);
     }
     S.an[g.id] = evs;
     MEM.an = MEM.an || {}; MEM.an[g.id] = evs; kv.set('an', MEM.an); setTimeout(cloudPushLocalAn, 0); gsSchedule();
-    attachAnalysis(P); TRAIN = null; gpTouch(g); return P;
+    attachAnalysis(P); TRAIN = null; gpTouch(g);
+    // confere os lances marcados com análise mais longa antes de entregar os rótulos
+    try { await deepVerify(g, p => { if (onProg) onProg(.8 + .2 * p); }); } catch (e) { /* fica com a análise rápida */ }
+    return P;
   })();
   ANALYZING.set(g.id, job);
   try { return await job; } finally { ANALYZING.delete(g.id); }
@@ -717,11 +725,13 @@ function renderView(v) {
   if (v === 'repertorio') renderRepertorio();
 }
 function showView(v) {
-  const first = !S.view;
+  const first = !S.view, prev = S.view;
+  // transição com direção também nos toques da barra (como no gesto de deslizar)
+  if (!S.swipeDir && prev && prev !== v && typeof SWIPE_ORDER !== 'undefined') { const a = SWIPE_ORDER.indexOf(prev), b = SWIPE_ORDER.indexOf(v); if (a >= 0 && b >= 0) S.swipeDir = b > a ? 1 : -1; }
   S.view = v;
   for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v);
   if (S.swipeDir) swipeMark($('#v-' + v));
-  const nv = v === 'arena' ? (S.arena && ARX[S.arena.kind] ? 'academia' : S.arena && S.arena.kind === 'rep' ? 'repertorio' : 'treino') : v;
+  const nv = v === 'arena' ? (S.arena && ARX[S.arena.kind] ? (ARX[S.arena.kind].nav ? ARX[S.arena.kind].nav() : 'academia') : S.arena && S.arena.kind === 'rep' ? 'repertorio' : 'treino') : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
   window.scrollTo(0, 0);
@@ -782,7 +792,7 @@ function renderPainel() {
   const ends = S.games.map(g => g.end);
   $('#pnSub').textContent = AGG.total + ' partidas de ' + S.me + ' no ' + PLAT[S.plat] + ' · ' + dateLabel(Math.min.apply(null, ends), true) + ' a ' + dateLabel(Math.max.apply(null, ends), true) + ' · ' + analyzedGames().length + ' analisadas pelo motor';
   $('#pnWeekly').innerHTML = weeklyHtml();
-  $('#pnLast').innerHTML = lastGameCard();
+  $('#pnLast').innerHTML = postCardHtml() + lastGameCard();
   $('#pnBadges').innerHTML = pnBadgesHtml();
   $('#pnRating').innerHTML = ratingMiniHtml(rapid, blitz);
   const rN = rapid.length ? rapid[rapid.length - 1][1] : 0, bN = blitz.length ? blitz[blitz.length - 1][1] : 0;
@@ -791,8 +801,8 @@ function renderPainel() {
     $('#pnInsight').hidden = false;
     $('#pnInsight').innerHTML = '<span class="label">Observação do treinador</span><p>Seu rating de ' + hi + ' está ' + Math.abs(rN - bN) + ' pontos acima do ' + lo + '. Uma diferença assim costuma vir de reconhecimento de padrões e de decisões com pouco tempo; táticas curtas e repetidas tendem a render mais que teoria de abertura.</p>';
   } else $('#pnInsight').hidden = true;
-  $('#prSub').textContent = T ? 'Os 3 temas que mais te custam pontos, nos ' + T.errs + ' erros de ' + T.games + ' partidas analisadas' : 'Calculando a partir das suas partidas analisadas…';
-  $('#pnPrio').innerHTML = !T ? CALC : T.prios.slice(0, 3).map(p => {
+  $('#prSub').textContent = T ? 'Os 2 temas que mais te custam pontos, nos ' + T.errs + ' erros de ' + T.games + ' partidas analisadas' : 'Calculando a partir das suas partidas analisadas…';
+  $('#pnPrio').innerHTML = !T ? CALC : T.prios.slice(0, 2).map(p => {
     const Ls = LESSONS[p.k];
     return '<a class="prio" href="#treino"><span class="row"><b>' + esc(Ls.t) + '</b><span class="mono muted" style="font-size:13px">' + p.n + ' de ' + T.errs + '</span></span><span class="bar"><i style="width:' + Math.round(p.n / Math.max(1, T.errs) * 100) + '%"></i></span><span class="muted" style="font-size:13px;line-height:1.4">' + esc(p.extra || Ls.d) + '</span></a>';
   }).join('') || '<p class="muted">Analise algumas partidas para gerar prioridades.</p>';
@@ -881,7 +891,7 @@ function renderPartidas() {
       busy ? '<span class="prog" data-prog="' + g.id + '"><i style="width:0"></i></span><span>analisando</span>' :
       '<span class="btn small" data-analyze="' + g.id + '" role="button">Analisar</span>';
     return '<button class="grow" type="button" data-open="' + g.id + '"><span class="res ' + R.k + '" aria-label="' + esc(R.label) + '">' + R.short + '</span><span style="min-width:0;display:flex;flex-direction:column;gap:1px"><span class="t">vs ' + esc(g.opp) + (g.oR ? ' <span class="muted" style="font-weight:400">' + g.oR + '</span>' : '') + '</span><span class="s">' + esc(opName(g)) + '</span><span class="s">' + tcLabel(g) + ' · ' + dateLabel(g.end) + ' · ' + (g.c === 'w' ? 'brancas' : 'pretas') + ' · ' + esc(R.label.trim()) + '</span></span><span class="r">' + right + '</span></button>';
-  }).join('') : '<p class="empty">' + (S.games.length ? 'Nenhuma partida neste filtro.' : 'Nenhuma partida de ' + esc(S.me) + ' ainda. Toque em “Importar partidas”.') + '</p>') +
+  }).join('') : (S.games.length ? emptyHtml('board', 'Nenhuma partida neste filtro', 'Troque o ritmo, o resultado ou a cor no filtro acima.') : emptyHtml('pawn', 'Nenhuma partida ainda', 'Sincronize a conta de ' + S.me + ' para ver as suas partidas aqui.'))) +
     (gs.length > shown.length ? '<div style="padding:12px 16px;border-top:1px solid var(--line);display:flex;justify-content:center"><button class="btn" type="button" id="gmMore">Mostrar mais (' + (gs.length - shown.length) + ' restantes)</button></div>' : '');
 }
 async function runAnalysis(id) {
@@ -1360,7 +1370,7 @@ async function autoSync() {
       toast(games.length === 1 ? 'Nova partida vs ' + games[0].opp + ': analisando…' : games.length + ' novas partidas: analisando…');
       for (const g of games.slice(0, 10)) { try { await analyzeGame(g); } catch (e) { break; } }
       TRAIN = null; scheduleRefresh(games.map(g => g.id)); if (S.view === 'painel') showView('painel');
-      const g = games[0]; if (S.an[g.id]) toast('Relatório pronto: ' + resultOf(g).label.trim() + ' vs ' + g.opp);
+      const g = games[0]; if (S.an[g.id]) toast('Relatório pronto: ' + resultOf(g).label.trim() + ' vs ' + g.opp + '. Revisão rápida no Painel.');
     }
   } catch (e) { /* tenta no próximo ciclo */ }
   autoBusy = false; $('#top').classList.remove('busy');
@@ -1427,11 +1437,12 @@ function renderCoach(P, n) {
       const cnt = side => { const o = {}; P.cls.forEach((c, i) => { if (P.moves[i].color === side) o[c.k] = (o[c.k] || 0) + 1; }); return o; };
       const a = cnt(g.c), b = cnt(other(g.c));
       h += '<div class="sumrow"><span></span><span class="label" style="text-align:right">Você</span><span class="label" style="text-align:right">Adv.</span>';
-      for (const k of ['brill', 'great', 'best', 'exc', 'good', 'inacc', 'mistake', 'blunder', 'miss']) h += '<span class="k-' + k + '"><b class="ks">' + esc(CLS[k].s) + '</b> ' + CLS[k].t + '</span><span class="mono">' + (a[k] || 0) + '</span><span class="mono">' + (b[k] || 0) + '</span>';
+      for (const k of ['brill', 'great', 'best', 'exc', 'good', 'inacc', 'mistake', 'blunder', 'miss'].concat(P.cls.some(c => c.k === 'hard') ? ['hard'] : [])) h += '<span class="k-' + k + '"><b class="ks">' + esc(CLS[k].s) + '</b> ' + CLS[k].t + '</span><span class="mono">' + (a[k] || 0) + '</span><span class="mono">' + (b[k] || 0) + '</span>';
       h += '</div>';
       const ms = []; P.cls.forEach((c, i) => { if (P.moves[i].color === g.c && (c.k === 'blunder' || c.k === 'mistake' || c.k === 'miss')) ms.push(i); });
       const gl = P.cls.some((c, i) => P.moves[i].color === g.c && (c.loss >= 8 || c.k === 'great'));
       if (gl) h += '<div class="vxacts"><button class="btn small accent" type="button" data-guess="start">Adivinhe o lance: reveja os momentos decisivos</button></div>';
+      labelsTick(P); h += labelsNote(P);
       if (P.dz != null) h += '<p class="muted" style="font-size:13.5px">A partida ficou decidida no lance ' + (Math.floor(P.dz / 2) + 1) + ' (faixa clara no gráfico). A precisão conta só os lances até ali.</p>';
       if (ms.length) h += '<div class="blk"><h3>Momentos para revisar</h3><div class="moments">' + ms.slice(0, 5).map(i => '<button type="button" data-goto="' + (i + 1) + '"><span class="kb k-' + P.cls[i].k + '">' + esc(CLS[P.cls[i].k].s) + '</span><span class="mono">' + (Math.floor(i / 2) + 1) + (i % 2 ? '…' : '.') + ' ' + esc(fig(P.moves[i].san)) + '</span><span class="muted" style="margin-left:auto;font-size:13px">' + CLS[P.cls[i].k].t + '</span></button>').join('') + '</div></div>';
       else h += '<p>Nenhum erro grave seu nesta partida. Avance lance a lance para ver as ideias de cada lado.</p>';
@@ -1445,6 +1456,8 @@ function renderCoach(P, n) {
   const num = (Math.floor(i / 2) + 1) + (i % 2 ? '… ' : '. ');
   let h = '<div class="hd">' + (c ? '<span class="kb k-' + c.k + '">' + esc(CLS[c.k].s) + ' ' + CLS[c.k].t + '</span>' : '') + '<span class="san">' + esc(num + fig(m.san)) + '</span>' +
     (P.evs ? '<span class="ev">' + evTxt(P.evs[i]) + ' → ' + evTxt(P.evs[i + 1]) + '</span>' : '') + '</div>';
+  if (c && c.hp != null && c.hp < 15 && (c.k === 'great' || c.k === 'brill')) h += '<div class="callout rare"><span class="label">Lance raro</span><p style="font-size:14px">Só ' + (c.hp < 1 ? 'menos de 1' : Math.round(c.hp)) + '% dos jogadores de ~' + humElo(P.g.mR || P.g.pmR) + ' jogariam isto aqui, segundo o Maia.</p></div>';
+  if (P.cls) labelsTick(P);
   if (c) h += '<p class="muted" style="font-size:13.5px">Chance estimada de vitória das ' + SIDE[m.color] + ': <b style="color:var(--ink)">' + pct(c.wb) + ' → ' + pct(c.wa) + '</b></p>';
   const tl = timeLine(P, i); if (tl) h += '<p class="muted" style="font-size:13.5px;margin-top:-8px">' + esc(tl) + '</p>';
   h += '<div class="blk"><h3>O que o lance faz</h3><p>' + esc(C.idea.join(' ')) + '</p></div>';
@@ -1716,7 +1729,7 @@ function renderRepertorio() {
   repSec(store.get('repSec', 'arvore'));
   if (!analyzedReady()) { warmPrep().then(() => { if (S.view === 'repertorio') renderRepertorio(); }); }
   const tok = S.rptok = {};
-  const stages = [() => renderRepSum(), () => renderRep(), () => renderTheory()];
+  const stages = [() => renderRepSum(), () => renderRep(), () => { const el = $('#opList'); if (el) el.innerHTML = openingsHtml(); }, () => renderTheory()];
   const next = () => { if (S.rptok !== tok) return; const f = stages.shift(); if (!f) return; try { f(); } catch (e) { /* segue */ } if (stages.length) setTimeout(next, 0); };
   next();
 }
@@ -1908,7 +1921,7 @@ function renderGoal() {
     cell(st, st === 1 ? 'dia seguido' : 'dias seguidos') + cell(due, 'para revisar', due ? ' data-pz="due" role="button" tabindex="0"' : '') + cell(solved.toLocaleString('pt-BR'), 'resolvidos');
 }
 function repSec(k) {
-  if (!['arvore', 'furos', 'teoria'].includes(k)) k = 'arvore'; store.set('repSec', k);
+  if (!['arvore', 'aberturas', 'furos', 'teoria'].includes(k)) k = 'arvore'; store.set('repSec', k);
   $$('#repNav [data-rsec]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.rsec === k)));
   $$('#v-repertorio [data-rs]').forEach(x => { x.hidden = x.dataset.rs !== k; });
 }
@@ -1924,7 +1937,7 @@ let TRT = null;
 function renderTreino() {
   if (!analyzedReady()) { trTab(S.pendingReview || S.pendingWarm || S.pendingPz ? 'ex' : S.trTab || store.get('trTab', 'hoje')); if (!PB) PB = new Board($('#pzBoard')); $('#pzQ').textContent = 'Preparando seus exercícios…'; warmPrep().then(() => { if (S.view === 'treino') renderTreino(); }); return; }
   const T = buildTraining(); if (!PB) PB = new Board($('#pzBoard'));
-  renderGoal();
+  renderGoal(); const tt = $('#trToday'); if (tt) tt.innerHTML = todayCard();
   trTab(S.pendingReview || S.pendingWarm || S.pendingPz ? 'ex' : S.trTab || store.get('trTab', 'hoje'));
   if (S.pendingReview) { const g = S.pendingReview; S.pendingReview = null; setPzMode('review', g); }
   else if (S.pendingWarm) { S.pendingWarm = false; setPzMode('warm'); }

@@ -609,7 +609,7 @@ function renderHero() {
   if (!T.length) {
     const last = G[0], days = Math.floor((Date.now() / 1000 - last.end) / 86400);
     line = 'Nenhuma partida hoje ainda. A última foi ' + (days <= 0 ? 'mais cedo' : days === 1 ? 'ontem' : 'há ' + days + ' dias') + ', ' + (rk(last) === 'W' ? 'uma vitória' : rk(last) === 'D' ? 'um empate' : 'uma derrota') + ' contra ' + esc(last.opp) + '.';
-    mood = 'Que tal 3 exercícios de aquecimento antes da primeira?';
+    mood = 'Que tal começar pelo treino de hoje? São uns 15 minutos.';
   } else {
     const parts = [W && W + (W === 1 ? ' vitória' : ' vitórias'), D && D + (D === 1 ? ' empate' : ' empates'), L && L + (L === 1 ? ' derrota' : ' derrotas')].filter(Boolean);
     line = 'Hoje já foram <b>' + T.length + (T.length === 1 ? ' partida' : ' partidas') + '</b>: ' + parts.join(', ').replace(/, ([^,]*)$/, ' e $1') + '.';
@@ -619,7 +619,7 @@ function renderHero() {
   }
   let html = '<p class="hero-line">' + line + '</p><p class="muted">' + esc(mood) + '</p>';
   if (T.length) html += '<div class="todayg">' + T.slice(-8).map(g => { const P = S.an[g.id] ? prepIf(g) : null, acc = P && P.acc ? pct(P.acc[g.c]) : ''; return '<button type="button" class="tg ' + rk(g) + '" data-openply="' + g.id + ':0"><b>' + ({ W: 'V', D: 'E', L: 'D' }[rk(g)]) + '</b><span>vs ' + esc(g.opp) + '</span>' + (acc ? '<i class="mono">' + acc + '</i>' : '') + '</button>'; }).join('') + '</div>';
-  html += '<div class="vxacts">' + (T.length ? '<button class="btn small primary" type="button" data-queue="today">Revisar as de hoje</button>' : '<button class="btn small primary" type="button" data-pz="warm">Aquecer com 3 exercícios</button>') + '</div>';
+  html += '<div class="vxacts">' + (T.length ? '<button class="btn small primary" type="button" data-queue="today">Revisar as de hoje</button>' : '<button class="btn small primary" type="button" data-today>Começar o treino de hoje</button><button class="btn small" type="button" data-pz="warm">Só aquecer (3 exercícios)</button>') + '</div>';
   $('#pnToday').innerHTML = html;
   $('#pnPlan').innerHTML = planHtml();
 }

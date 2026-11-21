@@ -56,6 +56,15 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - **Conforto**: fila de revisão, confirmação de lance com toque duplo, árvore de aberturas do adversário no dossiê.
 - **Visual**: vidro, gradientes e transições entre telas. Nos Ajustes, "Simples" desliga os efeitos em aparelhos mais fracos.
 
+## Rótulos confiáveis, Treino de hoje e revisão pós-partida
+
+- **Rótulos conferidos:** depois da análise rápida, os lances marcados (capivarada, erro, chance perdida, brilhante, ótimo) são reanalisados com ~4x mais tempo. As partidas já analisadas são conferidas em segundo plano (as 15 mais recentes) e ao abrir na Análise.
+- **Rótulos humanos (Maia):** com o Maia baixado, uma "chance perdida" que menos de 10% dos jogadores do seu nível achariam vira "chance difícil" e deixa de contar como erro; lances ótimos e brilhantes que quase ninguém acharia ganham o selo "lance raro".
+- **Treino de hoje:** uma sessão misturada de ~15 min (revisões vencidas, exercícios dos seus erros, repertório, capivaradas e uma punição), no Painel e na aba Treino.
+- **Revisão pós-partida:** 3 posições da última partida (seu lance mais caro, o momento crítico e a sua melhor ideia ou a punição do erro do adversário).
+- **Aberturas:** no Repertório, uma página por abertura frequente com ideias, planos, tendência de resultado e os seus erros nos 15 primeiros lances, com treino só desses erros.
+- **Teste de fumaça no Windows:** a compilação abre o .exe e confere xadrez, motor, fontes e abas antes de publicar.
+
 ## Academia (nova aba)
 
 - **Qual é a capivarada?**: dois lances da mesma posição das suas partidas, um deles foi o erro que aconteceu. Ache qual e veja por que perde.

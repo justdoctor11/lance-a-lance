@@ -24,6 +24,13 @@ jobs:
       - run: npm run dist:win
         env:
           CSC_IDENTITY_AUTO_DISCOVERY: false
+      # Abre o .exe e confere xadrez, motor, fontes e abas antes de publicar qualquer coisa
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Teste de fumaça do app de Windows
+        run: node scripts/smoke-win.mjs
+        timeout-minutes: 5
       - uses: actions/upload-artifact@v4
         with:
           name: windows

@@ -975,3 +975,40 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 @media (max-width:380px){.bnav a{font-size:8.4px;letter-spacing:-.035em}.bnav a .ic{padding:3px 4px}}
 .bnav a[aria-current="page"]{letter-spacing:-.035em}
 @media (max-width:380px){.bnav a{font-size:8px;letter-spacing:-.04em}}
+/* ---------- rótulos confiáveis, sessões, aberturas, vazios, foco ---------- */
+.k-hard{--k:var(--good)}
+.lbl-note{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.45;color:var(--muted);margin:0}
+.lbl-note span{flex:none;display:grid;place-items:center;width:18px;height:18px;border-radius:50%;background:color-mix(in srgb,var(--best) 16%,transparent);color:var(--best);font-size:11px;font-weight:700;margin-top:1px}
+.callout.rare{background:color-mix(in srgb,var(--best) 12%,var(--surface))}
+.callout.rare .label{color:var(--best)}
+.mix-dots{display:flex;gap:5px}
+.mix-dots i{flex:1;height:5px;border-radius:99px;background:var(--surface-2)}
+.mix-dots i.cur{background:color-mix(in srgb,var(--accent) 45%,var(--surface-2))}
+.mix-dots i.ok{background:var(--best)} .mix-dots i.no{background:var(--mistake)}
+.mix-tag{display:inline-flex;align-items:center;height:24px;padding:0 10px;border-radius:999px;font:600 12px var(--f-display);background:var(--surface-2);color:var(--ink)}
+.mix-due,.mix-rep{background:color-mix(in srgb,var(--series-2) 16%,var(--surface));color:var(--series-2)}
+.mix-pz,.mix-crit{background:color-mix(in srgb,var(--mistake) 14%,var(--surface));color:var(--mistake)}
+.mix-punish,.mix-opp,.mix-idea{background:color-mix(in srgb,var(--best) 14%,var(--surface));color:var(--best)}
+.mix-capi{background:var(--accent-soft);color:var(--accent-ink)}
+.today-card{display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:16px;background:linear-gradient(135deg,color-mix(in srgb,var(--accent) 10%,var(--surface)),var(--surface) 60%)}
+.today-card .btn{min-width:120px}
+.post-cta{display:grid;grid-template-columns:auto minmax(0,1fr) auto;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:1px solid color-mix(in srgb,var(--accent) 40%,var(--line));background:color-mix(in srgb,var(--accent) 7%,var(--surface));margin-bottom:14px}
+.post-cta b{font-size:14px} .post-cta .muted{font-size:12.5px}
+.post-dot{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 0 4px color-mix(in srgb,var(--accent) 22%,transparent)}
+.ops-list{display:flex;flex-direction:column;gap:8px}
+.op-card{border:1px solid var(--line);border-radius:14px;background:var(--surface);padding:0 16px}
+.op-card summary{display:flex;justify-content:space-between;align-items:center;gap:10px;padding:14px 0;cursor:pointer;list-style:none}
+.op-card summary::-webkit-details-marker{display:none}
+.op-card summary b{font:700 15px var(--f-display)} .op-card summary .muted{font-size:12.5px}
+.op-card summary .up{color:var(--win);font-weight:600} .op-card summary .down{color:var(--loss);font-weight:600}
+.op-chev{font-size:22px;color:var(--muted);transition:transform .2s var(--ease)}
+.op-card[open] .op-chev{transform:rotate(90deg)}
+.op-card[open]{padding-bottom:16px}
+.op-card p{font-size:14.5px;line-height:1.55}
+.op-tips{margin:0;padding-left:18px;display:flex;flex-direction:column;gap:4px;font-size:14px;line-height:1.45}
+.empty-st{display:flex;flex-direction:column;align-items:center;text-align:center;gap:6px;padding:28px 16px;color:var(--muted)}
+.empty-st b{font:700 15px var(--f-display);color:var(--ink)} .empty-st p{max-width:42ch;font-size:13.5px;line-height:1.5;margin:0}
+.empty-ic{display:grid;place-items:center;width:56px;height:56px;border-radius:16px;background:var(--surface-2);color:var(--muted);margin-bottom:4px}
+.empty-st .btn{margin-top:8px}
+:root.focus #trTabs,:root.focus .tr-top,:root.focus #trToday{display:none}
+@media (max-width:640px){#pnQuote{display:none}}

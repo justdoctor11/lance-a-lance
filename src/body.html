@@ -142,6 +142,7 @@
       </div>
 
       <div class="trp" data-trp="hoje" role="tabpanel">
+        <div id="trToday"></div>
         <div class="tr">
           <section class="card pad stack" style="gap:12px">
             <div class="stack" style="gap:2px"><h2 class="h-card">Plano da semana</h2><p class="sub">Montado com as suas fraquezas; os anéis enchem conforme você treina</p></div>
@@ -197,7 +198,7 @@
       </div>
       <div class="stack" style="gap:18px">
           <section class="card pad rep-sum" id="repSum"></section>
-          <div class="seg repnav" id="repNav" role="tablist" aria-label="Partes do repertório"><button type="button" role="tab" data-rsec="arvore" aria-selected="true">Árvore</button><button type="button" role="tab" data-rsec="furos" aria-selected="false">Furos</button><button type="button" role="tab" data-rsec="teoria" aria-selected="false">Teoria</button></div>
+          <div class="seg repnav" id="repNav" role="tablist" aria-label="Partes do repertório"><button type="button" role="tab" data-rsec="arvore" aria-selected="true">Árvore</button><button type="button" role="tab" data-rsec="aberturas" aria-selected="false">Aberturas</button><button type="button" role="tab" data-rsec="furos" aria-selected="false">Furos</button><button type="button" role="tab" data-rsec="teoria" aria-selected="false">Teoria</button></div>
           <section class="card pad stack" id="repCard" data-rs="arvore" style="gap:14px">
         <div style="display:flex;justify-content:space-between;align-items:flex-end;gap:12px;flex-wrap:wrap">
           <div class="stack" style="gap:2px"><h2 class="h-card">Árvore do seu repertório</h2><p class="sub">Seus primeiros 8 lances em todas as partidas, com o aproveitamento de cada caminho</p></div>
@@ -206,6 +207,10 @@
                 <div class="chips" id="repCrumb"></div>
         <div class="rep"><div class="repb"><div id="repBoard"></div></div><div class="stack" style="gap:8px;min-width:0" id="repInfo"></div></div>
       </section>
+            <section class="card pad stack" data-rs="aberturas" style="gap:12px" hidden>
+              <div class="stack" style="gap:2px"><h2 class="h-card">Suas aberturas</h2><p class="sub">Uma página para cada abertura que você joga com frequência: a ideia, os planos típicos e os erros que você comete nela</p></div>
+              <div id="opList"></div>
+            </section>
             <section class="card pad stack" data-rs="furos" style="gap:10px" hidden>
               <div class="stack" style="gap:2px"><h2 class="h-card">Furos do repertório</h2><p class="sub">Linhas com 10 ou mais partidas em que você rende bem abaixo da sua média. Toque para abrir na árvore.</p></div>
               <div class="stack" style="gap:6px" id="repHoles"></div>

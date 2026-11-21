@@ -13,7 +13,7 @@ var PH_NAME = { a: 'abertura', m: 'meio-jogo', f: 'final' };
 function anSig(raw) {
   if (!raw || !raw.length) return '';
   const a = raw[raw.length - 1] || [], b = raw[raw.length >> 1] || [];
-  return raw.length + ':' + a[0] + ',' + a[1] + ',' + a[2] + ':' + b[0] + ',' + b[1] + ',' + b[2];
+  return raw.length + ':' + a[0] + ',' + a[1] + ',' + a[2] + ':' + b[0] + ',' + b[1] + ',' + b[2] + ':' + ((raw[0] && raw[0][5]) || 0);
 }
 function movesFromRec(R) {
   const n = R.u.length, out = new Array(n);
