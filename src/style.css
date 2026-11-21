@@ -90,8 +90,7 @@ main{padding-block:20px 48px}
 .view{display:block}
 /* telas escondidas ficam "congeladas" (não desenham nem ocupam espaço, mas guardam o layout) e voltam prontas */
 .view:not(.on){content-visibility:hidden;height:0;overflow:hidden;contain-intrinsic-size:none}
-.view.on{animation:viewIn .32s var(--ease)}
-@keyframes viewIn{from{transform:translateY(6px)}to{transform:none}}
+.view.on{animation:none}
 .stack{display:flex;flex-direction:column;gap:16px}
 .card{background:var(--surface);border:1px solid var(--line);border-radius:14px}
 .pad{padding:16px}
@@ -491,8 +490,10 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 .tile:hover,.rec:hover{transform:translateY(-2px)}
 .tile:active,.rec:active,.chip:active,.repmv:active,.sw:active{transform:scale(.97)}
 /* troca de aba: uma única camada esmaece e sobe (só opacidade e transform) */
-.view.on{animation:viewIn .2s var(--ease)}
-@keyframes viewIn{from{opacity:0;transform:translate3d(0,6px,0)}to{opacity:1;transform:none}}
+/* entrada das abas: só por classe (vin, swr, swl), que sai sozinha ao fim; nunca na própria .view.on,
+   senão tirar a classe reinicia a animação. Sem mexer na opacidade: nada de piscar. */
+.view.on.vin{animation:viewIn .2s var(--ease)}
+@keyframes viewIn{from{transform:translate3d(0,6px,0)}to{transform:none}}
 :root[data-glass="off"] .view.on,:root[data-glass="off"] .view.on *{animation-duration:.01ms!important}
 @media (prefers-reduced-motion: reduce){*,*::before,*::after,::view-transition-group(*),::view-transition-old(*),::view-transition-new(*){animation-duration:.01ms!important;transition-duration:.01ms!important}}
 #gmList .grow{content-visibility:auto;contain-intrinsic-size:auto 66px}
@@ -581,7 +582,7 @@ details.lesson ul{margin:0;padding-left:18px;display:flex;flex-direction:column;
 .view.on.swl{animation:swL .24s var(--ease)}
 @keyframes swR{from{transform:translate3d(18px,0,0)}to{transform:none}}
 @keyframes swL{from{transform:translate3d(-18px,0,0)}to{transform:none}}
-@media (prefers-reduced-motion:reduce){.view.on.swr,.view.on.swl{animation:none}}
+@media (prefers-reduced-motion:reduce){.view.on.swr,.view.on.swl,.view.on.vin{animation:none}}
 /* cartões fora da tela não são montados nem pintados até chegarem perto dela (abrir abas longas fica leve) */
 .view section.card.pad{content-visibility:auto;contain-intrinsic-size:auto 420px}
 

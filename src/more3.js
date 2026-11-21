@@ -339,10 +339,10 @@ function swipeInit() {
   main.addEventListener('touchcancel', end, { passive: true });
 }
 function swipeMark(el) {
-  if (!S.swipeDir || !el) { S.swipeDir = 0; return; }
-  const cls = S.swipeDir > 0 ? 'swr' : 'swl'; S.swipeDir = 0;
-  el.classList.remove("swr", "swl"); el.classList.add(cls);
-  setTimeout(() => el.classList.remove(cls), 260);
+  if (!el) { S.swipeDir = 0; return; }
+  const cls = S.swipeDir > 0 ? 'swr' : S.swipeDir < 0 ? 'swl' : 'vin'; S.swipeDir = 0;
+  clearTimeout(el._swT); el.classList.remove('swr', 'swl', 'vin'); void el.offsetWidth; el.classList.add(cls);
+  el._swT = setTimeout(() => el.classList.remove(cls), 320);
 }
 
 /* ---------- progresso: o que vai para a nuvem e como juntar dois aparelhos ---------- */

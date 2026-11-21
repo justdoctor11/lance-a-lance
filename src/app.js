@@ -729,7 +729,7 @@ function showView(v) {
   // transição com direção também nos toques da barra (como no gesto de deslizar)
   if (!S.swipeDir && prev && prev !== v && typeof SWIPE_ORDER !== 'undefined') { const a = SWIPE_ORDER.indexOf(prev), b = SWIPE_ORDER.indexOf(v); if (a >= 0 && b >= 0) S.swipeDir = b > a ? 1 : -1; }
   S.view = v;
-  const swap = () => { for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v); if (S.swipeDir) swipeMark($('#v-' + v)); window.scrollTo(0, 0); };
+  const swap = () => { for (const x of VIEWS) $('#v-' + x).classList.toggle('on', x === v); swipeMark($('#v-' + v)); window.scrollTo(0, 0); };
   const nv = v === 'arena' ? (S.arena && ARX[S.arena.kind] ? (ARX[S.arena.kind].nav ? ARX[S.arena.kind].nav() : 'academia') : S.arena && S.arena.kind === 'rep' ? 'repertorio' : 'treino') : v;
   $$('[data-v]').forEach(a => { if (a.dataset.v === nv) a.setAttribute('aria-current', 'page'); else a.removeAttribute('aria-current'); });
   if (v !== 'analise' && S.guess) S.guess = null;
