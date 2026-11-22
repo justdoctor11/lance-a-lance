@@ -1,7 +1,7 @@
 {
   "name": "lance-a-lance",
   "productName": "Peão Passado",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "Treinador de xadrez: análise lance a lance, teoria, armadilhas e treino a partir das suas partidas.",
   "main": "electron/main.js",
   "private": true,

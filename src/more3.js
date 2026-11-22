@@ -550,6 +550,7 @@ function widgetPush() {
     const res = g ? ({ W: 'vitória', D: 'empate', L: 'derrota' })[rk(g)] + ' vs ' + g.opp : 'Nenhuma partida ainda';
     const data = { day: dayKey(new Date()), streak: String(sk), streakLabel: sk === 1 ? 'dia seguido' : 'dias seguidos', today: dailyCount() + ' de ' + GOAL, goal: String(GOAL), done: String(dailyCount()), rep: due == null ? '—' : String(due), last: 'Última: ' + res, user: S.me };
     capCall('LalWidget', 'update', data).catch(() => { /* aplicativo sem widget (versão antiga) */ });
+    widgetArtMaybe();
   }, 1200);
 }
 function progressChanged() { widgetPush(); remSchedule(); gsSchedule(); badgeSoon(); }

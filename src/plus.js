@@ -431,3 +431,101 @@ document.addEventListener('click', e => {
   const od = t.closest('[data-opdrill]'); if (od) { opDrill(od.dataset.opdrill); return; }
   const os = t.closest('[data-opstats]'); if (os) { const o = myOpenings().find(x => x.k === os.dataset.opstats); if (o) { const path = []; let node = repTree(o.c); for (const m of o.games[0].mv.split(' ').slice(0, 12)) { if (!node.ch[m] || node.ch[m].n < 3) break; path.push(m); node = node.ch[m]; } REP.c = o.c; REP.path = path; repSec('arvore'); renderRep(); $('#repCard').scrollIntoView({ behavior: 'smooth', block: 'start' }); } return; }
 });
+
+
+/* ---------- arte do widget da tela inicial ----------
+   8 cartões por semana (frases, partidas célebres e peças). O app desenha o fundo e a figura
+   (tabuleiro ou peça) com as peças originais do Peão Passado; o texto vai como texto, e o
+   widget nativo o arruma no tamanho que tiver. O widget troca de cartão sozinho a cada dia. */
+const ART_V = 'a2', ART_BW = 720, ART_BH = 360, ART_F = 320;
+const ART_PAL = [['#1d4a3a', '#07120d', '#e0ad4c'], ['#4a1b28', '#110509', '#e6b866'], ['#1b2c4c', '#060a15', '#d2aa62'], ['#4a3418', '#120b05', '#e8bb60']];
+const ART_GAMES = [
+  { t: 'A Ópera de Morphy', s: 'Morphy · Paris, 1858 · 17.Td8#', mv: 'e4 e5 Nf3 d6 d4 Bg4 dxe5 Bxf3 Qxf3 dxe5 Bc4 Nf6 Qb3 Qe7 Nc3 c6 Bg5 b5 Nxb5 cxb5 Bxb5+ Nbd7 O-O-O Rd8 Rxd7 Rxd7 Rd1 Qe6 Bxd7+ Nxd7 Qb8+ Nxb8 Rd8#' },
+  { t: 'A Imortal', s: 'Anderssen · Londres, 1851 · 23.Be7#', mv: 'e4 e5 f4 exf4 Bc4 Qh4+ Kf1 b5 Bxb5 Nf6 Nf3 Qh6 d3 Nh5 Nh4 Qg5 Nf5 c6 g4 Nf6 Rg1 cxb5 h4 Qg6 h5 Qg5 Qf3 Ng8 Bxf4 Qf6 Nc3 Bc5 Nd5 Qxb2 Bd6 Bxg1 e5 Qxa1+ Ke2 Na6 Nxg7+ Kd8 Qf6+ Nxf6 Be7#' },
+  { t: 'A Sempre-Viva', s: 'Anderssen · Berlim, 1852 · 24.Bxe7#', mv: 'e4 e5 Nf3 Nc6 Bc4 Bc5 b4 Bxb4 c3 Ba5 d4 exd4 O-O d3 Qb3 Qf6 e5 Qg6 Re1 Nge7 Ba3 b5 Qxb5 Rb8 Qa4 Bb6 Nbd2 Bb7 Ne4 Qf5 Bxd3 Qh5 Nf6+ gxf6 exf6 Rg8 Rad1 Qxf3 Rxe7+ Nxe7 Qxd7+ Kxd7 Bf5+ Ke8 Bd7+ Kf8 Bxe7#' },
+  { t: 'O mate de Légal', s: 'Légal · Paris, 1750 · 7.Cd5#', mv: 'e4 e5 Nf3 d6 Bc4 Bg4 Nc3 g6 Nxe5 Bxd1 Bxf7+ Ke7 Nd5#' }
+];
+const ART_PIECES = [
+  ['n', 'O cavalo', 'Único que salta sobre as outras peças. Do centro alcança 8 casas; do canto, só 2.'],
+  ['b', 'O bispo', 'Passa a partida inteira numa só cor de casa. Os dois juntos cobrem as 64.'],
+  ['r', 'A torre', 'Rende mais nas colunas abertas e na sétima fileira, atacando os peões pelo lado.'],
+  ['p', 'O peão', 'Ao chegar à última fileira vira qualquer peça. Philidor o chamou de alma do xadrez.'],
+  ['k', 'O rei', 'Na abertura se esconde; no final, centralizado, vira peça de ataque.'],
+  ['q', 'A dama', 'Até o fim do século XV andava uma casa na diagonal; a dama poderosa nasceu na Espanha.']
+];
+const artImg = src => new Promise((res, rej) => { const i = new Image(); i.onload = () => res(i); i.onerror = rej; i.src = src; });
+const artCv = (w, h) => { const c = document.createElement('canvas'); c.width = w; c.height = h; return [c, c.getContext('2d')]; };
+// peças clássicas (cburnett, as mesmas do Lichess), lidas do CSS que já vem no app
+const ART_CB = {};
+function artCb(code) {
+  if (ART_CB[code]) return ART_CB[code];
+  for (const sh of document.styleSheets) { let rs; try { rs = sh.cssRules; } catch (e) { continue; }
+    for (const r of rs) if (r.selectorText === '.pc.' + code) { const m = /base64,([^'")]+)/.exec(r.style.backgroundImage); if (m) return (ART_CB[code] = atob(m[1])); } }
+  throw new Error('peça ' + code + ' não encontrada');
+}
+const artCbUrl = code => 'data:image/svg+xml;base64,' + btoa(artCb(code));
+// a peça branca clássica, pintada de ouro
+function artGoldPiece(t, pal) {
+  const svg = artCb('w' + t).replace(/fill="#fff"/g, 'fill="url(#gd)"').replace(/stroke="#000"/g, 'stroke="#3a2a10"').replace(/fill="#000"/g, 'fill="#3a2a10"')
+    .replace(/(<svg[^>]*>)/, '$1<defs><linearGradient id="gd" x1="0" y1="0" x2=".35" y2="1"><stop offset="0" stop-color="#fff4d8"/><stop offset=".45" stop-color="' + pal[2] + '"/><stop offset="1" stop-color="#8a6420"/></linearGradient></defs>');
+  return 'data:image/svg+xml;base64,' + btoa(svg);
+}
+// fundo: gradiente da paleta, tabuleiro em perspectiva quase invisível, brilho e, nas frases, a peça gigante
+async function artBg(pal, seed, giant) {
+  const [c, x] = artCv(ART_BW, ART_BH), W = ART_BW, H = ART_BH;
+  const g = x.createLinearGradient(0, 0, W * .5, H); g.addColorStop(0, pal[0]); g.addColorStop(1, pal[1]); x.fillStyle = g; x.fillRect(0, 0, W, H);
+  x.save(); x.globalAlpha = .06; x.translate(W * .72, H * .05); x.rotate(-.5 + (seed % 3) * .1);
+  for (let r = 0; r < 12; r++) for (let f = 0; f < 12; f++) if ((r + f) % 2) { x.fillStyle = '#fff'; x.fillRect(f * 46 - 280, r * 46 - 160, 46, 46); }
+  x.restore();
+  const v = x.createRadialGradient(W * .78, H * .3, 10, W * .78, H * .3, W * .7); v.addColorStop(0, 'rgba(255,230,180,.13)'); v.addColorStop(1, 'rgba(0,0,0,0)'); x.fillStyle = v; x.fillRect(0, 0, W, H);
+  if (giant) { const im = await artImg(artGoldPiece(giant, pal)); x.save(); x.globalAlpha = .2; x.shadowColor = pal[2]; x.shadowBlur = 50; x.drawImage(im, W - 330, -30, 420, 420); x.restore(); }
+  // poeira dourada
+  for (let i = 0; i < 26; i++) { const a = (seed * 97 + i * 131) % 1000 / 1000, b = (seed * 53 + i * 71) % 1000 / 1000; x.fillStyle = 'rgba(240,210,150,' + (.08 + (i % 4) * .04) + ')'; x.beginPath(); x.arc(W * (.35 + a * .65), H * b, 1 + (i % 3), 0, 7); x.fill(); }
+  // escurece a esquerda e o rodapé, onde ficam os textos e os números
+  const l = x.createLinearGradient(0, 0, W * .75, 0); l.addColorStop(0, 'rgba(4,8,6,.62)'); l.addColorStop(1, 'rgba(4,8,6,0)'); x.fillStyle = l; x.fillRect(0, 0, W, H);
+  const b = x.createLinearGradient(0, H * .55, 0, H); b.addColorStop(0, 'rgba(4,8,6,0)'); b.addColorStop(1, 'rgba(4,8,6,.6)'); x.fillStyle = b; x.fillRect(0, 0, W, H);
+  return c.toDataURL('image/jpeg', .88).split(',')[1];
+}
+async function artBoard(G) {
+  const c0 = new Chess(); let last = null; for (const m of G.mv.split(' ')) last = c0.move(m);
+  const B = parseBoard(c0.fen()), [c, x] = artCv(ART_F, ART_F), pad = 14, sz = ART_F - pad * 2, q = sz / 8;
+  x.save(); x.shadowColor = 'rgba(0,0,0,.6)'; x.shadowBlur = 14; x.shadowOffsetY = 5; x.fillStyle = '#000'; x.beginPath(); x.roundRect(pad, pad, sz, sz, 10); x.fill(); x.restore();
+  x.save(); x.beginPath(); x.roundRect(pad, pad, sz, sz, 10); x.clip();
+  for (let r = 0; r < 8; r++) for (let f = 0; f < 8; f++) {
+    x.fillStyle = (r + f) % 2 ? '#6f8f7e' : '#ece5d2'; x.fillRect(pad + f * q, pad + r * q, q, q);
+    const n = 'abcdefgh'[f] + (8 - r); if (n === last.from || n === last.to) { x.fillStyle = 'rgba(224,173,76,.6)'; x.fillRect(pad + f * q, pad + r * q, q, q); }
+  }
+  const cache = {};
+  for (let i = 0; i < 64; i++) { const p = B[i]; if (!p) continue; const k = p.c + p.t; cache[k] = cache[k] || await artImg(artCbUrl(k)); x.drawImage(cache[k], pad + (i % 8) * q, pad + (7 - (i >> 3)) * q, q, q); }
+  x.restore();
+  x.strokeStyle = 'rgba(255,240,210,.35)'; x.lineWidth = 1.5; x.beginPath(); x.roundRect(pad + .75, pad + .75, sz - 1.5, sz - 1.5, 10); x.stroke();
+  return c.toDataURL('image/png').split(',')[1];
+}
+async function artFigPiece(t, pal) {
+  const [c, x] = artCv(ART_F, ART_F), im = await artImg(artGoldPiece(t, pal));
+  x.shadowColor = pal[2]; x.shadowBlur = 30; x.drawImage(im, 10, 6, ART_F - 20, ART_F - 20);
+  return c.toDataURL('image/png').split(',')[1];
+}
+async function widgetArtGen() {
+  const wk = Math.floor(Date.now() / (7 * 86400000));
+  const qs = QUOTES.filter(q => q[0].length <= 110), cards = [];
+  const plan = ['q', 'g', 'p', 'q', 'g', 'q', 'p', 'g'], cnt = { q: 0, g: 0, p: 0 };
+  for (let i = 0; i < plan.length; i++) {
+    const k = plan[i], n = cnt[k]++, pal = ART_PAL[(wk + i) % ART_PAL.length];
+    if (k === 'q') { const q = qs[(wk * 3 + n * 7) % qs.length]; cards.push({ bg: await artBg(pal, wk + i, 'nbrqkp'[(wk + n) % 6]), kick: 'FRASE DO DIA', title: '“' + q[0] + '”', sub: '— ' + q[1] }); }
+    else if (k === 'g') { const G = ART_GAMES[(wk + n) % ART_GAMES.length]; cards.push({ bg: await artBg(pal, wk + i), fig: await artBoard(G), kick: 'PARTIDA CÉLEBRE', title: G.t, sub: G.s }); }
+    else { const P = ART_PIECES[(wk * 2 + n) % ART_PIECES.length]; cards.push({ bg: await artBg(pal, wk + i), fig: await artFigPiece(P[0], pal), kick: 'PEÇA EM FOCO', title: P[1], sub: P[2] }); }
+  }
+  return cards;
+}
+let ARTBUSY = false;
+function widgetArtMaybe() {
+  if (!NATIVE || NATIVE.platform !== 'android' || ARTBUSY) return;
+  const key = ART_V + ':' + Math.floor(Date.now() / (7 * 86400000));
+  if (store.get('wArtK', '') === key) return;
+  ARTBUSY = true;
+  setTimeout(async () => {
+    try { const cards = await widgetArtGen(); await capCall('LalWidget', 'art', { cards }); store.set('wArtK', key); } catch (e) { /* aplicativo antigo, sem arte no widget */ }
+    ARTBUSY = false;
+  }, 6000);
+}
