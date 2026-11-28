@@ -107,6 +107,7 @@ const BADGES = [
   { id: 'anticapivara', cat: 'treino', t: 'Anticapivara', ic: 'alerta', lv: [10, 40, 120, 300, 700], d: n => 'Ache ' + n + ' capivaradas no Qual é a capivarada?', v: X => X.capiOk },
   { id: 'fotografica', cat: 'treino', t: 'Memória fotográfica', ic: 'memoria', lv: [8, 10, 12, 14, 15], d: n => 'Acerte ' + n + ' de 15 numa rodada de Memória', v: X => X.memBest },
   { id: 'estante', cat: 'treino', t: 'Estante de táticas', ic: 'estante', lv: [10, 50, 150, 400, 1000], d: n => 'Resolva ' + n + ' puzzles da Biblioteca de táticas', v: X => X.libOk },
+  { id: 'leitor', cat: 'treino', t: 'Leitor', ic: 'livro', lv: [10, 50, 150, 400, 1000], d: n => 'Aprenda ' + n + ' linhas e exercícios na Biblioteca', v: X => X.bibL },
   { id: 'raiox', cat: 'treino', t: 'Raio-X', ic: 'scan', lv: [4, 7, 10, 13, 16], d: n => 'Acerte ' + n + ' posições numa rodada do Raio-X', v: X => X.xbest },
   { id: 'zeitnot', cat: 'treino', t: 'Zeitnot', ic: 'relogio', lv: [1, 3, 8, 15, 30], d: n => 'Vença ' + n + ' ' + pl(n, 'partida', 'partidas') + ' no treino de relógio', v: X => X.clockW },
   { id: 'castigo', cat: 'treino', t: 'Castigo', ic: 'martelo', lv: [5, 25, 75, 150, 300], d: n => 'Puna ' + n + ' erros no modo Puna o erro', v: X => X.punish },
@@ -311,7 +312,7 @@ function badgeStats() {
   X.self70 = Object.values(store.get('self', {})).filter(x => x.s >= 70).length;
   X.ends = cnt('end:'); X.mates = cnt('mates:'); X.conv = cnt('convert:'); X.def = cnt('defend:') + cnt('mine:');
   X.rep = Object.values(store.get('rep', {})).filter(x => x.b >= 2).length;
-  X.capiOk = (store.get('capi', {}).ok) || 0; X.memBest = (store.get('mem', {}).best) || 0; X.libOk = Object.values(store.get('libDone', {})).filter(x => x === 1).length;
+  X.capiOk = (store.get('capi', {}).ok) || 0; X.memBest = (store.get('mem', {}).best) || 0; X.libOk = Object.values(store.get('libDone', {})).filter(x => x === 1).length; X.bibL = Object.keys((store.get('bib', {}) || {}).c || {}).length;
   X.xbest = store.get('xbest', 0); X.clockW = store.get('clockHist', []).filter(x => x.res === 'W').length;
   X.blind = tot('blind'); X.repReviews = tot('rep'); X.rushTop = (store.get('rush', {}).top) || 0;
   X.punish = tot('punish'); X.theory = tot('theory'); X.guess = tot('guess'); X.spot = tot('spot');

@@ -41,7 +41,7 @@ const r = await ev(`(async () => {
     const t = setTimeout(() => { w.terminate(); res('sem resposta'); }, 30000);
     w.onmessage = e => { if (String(e.data) === 'uciok') { clearTimeout(t); w.terminate(); res('uciok'); } };
     w.onerror = e => { clearTimeout(t); res('erro: ' + e.message); }; w.postMessage('uci'); });
-  for (const v of ['partidas', 'analise', 'stats', 'treino', 'repertorio', 'academia', 'conquistas', 'painel']) { location.hash = v; await new Promise(r => setTimeout(r, 400)); }
+  for (const v of ['partidas', 'analise', 'stats', 'treino', 'repertorio', 'academia', 'biblioteca', 'conquistas', 'painel']) { location.hash = v; await new Promise(r => setTimeout(r, 400)); }
   o.view = document.querySelector('.view.on') && document.querySelector('.view.on').id;
   return JSON.stringify(o);
 })()`);

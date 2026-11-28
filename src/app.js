@@ -450,7 +450,7 @@ class Board {
   }
   setPosition(fen, animate) {
     const run = () => {
-      if (animate && this.fen && this.fen !== fen) { const k = parseBoard(fen).filter(Boolean).length < this.items.length ? 'cap' : 'move'; sound(k); if (this.el.closest('#v-analise,#v-treino')) haptic(k); }
+      if (animate && this.fen && this.fen !== fen) { const k = parseBoard(fen).filter(Boolean).length < this.items.length ? 'cap' : 'move'; sound(k); if (this.el.closest('#v-analise,#v-treino,#v-biblioteca')) haptic(k); }
       const B = parseBoard(fen); const target = [];
       B.forEach((p, i) => { if (p) target.push({ idx: i, code: p.c + p.t }); });
       const cur = this.items, used = new Array(cur.length).fill(false), next = [], pending = [];
@@ -486,6 +486,7 @@ class Board {
     for (const s of m.hangp || []) add(s, 'hangp');
     for (const s of m.wrongp || []) add(s, 'wrongp');
     for (const s of m.missp || []) add(s, 'missp');
+    for (const s of m.hl || []) add(s[0], 'hl-' + s[1]);
     if (m.badge) add(m.badge.sq, '', '<span class="bdg k-' + m.badge.k + '" style="background:var(--k)">' + esc(CLS[m.badge.k].s) + '</span>');
     this.L.marks.innerHTML = h;
   }
@@ -692,7 +693,7 @@ const LESSONS = {
 };
 
 /* ---------- navegação ---------- */
-const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats', 'conquistas', 'academia', 'repertorio'];
+const VIEWS = ['painel', 'partidas', 'analise', 'treino', 'arena', 'stats', 'conquistas', 'academia', 'repertorio', 'biblioteca'];
 function route() {
   const h = (location.hash || '').replace('#', '');
   const v = VIEWS.includes(h) ? h : 'painel';
@@ -723,6 +724,7 @@ function renderView(v) {
   if (v === 'conquistas') renderConquistas();
   if (v === 'academia') renderAcademia();
   if (v === 'repertorio') renderRepertorio();
+  if (v === 'biblioteca') renderBiblioteca();
 }
 function showView(v) {
   const first = !S.view, prev = S.view;
@@ -2600,5 +2602,6 @@ route();
 v14Start();
 hydrate().then(() => { loadData(); TRAIN = null; showView(S.view || 'painel'); v14Data(); return cloudStart(); });
 try { if (window.__APP_BUILD != null) localStorage.setItem('lal.bootok', String(window.__APP_BUILD)); } catch (e) { /* sem armazenamento */ }
+/*@BIB@*/
 /*@DEBUG@*/
 })();

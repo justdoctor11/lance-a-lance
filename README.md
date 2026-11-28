@@ -76,6 +76,20 @@ Como funciona: cada envio ao ramo `main` gera o pacote do app no ramo `updates`.
 - **Relatório para o treinador**: resumo em texto para copiar, salvar ou compartilhar, com posições-chave e link de análise.
 - **Análise em fila** e **contas combinadas** (Chess.com + Lichess nas estatísticas e treinos; os gráficos de rating seguem só a conta principal).
 
+## Biblioteca (nova aba)
+
+Livros e cursos interativos no estilo do Chessable, com revisão espaçada. No celular a aba aparece como "Livros" na barra de baixo.
+
+- **Livros que vêm no app**: os 4 volumes do Xadrez Vitorioso, o Meu Raio-X e o Xadrez Lógico (as 33 partidas comentadas, com desafios nos lances-chave).
+- **Aprender e revisar**: cada linha é aprendida jogando os lances, com os comentários do autor. Depois ela volta para revisão em 4 h, 1 dia, 3 dias, 1 semana, 2 semanas, 1 mês, 3 meses e 6 meses; um erro a devolve ao começo. Exercícios, perguntas e "toque nas casas" entram na mesma revisão.
+- **Meta do dia e sequência**: meta de lances por dia (15, 30 ou 60), dias seguidos, treino extra e resumo no fim de cada sessão.
+- **Estudo do Lichess**: cole o link de um estudo público ou não listado (busca automática no app de computador) ou o PGN dele. Capítulos, variantes, comentários, setas e casas coloridas viram lições.
+- **PGN ou repertório**: cada variante do PGN vira uma linha para treinar, do lado escolhido.
+- **Montar no tabuleiro**: jogue os lances do seu repertório e salve cada linha, com setas verdes para o que já está guardado.
+- **Das suas partidas**: as linhas que você mais repete nas aberturas, com o seu aproveitamento em cada uma.
+- **Livro em PDF** (só dentro do app Claude): o Claude lê o livro em partes, com as imagens das páginas para entender os diagramas, e monta capítulos, partidas, variantes, exercícios e perguntas de revisão. Dá para estudar durante a conversão, pausar e continuar. Lances ilegais são cortados; confira as posições lidas de diagramas.
+- Os cursos e o progresso são salvos no aparelho e na sua conta Claude.
+
 ## Novidades da versão 1.5
 
 Chegam pela atualização automática, sem reinstalar.

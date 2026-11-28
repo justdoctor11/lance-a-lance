@@ -296,7 +296,7 @@ function phaseCostHtml() {
 }
 
 /* ---------- deslizar entre as abas (celular) ---------- */
-var SWIPE_ORDER = ['painel', 'partidas', 'analise', 'stats', 'treino', 'repertorio', 'academia', 'conquistas'];
+var SWIPE_ORDER = ['painel', 'partidas', 'analise', 'stats', 'treino', 'repertorio', 'academia', 'biblioteca', 'conquistas'];
 function swipeInit() {
   const main = $('main.wrap'); if (!main) return;
   const mq = matchMedia('(max-width: 899px)');
